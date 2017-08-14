@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PopcornCore</name>
+    </assembly>
+    <members>
+        <member name="M:Skyward.Popcorn.Core.EntityFrameworkCore.MapEntityFramework``3(Skyward.Popcorn.PopcornConfiguration,Microsoft.EntityFrameworkCore.DbContextOptionsBuilder{``2},System.String)">
+            <summary>
+            Helper function creating a mapping from a source type to a destination type.  Will attempt to auto-load navigation properties as needed.
+            </summary>
+            <param name="optionsBuilder"></param>
+            <param name="defaultIncludes"></param>
+            <param name="self">todo: describe self parameter on MapEntityFramework</param>
+            <typeparam name="TSourceType"></typeparam>
+            <typeparam name="TDestType"></typeparam>
+            <typeparam name="TContext"></typeparam>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Core.EntityFrameworkCore.ConstructDbContextWithOptions``1(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder{``0})">
+            <summary>
+            A helper method to build a DbContext given an options builder.
+            </summary>
+            <typeparam name="TContext"></typeparam>
+            <param name="optionsBuilder"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Core.EntityFrameworkCore.GetNavigationProperties(System.Type,Microsoft.EntityFrameworkCore.DbContext)">
+            <summary>
+            Method that uses a DbContext to get a list of 'Navigation' properties -- that is, properties that represent other entities
+            rather than strictly data on THIS entity.
+            </summary>
+            <param name="entityType"></param>
+            <param name="context"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Skyward.Popcorn.Core.PopcornJsonFormatter">
+            <summary>
+            This formatter provides an interception point on data that is returned by an API method.  It is the point of conversion into the serialized format.
+            This allows us to affect and control what actually ends up being serialized and returned as a Response.
+            
+            It relies on an existing JsonFormatter which we will pass through to.
+            </summary>
+        </member>
+        <member name="M:Skyward.Popcorn.Core.PopcornJsonFormatter.#ctor(Microsoft.AspNetCore.Mvc.Formatters.TextOutputFormatter,Skyward.Popcorn.Expander,System.Collections.Generic.Dictionary{System.String,System.Object},System.Func{System.Object,System.Object,System.Object})">
+            <summary>
+            The only constructor
+            </summary>
+            <param name="innerFormatter">the formatter to replace</param>
+            <param name="expander">The constructed and configured expander</param>
+            <param name="expandContext">Any context to be passed in</param>
+            <param name="inspector">Any inspector to wrap around the results.</param>
+        </member>
+        <member name="M:Skyward.Popcorn.Core.PopcornJsonFormatter.CanWriteResult(Microsoft.AspNetCore.Mvc.Formatters.OutputFormatterCanWriteContext)">
+            <summary>
+            Pass through the query to our inner formatter
+            </summary>
+            <param name="context"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Core.PopcornJsonFormatter.WriteResponseBodyAsync(Microsoft.AspNetCore.Mvc.Formatters.OutputFormatterWriteContext,System.Text.Encoding)">
+            <summary>
+            Handle receiving an object and writing a response
+            </summary>
+            <param name="context"></param>
+            <param name="selectedEncoding"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Skyward.Popcorn.Core.ApiExpanderJsonFormatterExtensions">
+            <summary>
+            Some useful extensions for Web App style configuration
+            </summary>
+        </member>
+        <member name="M:Skyward.Popcorn.Core.ApiExpanderJsonFormatterExtensions.ConfigureApiExpansion(Microsoft.AspNetCore.Mvc.MvcOptions,System.Action{Skyward.Popcorn.PopcornConfiguration})">
+            <summary>
+            Configure the AspNet Core MVC options to include an Api Expander.  Allow the caller to configure it with an action.
+            </summary>
+            <param name="options"></param>
+            <param name="configure"></param>
+        </member>
+    </members>
+</doc>

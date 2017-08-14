@@ -2,6 +2,25 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp1.1</TargetFramework>
+    <PackageId>Skyward.Api.Popcorn.DotNetCore</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Authors>Skyward App Company, LLC</Authors>
+    <Description>Extensions for Popcorn utilizing EntityFramework Core and Asp.Net Core</Description>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes>First release</PackageReleaseNotes>
+    <Copyright>Copyright 2017 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
+    <PackageTags>api rest dotnet entityframework asp.net</PackageTags>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageLicenseUrl>https://github.com/SkywardApps/popcorn/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/SkywardApps/popcorn</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <AssemblyVersion>0.8.0.0</AssemblyVersion>
+    <FileVersion>0.8.0.0</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>PopcornCore.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

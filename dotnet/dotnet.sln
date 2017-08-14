@@ -3,15 +3,23 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornCoreTest", "PopcornCoreTest\PopcornCoreTest.csproj", "{EB9B2D00-1545-4AC3-8F52-49BE4DD0D69C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornCoreTest", "PopcornCoreTest\PopcornCoreTest.csproj", "{EB9B2D00-1545-4AC3-8F52-49BE4DD0D69C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornStandardTest", "PopcornStandardTest\PopcornStandardTest.csproj", "{AB46DC7B-4E75-4A2B-888C-1888051AC56F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornStandardTest", "PopcornStandardTest\PopcornStandardTest.csproj", "{AB46DC7B-4E75-4A2B-888C-1888051AC56F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornCore", "PopcornCore\PopcornCore.csproj", "{72918F23-39A0-40CE-BCF1-501252EAF2E5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornStandard", "PopcornStandard\PopcornStandard.csproj", "{585EAD08-1A9A-44FD-8344-62B12862B4CF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{A7EEB6B5-2616-4E2A-BFAA-FE87FF7AD77B}"
+	ProjectSection(SolutionItems) = preProject
+		..\.gitattributes = ..\.gitattributes
+		..\.gitignore = ..\.gitignore
+		..\LICENSE = ..\LICENSE
+		..\README.md = ..\README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

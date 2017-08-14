@@ -3,6 +3,25 @@
   <PropertyGroup>
     <TargetFramework>netstandard1.5</TargetFramework>
     <RootNamespace>Popcorn</RootNamespace>
+    <PackageId>Skyward.Api.Popcorn</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Authors>Skyward App Company, LLC</Authors>
+    <Description>Object dynamic filtering and expansion</Description>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes>First release</PackageReleaseNotes>
+    <Copyright>Copyright 2017 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
+    <PackageTags>api rest</PackageTags>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/SkywardApps/popcorn</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/SkywardApps/popcorn/blob/master/LICENSE</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <AssemblyVersion>0.8.0.0</AssemblyVersion>
+    <FileVersion>0.8.0.0</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>PopcornStandard.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
