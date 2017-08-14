@@ -2,7 +2,7 @@
 # We have five stages:
 stages:
 #
-- build
+ - build
  # a test stage, which will execute all of the various unit and integration tests that are performed from within the project itself
  - test
   # a stage where all test results will be integrated into TargetProcess, Confluence, and/or other central sites
