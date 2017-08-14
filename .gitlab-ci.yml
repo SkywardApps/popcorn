@@ -1,0 +1,90 @@
+# This is the configuration file for git-lab's CI service.
+# We have five stages:
+stages:
+#
+- build
+ # a test stage, which will execute all of the various unit and integration tests that are performed from within the project itself
+ - test
+  # a stage where all test results will be integrated into TargetProcess, Confluence, and/or other central sites
+ - uploadresults
+  # 
+ - deployment
+
+ # Deploy our project to the internal site for testing
+
+ build:
+  stage: build
+  image: onsitedashboard:build
+ script: 
+  - cd dotnet/PopcornStandard
+  - dotnet build 
+  - cd ../PopcornCore
+  - dotnet build 
+ tags:
+  - x86
+
+# Running the standard library tests
+popcorn_test:
+ stage: test
+ image: onsitedashboard:build
+ script: 
+  - cd dotnet/PopcornStandardTest
+  - dotnet test
+ tags:
+  - x86
+
+# Running the dotnet core tests
+popcorncore_test:
+ stage: test
+ image: onsitedashboard:build
+ script: 
+  - cd dotnet/PopcornCoreTest
+  - dotnet test
+ tags:
+  - x86
+x86
+
+# Updating documentation on confluence markdowns within the project
+documentation:
+ stage: uploadresults
+ image: onsitedashboard:build
+ only: 
+  - master
+ before_script:
+  - mkdir -p ~/.ssh
+  # Sadly Gitlab mangles these secret variables by prepending a space on susequent lines
+  - echo $MarkdownConfluenceCORE_pk | tr '.' '\n' >~/.ssh/id_rsa
+  - chmod 600 ~/.ssh/id_rsa
+  - ssh-keyscan -t rsa khan.skywardapps.us >>~/.ssh/known_hosts
+ script: 
+  # Pull down the connector project to connect results to TP
+  - git clone git@khan.skywardapps.us:internal/markdown-confluence.git
+  - cd markdown-confluence/MarkdownUploaderCore
+  - dotnet restore
+  - dotnet build
+  # Run with the hardcoded project id as this will always be OnsiteDashboard
+  - cd ../..
+  - dotnet run --project markdown-confluence/MarkdownUploaderCore/MarkdownUploaderCore.csproj
+ tags:
+  - x86
+  
+# Create an instance of this server.
+nuget:
+ stage: deployment
+ image: onsitedashboard:build
+ when: manual
+ allow_failure: true
+ only:
+  - master
+  - alpha
+  - beta
+  - production
+ script:
+  - cd dotnet/PopcornStandard
+  - dotnet build -c Release
+  - cd ../PopcornCore
+  - dotnet build -c Release
+  - cd ../Build/Release
+  - dotnet nuget push Skyward.Api.Popcorn.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
+ tags:
+  - x86
