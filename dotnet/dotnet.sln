@@ -17,7 +17,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentat
 	ProjectSection(SolutionItems) = preProject
 		..\.gitattributes = ..\.gitattributes
 		..\.gitignore = ..\.gitignore
+		..\.gitlab-ci.yml = ..\.gitlab-ci.yml
 		..\LICENSE = ..\LICENSE
+		..\markdown.json = ..\markdown.json
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
