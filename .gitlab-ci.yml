@@ -16,8 +16,10 @@ build:
  image: onsitedashboard:build
  script: 
   - cd dotnet/PopcornStandard
+  - dotnet restore
   - dotnet build 
   - cd ../PopcornCore
+  - dotnet restore
   - dotnet build 
  tags:
   - x86
@@ -28,6 +30,7 @@ popcorn_test:
  image: onsitedashboard:build
  script: 
   - cd dotnet/PopcornStandardTest
+  - dotnet restore
   - dotnet test
  tags:
   - x86
@@ -38,6 +41,7 @@ popcorncore_test:
  image: onsitedashboard:build
  script: 
   - cd dotnet/PopcornCoreTest
+  - dotnet restore
   - dotnet test
  tags:
   - x86
@@ -79,8 +83,10 @@ nuget:
   - production
  script:
   - cd dotnet/PopcornStandard
+  - dotnet restore
   - dotnet build -c Release
   - cd ../PopcornCore
+  - dotnet restore
   - dotnet build -c Release
   - cd ../Build/Release
   - dotnet nuget push Skyward.Api.Popcorn.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
