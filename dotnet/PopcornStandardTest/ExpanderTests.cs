@@ -1,0 +1,548 @@
+using Skyward.Popcorn;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using Shouldly;
+
+namespace PopcornStandardTest
+{
+    [TestClass]
+    public class ExpanderTests
+    {
+        /// <summary>
+        /// A test root object with a myriad of properties used to test direct implementations.
+        /// The property names should generally be named for what they are being used to test.
+        /// </summary>
+        public class RootObject
+        {
+            public Guid Id { get; set; }
+            public Guid? Nullable { get; set; }
+            public string StringValue { get; set; }
+            public string NonIncluded { get; set; }
+            public string ExcludedFromProjection { get; set; }
+            public int Upconvert { get; set; }
+            public double Downconvert { get; set; }
+
+            public ChildObject Child { get; set; }
+            public List<ChildObject> Children { get; set; }
+            public IEnumerable<ChildObject> ChildrenInterface { get; set; }
+            public HashSet<ChildObject> ChildrenSet { get; set; }
+            public DerivedChildObject SubclassInOriginal { get; set; }
+            public ChildObject SuperclassInOriginal { get; set; }
+            public Guid InvalidCastType { get; set; }
+
+            public string FromMethod() { return nameof(FromMethod); }
+            public ChildObject ComplexFromMethod() { return new ChildObject { Id = Guid.NewGuid(), Name = "ComplexFromMethod ChildObject", Description = "This proves that an object returned from a method will also be projected." }; }
+            
+        }
+
+
+        /// <summary>
+        /// A sub-entity used to test collections
+        /// </summary>
+        public class ChildObject
+        {
+            public Guid Id { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+        }
+
+        /// <summary>
+        /// A subclass of the child entity so we can test polymorphism
+        /// </summary>
+        public class DerivedChildObject : ChildObject
+        {
+            public string ExtendedProperty { get; set; }
+        }
+
+        /// <summary>
+        /// A projection of our testing class.  This mostly contains the same properties, sometimes with different types.
+        /// There will be some values here that are calculated just from 'translators'.
+        /// </summary>
+        public class RootObjectProjection
+        {
+            //public string Excluded { get; set; } // this one doesn't exist in the projection
+            public string Additional { get; set; } // this one doesn't exist in the root
+
+
+            public Guid Id { get; set; } // a non-simple type
+            public Guid? Nullable { get; set; }
+            public string StringValue { get; set; }
+            public string NonIncluded { get; set; }
+
+            public double? Upconvert { get; set; } // we sneakily changed the type here
+            public int? Downconvert { get; set; }
+
+            public double? ValueFromTranslator { get; set; }
+            public ChildObjectProjection ComplexFromTranslator { get; set; }
+
+            public ChildObjectProjection Child { get; set; }
+            public List<ChildObjectProjection> Children { get; set; }
+            public IEnumerable<ChildObjectProjection> ChildrenInterface { get; set; }
+            public HashSet<ChildObjectProjection> ChildrenSet { get; set; }
+            public ChildObjectProjection SubclassInOriginal { get; set; }
+            public DerivedChildObjectProjection SuperclassInOriginal { get; set; }
+            public string InvalidCastType { get; set; }
+
+            public string FromMethod { get; set; }
+            public ChildObjectProjection ComplexFromMethod { get; set; }
+        }
+
+        public class ChildObjectProjection
+        {
+            public Guid Id { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+
+        }
+
+        public class DerivedChildObjectProjection : ChildObjectProjection
+        {
+            public string ExtendedProperty { get; set; }
+        }
+
+        Expander _expander;
+
+        [TestInitialize]
+        public void SetupExpanderRegistry()
+        {
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            config.Map<RootObject, RootObjectProjection>($"[{nameof(RootObjectProjection.Id)},{nameof(RootObjectProjection.StringValue)},{nameof(RootObjectProjection.NonIncluded)}]",
+                (definition) =>
+                {
+                    definition.Translate(o => o.ValueFromTranslator, () => 5.2);
+                });
+
+            config.Map<ChildObject, ChildObjectProjection>();
+            config.Map<DerivedChildObject, DerivedChildObjectProjection>();
+        }
+
+        // Things to test
+
+        // Specific includes
+        [TestMethod]
+        public void SimpleMapping()
+        {
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Id)},{nameof(RootObjectProjection.StringValue)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.StringValue.ShouldBe(root.StringValue);
+            projection.Id.ShouldBe(root.Id);
+
+            projection.NonIncluded.ShouldBeNull();
+            projection.Additional.ShouldBeNull();
+            projection.Child.ShouldBeNull();
+            projection.Children.ShouldBeNull();
+            projection.Upconvert.ShouldBeNull();
+            projection.ValueFromTranslator.ShouldBeNull();
+            projection.Downconvert.ShouldBeNull();
+
+        }
+
+        // assign a null
+        [TestMethod]
+        public void AssignNull()
+        {
+            var root = new RootObject
+            {
+                StringValue = null,
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.StringValue)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.StringValue.ShouldBe(null);
+        }
+
+        // Assign to nullable
+        [TestMethod]
+        public void AssignValueToNullable()
+        {
+            var root = new RootObject
+            {
+                Nullable = Guid.NewGuid(),
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Nullable)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Nullable.ShouldBe(root.Nullable);
+        }
+
+        // Assign to nullable
+        [TestMethod]
+        public void AssignNullToNullable()
+        {
+            var root = new RootObject
+            {
+                Nullable = null,
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Nullable)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Nullable.ShouldBe(null);
+        }
+
+        // change basic types (upconvert)
+        [TestMethod]
+        public void UpconvertBasicType()
+        {
+            var root = new RootObject
+            {
+                Upconvert = 5
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Upconvert)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Upconvert.ShouldBe(5);
+        }
+
+        // change basic types (downconvert)
+        [TestMethod]
+        public void DownconvertBasicType()
+        {
+            var root = new RootObject
+            {
+                Downconvert = 5.5
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Downconvert)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Downconvert.ShouldBe(6);
+        }
+
+        // Invalid conversion
+        [TestMethod]
+        public void InvalidConversion()
+        {
+            var root = new RootObject
+            {
+                InvalidCastType = Guid.NewGuid()
+            };
+
+            object result = null;
+            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.InvalidCastType)}]")); }).Message.ShouldBe(nameof(RootObjectProjection.InvalidCastType));
+            result.ShouldBeNull();
+        }
+
+
+        // assign to subclass Subclass
+        [TestMethod]
+        public void ConvertToSubclass()
+        {
+            var root = new RootObject
+            {
+                SubclassInOriginal = new DerivedChildObject
+                {
+                    Name = "Name",
+                    ExtendedProperty = "Extended"
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.SubclassInOriginal)}[{nameof(DerivedChildObject.Name)},{nameof(DerivedChildObject.ExtendedProperty)}]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.SubclassInOriginal.ShouldNotBeNull();
+
+            DerivedChildObjectProjection child = projection.SubclassInOriginal as DerivedChildObjectProjection;
+            child.ShouldNotBeNull();
+            child.Name.ShouldBe(root.SubclassInOriginal.Name);
+            child.ExtendedProperty.ShouldBe(root.SubclassInOriginal.ExtendedProperty);
+        }
+
+
+        // assign to superclass
+        [TestMethod]
+        public void AssignToSuperclass()
+        {
+            var root = new RootObject
+            {
+                SuperclassInOriginal = new ChildObject
+                {
+                    Name = "Name"
+                }
+            };
+
+            object result = null;
+            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.SuperclassInOriginal)}]")); }).Message.ShouldBe(nameof(RootObjectProjection.SuperclassInOriginal));
+            result.ShouldBeNull();
+        }
+
+        // assign simple from a method
+        [TestMethod]
+        public void SimpleFromMethod()
+        {
+            var root = new RootObject
+            {
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.FromMethod)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.FromMethod.ShouldBe(root.FromMethod());
+        }
+
+        // assign complex from a method
+        [TestMethod]
+        public void ComplexFromMethod()
+        {
+            var root = new RootObject
+            {
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.ComplexFromMethod)}[{nameof(ChildObjectProjection.Id)},{nameof(ChildObjectProjection.Name)}]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.ComplexFromMethod.ShouldNotBeNull();
+            projection.ComplexFromMethod.Id.ShouldNotBe(Guid.Empty);
+            String.IsNullOrWhiteSpace(projection.ComplexFromMethod.Name).ShouldBeFalse();
+            projection.ComplexFromMethod.Name.ShouldBe(root.ComplexFromMethod().Name);
+            projection.ComplexFromMethod.Description.ShouldBeNull();
+
+
+        }
+
+        // assign simple from a translator
+        [TestMethod]
+        public void SimpleFromTranslator()
+        {
+            var root = new RootObject
+            {
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.ValueFromTranslator)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.ValueFromTranslator.ShouldBe(5.2);
+
+        }
+
+        // child
+        [TestMethod]
+        public void ChildIncluded()
+        {
+            var root = new RootObject
+            {
+                Child = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Name",
+                    Description = "Description"
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Child)}[{nameof(ChildObject.Id)},{nameof(ChildObject.Name)}]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Child.ShouldNotBeNull();
+            projection.Child.Id.ShouldBe(root.Child.Id);
+            projection.Child.Name.ShouldBe(root.Child.Name);
+            projection.Child.Description.ShouldBeNull();
+        }
+
+
+        // list of children 
+
+        [TestMethod]
+        public void ListOfChildren()
+        {
+            var root = new RootObject
+            {
+                Children = new List<ChildObject>
+                {
+                    new ChildObject
+                    {
+                        Name = "Item1",
+                        Description = "Description1"
+                    },
+                    new ChildObject
+                    {
+                        Name = "Item2",
+                        Description = "Description2"
+                    }
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Children)}[{nameof(ChildObject.Name)}]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+
+            projection.Children.ShouldNotBeNull();
+            projection.Children.Count.ShouldBe(2);
+            projection.Children.Any(c => c.Name == "Item1").ShouldBeTrue();
+            projection.Children.Any(c => c.Name == "Item2").ShouldBeTrue();
+            projection.Children.Any(c => c.Description != null).ShouldBeFalse();
+        }
+
+        [TestMethod]
+        public void ListOfChildrenInterface()
+        {
+            var root = new RootObject
+            {
+                ChildrenInterface = new List<ChildObject>
+                {
+                    new ChildObject
+                    {
+                        Name = "Item1",
+                        Description = "Description1"
+                    },
+                    new ChildObject
+                    {
+                        Name = "Item2",
+                        Description = "Description2"
+                    }
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.ChildrenInterface)}[{nameof(ChildObject.Name)}]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+
+            projection.ChildrenInterface.ShouldNotBeNull();
+            projection.ChildrenInterface.Count().ShouldBe(2);
+            projection.ChildrenInterface.Any(c => c.Name == "Item1").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => c.Name == "Item2").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => c.Description != null).ShouldBeFalse();
+        }
+
+        // @TODO Currently this fails because a HashSet doesn't implement IList (rightly!) but our current collection implementation assumes an IList interface is available.
+        [TestMethod, Ignore]
+        public void ListOfChildrenHashSet()
+        {
+            var root = new RootObject
+            {
+                ChildrenSet = new HashSet<ChildObject>
+                {
+                    new ChildObject
+                    {
+                        Name = "Item1",
+                        Description = "Description1"
+                    },
+                    new ChildObject
+                    {
+                        Name = "Item2",
+                        Description = "Description2"
+                    }
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.ChildrenSet)}[{nameof(ChildObject.Name)}]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+
+            projection.ChildrenSet.ShouldNotBeNull();
+            projection.ChildrenSet.Count().ShouldBe(2);
+            projection.ChildrenSet.Any(c => c.Name == "Item1").ShouldBeTrue();
+            projection.ChildrenSet.Any(c => c.Name == "Item2").ShouldBeTrue();
+            projection.ChildrenSet.Any(c => c.Description != null).ShouldBeFalse();
+        }
+
+        // assign complex from a translator
+
+        [TestMethod, Ignore]
+        public void ComplexFromTranslator()
+        {
+
+        }
+        // 
+
+        // Default
+
+        [TestMethod, Ignore]
+        public void UseDefaultsIncludes()
+        {
+        }
+        // Default on child
+
+        [TestMethod, Ignore]
+        public void UseDefaultIncludesOnChild()
+        {
+        }
+
+        // empty includes
+
+        [TestMethod, Ignore]
+        public void EmptyIncludes()
+        {
+        }
+
+        // multiple different children with different includes
+
+        [TestMethod, Ignore]
+        public void DifferingChildren()
+        {
+        }
+
+        // multiple different lists with different includes
+
+        [TestMethod, Ignore]
+        public void ListOfDifferingChildren()
+        {
+        }
+
+        // non-projected child
+
+        [TestMethod, Ignore]
+        public void UnprojectedChild()
+        {
+        }
+
+        // non-projected list of children
+
+        [TestMethod, Ignore]
+        public void UnprojectedChildList()
+        {
+        }
+
+        // Database navigation property
+        [TestMethod, Ignore]
+        public void DatabaseObject()
+        {
+
+        }
+
+    }
+}
