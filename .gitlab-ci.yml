@@ -1,20 +1,19 @@
 # This is the configuration file for git-lab's CI service.
 # We have five stages:
 stages:
-#
-- build
- # a test stage, which will execute all of the various unit and integration tests that are performed from within the project itself
+# Make sure everything compiles OK
+ - build
+# a test stage, which will execute all of the various unit and integration tests that are performed from within the project itself
  - test
-  # a stage where all test results will be integrated into TargetProcess, Confluence, and/or other central sites
+# a stage where all test results will be integrated into TargetProcess, Confluence, and/or other central sites
  - uploadresults
-  # 
+# Option to upload an updated nuget package
  - deployment
 
- # Deploy our project to the internal site for testing
-
- build:
-  stage: build
-  image: onsitedashboard:build
+# Deploy our project to the internal site for testing
+build:
+ stage: build
+ image: onsitedashboard:build
  script: 
   - cd dotnet/PopcornStandard
   - dotnet build 
@@ -42,7 +41,6 @@ popcorncore_test:
   - dotnet test
  tags:
   - x86
-x86
 
 # Updating documentation on confluence markdowns within the project
 documentation:
