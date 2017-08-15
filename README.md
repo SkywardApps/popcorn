@@ -40,25 +40,19 @@ Which returns a list of contacts in the form:
 Now, if you want to get a list of phone numbers for each of those, you now need to make a series
 of calls to further endpoints, one for each contact you want to look up the information for:
 
-```
-https://myserver.com/api/1/contacts/1/phonenumbers
-```
+``` https://myserver.com/api/1/contacts/1/phonenumbers ```
 ```
 [
   {"Type":"cell","Number":"867-5309"}
 ]
 ```
-```
-https://myserver.com/api/1/contacts/2/
-```
+``` https://myserver.com/api/1/contacts/2/ ```
 ```
 [
   {"Type":"landline","Number":"555-5555"}
 ]
 ```
-```
-https://myserver.com/api/1/contacts/3/phonenumbers
-```
+``` https://myserver.com/api/1/contacts/3/phonenumbers ```
 ```
 [
   {"Type":"cell","Number":"123-4567"}
@@ -70,12 +64,10 @@ Let's say that while we want the numbers for each contact, we don't really need 
 (cell or landline) and would prefer to save the bandwidth by not transfering it.  Now, instead of 
 making many calls, all the above can be reduced down to:
 
-```
-https://myserver.com/api/1/contacts?include=[Id,Name,PhoneNumbers[Number]]
-
-```
+``` https://myserver.com/api/1/contacts?include=[Id,Name,PhoneNumbers[Number]] ```
 
 Which provides:
+
 ```
 [
  {
