@@ -3,7 +3,9 @@
 A high level overview of features we would like to develop, in relative priority order.
 
 1. Automatic schema generation
-2. Automatic documentation generation
+ 2. Automatic documentation generation
+3. Payload containers
+ 4.   Pagination  
 2. Platform Provider: PHP
 3. Platform Provider: .Net Framework
 5. Platform Provider: Client side Typescript
