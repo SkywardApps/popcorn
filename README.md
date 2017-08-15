@@ -42,18 +42,24 @@ of calls to further endpoints, one for each contact you want to look up the info
 
 ```
 https://myserver.com/api/1/contacts/1/phonenumbers
+```
+```
 [
   {"Type":"cell","Number":"867-5309"}
 ]
 ```
 ```
-https://myserver.com/api/1/contacts/2/phonenumbers
+https://myserver.com/api/1/contacts/2/
+```
+```
 [
   {"Type":"landline","Number":"555-5555"}
 ]
 ```
 ```
 https://myserver.com/api/1/contacts/3/phonenumbers
+```
+```
 [
   {"Type":"cell","Number":"123-4567"}
 ]
