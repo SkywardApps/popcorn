@@ -1,1 +1,1 @@
-# [Popcorn](../README) > Contributing
+# [Popcorn](../README.md) > Contributing

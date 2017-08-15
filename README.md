@@ -127,7 +127,7 @@ asp.net core and entityframework core, but many more platforms are on the roadma
 ## How can I use it in my project?
 
 First you need to figure out if you're working with a platform that has a provider implemented in 
-the popcorn project. (Probably check out [Documentation](docs/Documentation)).
+the popcorn project. (Probably check out [Documentation](docs/Documentation.md)).
 
 If there's a provider already in the project, great!  The platform-specific documentation will walk
 you though incorporating the provider into your project.
@@ -138,8 +138,8 @@ to contribute any platform-specific providers you come up with!
 
 ## Further Reading
 
-+ [Quick Start](docs/QuickStart)
-+ [Documentation](docs/Documentation)
-+ [Roadmap](docs/Roadmap)
-+ [Contributing](docs/Contributing)
++ [Quick Start](docs/QuickStart.md)
++ [Documentation](docs/Documentation.md)
++ [Roadmap](docs/Roadmap.md)
++ [Contributing](docs/Contributing.md)
 + [License](LICENSE)

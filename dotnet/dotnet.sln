@@ -18,9 +18,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentat
 		..\.gitattributes = ..\.gitattributes
 		..\.gitignore = ..\.gitignore
 		..\.gitlab-ci.yml = ..\.gitlab-ci.yml
+		..\docs\Contributing.md = ..\docs\Contributing.md
+		..\docs\Documentation.md = ..\docs\Documentation.md
 		..\LICENSE = ..\LICENSE
 		..\markdown.json = ..\markdown.json
+		..\docs\QuickStart.md = ..\docs\QuickStart.md
 		..\README.md = ..\README.md
+		..\docs\Roadmap.md = ..\docs\Roadmap.md
 	EndProjectSection
 EndProject
 Global
