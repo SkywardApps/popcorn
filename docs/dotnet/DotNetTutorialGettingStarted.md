@@ -186,7 +186,10 @@ We have all our data here! Great! Our entire heirarchy has been returned to us.
 But... what if we didn't actually *care* about the vehicles? That could be a ton of information that we don't even need, sucking up our data plan.
 That wouldn't make us a responsible internet citizen.  So let's add Popcorn and see how it saves us time, money, and brings about world peace.
 
-We need to do three things (in the future, only one, but come back when v2 is released!).  
+If you haven't already, now would be a great time to visit the [Quick Start Guide](DotNetQuickStart.md) and make sure you've got Popcorn linked into 
+your project correctly.
+
+To utilize Popcorn we need to do three things (in the future, only one, so come back when v2 is released!).  
 Add two 'projections', which are the data types that format our outgoing data. Create a 'Projections' folder in our solution, then add:
 
 ```csharp
