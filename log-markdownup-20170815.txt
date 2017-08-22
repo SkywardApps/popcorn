@@ -1,0 +1,302 @@
+2017-08-15 16:38:41.032 -04:00 [Information] MarkdownUploader run in "C:\Users\nelliott\Documents\Projects\popcorn"
+2017-08-15 16:39:13.781 -04:00 [Information] Config read in: "{
+  \"ProjectName\": \"Popcorn\",
+  \"ProjectSpace\": \"POP\",
+  \"ParentPageId\": \"9536879\"
+}
+"
+2017-08-15 16:39:14.241 -04:00 [Information] Actually running in C:\Users\nelliott\Documents\Projects\popcorn
+2017-08-15 16:39:14.623 -04:00 [Information] Found 17 existing autodoc pages
+2017-08-15 16:40:42.301 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn
+2017-08-15 16:40:42.303 -04:00 [Information] Found README.md
+2017-08-15 16:40:42.304 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet
+2017-08-15 16:40:42.305 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build
+2017-08-15 16:40:42.306 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release
+2017-08-15 16:40:42.306 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release\netcoreapp1.1
+2017-08-15 16:40:42.307 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release\netstandard1.5
+2017-08-15 16:40:42.308 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore
+2017-08-15 16:40:42.309 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin
+2017-08-15 16:40:42.310 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Debug
+2017-08-15 16:40:42.312 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Debug\netcoreapp1.1
+2017-08-15 16:40:42.314 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Release
+2017-08-15 16:40:42.315 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Release\netcoreapp1.1
+2017-08-15 16:40:42.316 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj
+2017-08-15 16:40:42.317 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Debug
+2017-08-15 16:40:42.318 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Debug\netcoreapp1.1
+2017-08-15 16:40:42.320 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Release
+2017-08-15 16:40:42.322 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Release\netcoreapp1.1
+2017-08-15 16:40:42.323 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest
+2017-08-15 16:40:42.323 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin
+2017-08-15 16:40:42.324 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Debug
+2017-08-15 16:40:42.325 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Debug\netcoreapp1.1
+2017-08-15 16:40:42.327 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Release
+2017-08-15 16:40:42.328 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Release\netcoreapp1.1
+2017-08-15 16:40:42.329 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Migrations
+2017-08-15 16:40:42.332 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Model
+2017-08-15 16:40:42.333 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj
+2017-08-15 16:40:42.334 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Debug
+2017-08-15 16:40:42.334 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Debug\netcoreapp1.1
+2017-08-15 16:40:42.336 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Release
+2017-08-15 16:40:42.337 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Release\netcoreapp1.1
+2017-08-15 16:40:42.338 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Projections
+2017-08-15 16:40:42.340 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Utilities
+2017-08-15 16:40:42.343 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard
+2017-08-15 16:40:42.344 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin
+2017-08-15 16:40:42.346 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug
+2017-08-15 16:40:42.347 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug\netcoreapp1.1
+2017-08-15 16:40:42.349 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug\netstandard1.5
+2017-08-15 16:40:42.351 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release
+2017-08-15 16:40:42.353 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release\netcoreapp1.1
+2017-08-15 16:40:42.355 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release\netstandard1.5
+2017-08-15 16:40:42.357 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\Implementation
+2017-08-15 16:40:42.358 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\Interface
+2017-08-15 16:40:42.360 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj
+2017-08-15 16:40:42.363 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug
+2017-08-15 16:40:42.364 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug\netcoreapp1.1
+2017-08-15 16:40:42.367 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug\netstandard1.5
+2017-08-15 16:40:42.372 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release
+2017-08-15 16:40:42.373 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release\netcoreapp1.1
+2017-08-15 16:40:42.375 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release\netstandard1.5
+2017-08-15 16:40:42.377 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest
+2017-08-15 16:40:42.378 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin
+2017-08-15 16:40:42.379 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Debug
+2017-08-15 16:40:42.382 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Debug\netcoreapp1.1
+2017-08-15 16:40:42.384 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Release
+2017-08-15 16:40:42.385 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Release\netcoreapp1.1
+2017-08-15 16:40:42.387 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj
+2017-08-15 16:40:42.388 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Debug
+2017-08-15 16:40:42.389 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Debug\netcoreapp1.1
+2017-08-15 16:40:42.392 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Release
+2017-08-15 16:40:42.393 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Release\netcoreapp1.1
+2017-08-15 16:40:42.395 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\media
+2017-08-15 16:41:38.540 -04:00 [Information] Updated 1 pages
+2017-08-15 16:44:17.203 -04:00 [Information] MarkdownUploader run in "C:\Users\nelliott\Documents\Projects\popcorn"
+2017-08-15 16:44:29.994 -04:00 [Information] Config read in: "{
+  \"ProjectName\": \"Popcorn\",
+  \"ProjectSpace\": \"POP\",
+  \"ParentPageId\": \"9536879\"
+}
+"
+2017-08-15 16:44:30.354 -04:00 [Information] Actually running in C:\Users\nelliott\Documents\Projects\popcorn
+2017-08-15 16:44:30.653 -04:00 [Information] Found 0 existing autodoc pages
+2017-08-15 16:44:30.657 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn
+2017-08-15 16:44:30.658 -04:00 [Information] Found README.md
+2017-08-15 16:44:30.660 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet
+2017-08-15 16:44:30.661 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build
+2017-08-15 16:44:30.662 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release
+2017-08-15 16:44:30.663 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release\netcoreapp1.1
+2017-08-15 16:44:30.664 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release\netstandard1.5
+2017-08-15 16:44:30.665 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore
+2017-08-15 16:44:30.666 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin
+2017-08-15 16:44:30.666 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Debug
+2017-08-15 16:44:30.667 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Debug\netcoreapp1.1
+2017-08-15 16:44:30.667 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Release
+2017-08-15 16:44:30.668 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Release\netcoreapp1.1
+2017-08-15 16:44:30.669 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj
+2017-08-15 16:44:30.669 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Debug
+2017-08-15 16:44:30.670 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Debug\netcoreapp1.1
+2017-08-15 16:44:30.672 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Release
+2017-08-15 16:44:30.673 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Release\netcoreapp1.1
+2017-08-15 16:44:30.674 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest
+2017-08-15 16:44:30.674 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin
+2017-08-15 16:44:30.676 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Debug
+2017-08-15 16:44:30.677 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Debug\netcoreapp1.1
+2017-08-15 16:44:30.679 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Release
+2017-08-15 16:44:30.680 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Release\netcoreapp1.1
+2017-08-15 16:44:30.683 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Migrations
+2017-08-15 16:44:30.684 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Model
+2017-08-15 16:44:30.684 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj
+2017-08-15 16:44:30.685 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Debug
+2017-08-15 16:44:30.687 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Debug\netcoreapp1.1
+2017-08-15 16:44:30.688 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Release
+2017-08-15 16:44:30.689 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Release\netcoreapp1.1
+2017-08-15 16:44:30.690 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Projections
+2017-08-15 16:44:30.694 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Utilities
+2017-08-15 16:44:30.695 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard
+2017-08-15 16:44:30.697 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin
+2017-08-15 16:44:30.697 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug
+2017-08-15 16:44:30.698 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug\netcoreapp1.1
+2017-08-15 16:44:30.700 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug\netstandard1.5
+2017-08-15 16:44:30.701 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release
+2017-08-15 16:44:30.704 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release\netcoreapp1.1
+2017-08-15 16:44:30.705 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release\netstandard1.5
+2017-08-15 16:44:30.707 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\Implementation
+2017-08-15 16:44:30.709 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\Interface
+2017-08-15 16:44:30.711 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj
+2017-08-15 16:44:30.713 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug
+2017-08-15 16:44:30.715 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug\netcoreapp1.1
+2017-08-15 16:44:30.716 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug\netstandard1.5
+2017-08-15 16:44:30.718 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release
+2017-08-15 16:44:30.720 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release\netcoreapp1.1
+2017-08-15 16:44:30.723 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release\netstandard1.5
+2017-08-15 16:44:30.724 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest
+2017-08-15 16:44:30.725 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin
+2017-08-15 16:44:30.727 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Debug
+2017-08-15 16:44:30.729 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Debug\netcoreapp1.1
+2017-08-15 16:44:30.730 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Release
+2017-08-15 16:44:30.733 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Release\netcoreapp1.1
+2017-08-15 16:44:30.735 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj
+2017-08-15 16:44:30.736 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Debug
+2017-08-15 16:44:30.738 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Debug\netcoreapp1.1
+2017-08-15 16:44:30.739 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Release
+2017-08-15 16:44:30.742 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Release\netcoreapp1.1
+2017-08-15 16:44:30.744 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\media
+2017-08-15 16:45:46.904 -04:00 [Information] MarkdownUploader run in "C:\Users\nelliott\Documents\Projects\popcorn"
+2017-08-15 16:46:16.237 -04:00 [Information] Config read in: "{
+  \"ProjectName\": \"Popcorn\",
+  \"ProjectSpace\": \"POP\",
+  \"ParentPageId\": \"9536879\"
+}
+"
+2017-08-15 16:46:16.603 -04:00 [Information] Actually running in C:\Users\nelliott\Documents\Projects\popcorn
+2017-08-15 16:46:16.981 -04:00 [Information] Found 0 existing autodoc pages
+2017-08-15 16:46:16.985 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn
+2017-08-15 16:46:16.987 -04:00 [Information] Found README.md
+2017-08-15 16:46:16.989 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\docs
+2017-08-15 16:46:16.990 -04:00 [Information] Found Contributing.md
+2017-08-15 16:46:16.991 -04:00 [Information] Found Documentation.md
+2017-08-15 16:46:16.992 -04:00 [Information] Found QuickStart.md
+2017-08-15 16:46:16.993 -04:00 [Information] Found Roadmap.md
+2017-08-15 16:46:16.994 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\docs\dotnet
+2017-08-15 16:46:16.995 -04:00 [Information] Found DotNetDocumentation.md
+2017-08-15 16:46:16.996 -04:00 [Information] Found DotNetQuickStart.md
+2017-08-15 16:46:16.998 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet
+2017-08-15 16:46:17.000 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build
+2017-08-15 16:46:17.001 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release
+2017-08-15 16:46:17.003 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release\netcoreapp1.1
+2017-08-15 16:46:17.004 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release\netstandard1.5
+2017-08-15 16:46:17.006 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore
+2017-08-15 16:46:17.008 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin
+2017-08-15 16:46:17.009 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Debug
+2017-08-15 16:46:17.010 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Debug\netcoreapp1.1
+2017-08-15 16:46:17.011 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Release
+2017-08-15 16:46:17.013 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Release\netcoreapp1.1
+2017-08-15 16:46:17.014 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj
+2017-08-15 16:46:17.016 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Debug
+2017-08-15 16:46:17.019 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Debug\netcoreapp1.1
+2017-08-15 16:46:17.021 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Release
+2017-08-15 16:46:17.022 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Release\netcoreapp1.1
+2017-08-15 16:46:17.025 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest
+2017-08-15 16:46:17.026 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin
+2017-08-15 16:46:17.029 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Debug
+2017-08-15 16:46:17.036 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Debug\netcoreapp1.1
+2017-08-15 16:46:17.039 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Release
+2017-08-15 16:46:17.044 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Release\netcoreapp1.1
+2017-08-15 16:46:17.047 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Migrations
+2017-08-15 16:46:17.050 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Model
+2017-08-15 16:46:17.053 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj
+2017-08-15 16:46:17.055 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Debug
+2017-08-15 16:46:17.060 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Debug\netcoreapp1.1
+2017-08-15 16:46:17.063 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Release
+2017-08-15 16:46:17.066 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Release\netcoreapp1.1
+2017-08-15 16:46:17.068 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Projections
+2017-08-15 16:46:17.070 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Utilities
+2017-08-15 16:46:17.074 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard
+2017-08-15 16:46:17.075 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin
+2017-08-15 16:46:17.076 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug
+2017-08-15 16:46:17.082 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug\netcoreapp1.1
+2017-08-15 16:46:17.085 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug\netstandard1.5
+2017-08-15 16:46:17.088 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release
+2017-08-15 16:46:17.094 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release\netcoreapp1.1
+2017-08-15 16:46:17.096 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release\netstandard1.5
+2017-08-15 16:46:17.099 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\Implementation
+2017-08-15 16:46:17.103 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\Interface
+2017-08-15 16:46:17.107 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj
+2017-08-15 16:46:17.108 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug
+2017-08-15 16:46:17.110 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug\netcoreapp1.1
+2017-08-15 16:46:17.114 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug\netstandard1.5
+2017-08-15 16:46:17.116 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release
+2017-08-15 16:46:17.118 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release\netcoreapp1.1
+2017-08-15 16:46:17.123 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release\netstandard1.5
+2017-08-15 16:46:17.125 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest
+2017-08-15 16:46:17.127 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin
+2017-08-15 16:46:17.128 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Debug
+2017-08-15 16:46:17.133 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Debug\netcoreapp1.1
+2017-08-15 16:46:17.134 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Release
+2017-08-15 16:46:17.141 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Release\netcoreapp1.1
+2017-08-15 16:46:17.143 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj
+2017-08-15 16:46:17.145 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Debug
+2017-08-15 16:46:17.148 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Debug\netcoreapp1.1
+2017-08-15 16:46:17.152 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Release
+2017-08-15 16:46:17.155 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Release\netcoreapp1.1
+2017-08-15 16:46:17.161 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\media
+2017-08-15 16:52:40.752 -04:00 [Information] MarkdownUploader run in "C:\Users\nelliott\Documents\Projects\popcorn"
+2017-08-15 16:52:41.680 -04:00 [Information] Config read in: "{
+  \"ProjectName\": \"Popcorn\",
+  \"ProjectSpace\": \"POP\",
+  \"ParentPageId\": \"9536879\"
+}
+"
+2017-08-15 16:52:42.047 -04:00 [Information] Actually running in C:\Users\nelliott\Documents\Projects\popcorn
+2017-08-15 16:52:42.417 -04:00 [Information] Found 3 existing autodoc pages
+2017-08-15 16:52:42.421 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn
+2017-08-15 16:52:42.422 -04:00 [Information] Found README.md
+2017-08-15 16:52:42.423 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\docs
+2017-08-15 16:52:42.424 -04:00 [Information] Found Contributing.md
+2017-08-15 16:52:42.424 -04:00 [Information] Found Documentation.md
+2017-08-15 16:52:42.425 -04:00 [Information] Found QuickStart.md
+2017-08-15 16:52:42.425 -04:00 [Information] Found Roadmap.md
+2017-08-15 16:52:42.426 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\docs\dotnet
+2017-08-15 16:52:42.428 -04:00 [Information] Found DotNetDocumentation.md
+2017-08-15 16:52:42.428 -04:00 [Information] Found DotNetQuickStart.md
+2017-08-15 16:52:42.429 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet
+2017-08-15 16:52:42.430 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build
+2017-08-15 16:52:42.430 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release
+2017-08-15 16:52:42.431 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release\netcoreapp1.1
+2017-08-15 16:52:42.432 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\Build\Release\netstandard1.5
+2017-08-15 16:52:42.433 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore
+2017-08-15 16:52:42.433 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin
+2017-08-15 16:52:42.434 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Debug
+2017-08-15 16:52:42.435 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Debug\netcoreapp1.1
+2017-08-15 16:52:42.438 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Release
+2017-08-15 16:52:42.438 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\bin\Release\netcoreapp1.1
+2017-08-15 16:52:42.439 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj
+2017-08-15 16:52:42.441 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Debug
+2017-08-15 16:52:42.442 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Debug\netcoreapp1.1
+2017-08-15 16:52:42.444 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Release
+2017-08-15 16:52:42.445 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCore\obj\Release\netcoreapp1.1
+2017-08-15 16:52:42.448 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest
+2017-08-15 16:52:42.450 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin
+2017-08-15 16:52:42.450 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Debug
+2017-08-15 16:52:42.454 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Debug\netcoreapp1.1
+2017-08-15 16:52:42.457 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Release
+2017-08-15 16:52:42.459 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\bin\Release\netcoreapp1.1
+2017-08-15 16:52:42.461 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Migrations
+2017-08-15 16:52:42.462 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Model
+2017-08-15 16:52:42.464 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj
+2017-08-15 16:52:42.465 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Debug
+2017-08-15 16:52:42.470 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Debug\netcoreapp1.1
+2017-08-15 16:52:42.472 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Release
+2017-08-15 16:52:42.474 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\obj\Release\netcoreapp1.1
+2017-08-15 16:52:42.476 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Projections
+2017-08-15 16:52:42.480 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornCoreTest\Utilities
+2017-08-15 16:52:42.482 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard
+2017-08-15 16:52:42.482 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin
+2017-08-15 16:52:42.483 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug
+2017-08-15 16:52:42.486 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug\netcoreapp1.1
+2017-08-15 16:52:42.489 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Debug\netstandard1.5
+2017-08-15 16:52:42.491 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release
+2017-08-15 16:52:42.492 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release\netcoreapp1.1
+2017-08-15 16:52:42.494 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\bin\Release\netstandard1.5
+2017-08-15 16:52:42.496 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\Implementation
+2017-08-15 16:52:42.499 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\Interface
+2017-08-15 16:52:42.501 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj
+2017-08-15 16:52:42.502 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug
+2017-08-15 16:52:42.504 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug\netcoreapp1.1
+2017-08-15 16:52:42.507 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Debug\netstandard1.5
+2017-08-15 16:52:42.508 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release
+2017-08-15 16:52:42.510 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release\netcoreapp1.1
+2017-08-15 16:52:42.513 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandard\obj\Release\netstandard1.5
+2017-08-15 16:52:42.515 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest
+2017-08-15 16:52:42.518 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin
+2017-08-15 16:52:42.519 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Debug
+2017-08-15 16:52:42.521 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Debug\netcoreapp1.1
+2017-08-15 16:52:42.523 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Release
+2017-08-15 16:52:42.525 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\bin\Release\netcoreapp1.1
+2017-08-15 16:52:42.529 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj
+2017-08-15 16:52:42.529 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Debug
+2017-08-15 16:52:42.531 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Debug\netcoreapp1.1
+2017-08-15 16:52:42.533 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Release
+2017-08-15 16:52:42.535 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\dotnet\PopcornStandardTest\obj\Release\netcoreapp1.1
+2017-08-15 16:52:42.538 -04:00 [Information] Searching Directory $C:\Users\nelliott\Documents\Projects\popcorn\media
+2017-08-15 16:53:48.008 -04:00 [Information] Updated 7 pages

@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
+using System.Buffers;
 
 namespace Skyward.Popcorn.Core
 {
@@ -27,20 +29,28 @@ namespace Skyward.Popcorn.Core
         /// <param name="expander">The constructed and configured expander</param>
         /// <param name="expandContext">Any context to be passed in</param>
         /// <param name="inspector">Any inspector to wrap around the results.</param>
-        public PopcornJsonFormatter(TextOutputFormatter innerFormatter, Expander expander, Dictionary<string, object> expandContext = null, Func<object, object, object> inspector = null) :
+        public PopcornJsonFormatter(Expander expander, Dictionary<string, object> expandContext = null, Func<object, object, object> inspector = null) :
             base()
         {
-            _innerFormatter = innerFormatter;
+            _innerFormatter = new JsonOutputFormatter(
+                new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore,
+                    DefaultValueHandling = DefaultValueHandling.Ignore
+                },
+                ArrayPool<Char>.Shared);
+
             _expander = expander;
             _context = expandContext;
             _inspector = inspector;
 
             // Duplicate the underlying supported types and encodings
-            foreach (var mediaType in innerFormatter.SupportedMediaTypes)
+            foreach (var mediaType in _innerFormatter.SupportedMediaTypes)
                 SupportedMediaTypes.Add(mediaType);
 
-            foreach (var encoding in innerFormatter.SupportedEncodings)
+            foreach (var encoding in _innerFormatter.SupportedEncodings)
                 SupportedEncodings.Add(encoding);
+
         }
 
         /// <summary>
@@ -106,7 +116,7 @@ namespace Skyward.Popcorn.Core
         /// </summary>
         /// <param name="options"></param>
         /// <param name="configure"></param>
-        public static void ConfigureApiExpansion(this Microsoft.AspNetCore.Mvc.MvcOptions options, Action<PopcornConfiguration> configure = null)
+        public static void UsePopcorn(this Microsoft.AspNetCore.Mvc.MvcOptions options, Action<PopcornConfiguration> configure = null)
         {
             // Inject our Api Expander
             // First we remove the existing one
@@ -123,7 +133,7 @@ namespace Skyward.Popcorn.Core
             }
 
             // And add a Json Formatter that will utilize that expander when appropriate
-            options.OutputFormatters.Add(new PopcornJsonFormatter(existingJsonFormatter, expander, configuration.Context, configuration.Inspector));
+            options.OutputFormatters.Add(new PopcornJsonFormatter(expander, configuration.Context, configuration.Inspector));
         }
     }
 }

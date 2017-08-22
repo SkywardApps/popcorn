@@ -41,7 +41,7 @@
             It relies on an existing JsonFormatter which we will pass through to.
             </summary>
         </member>
-        <member name="M:Skyward.Popcorn.Core.PopcornJsonFormatter.#ctor(Microsoft.AspNetCore.Mvc.Formatters.TextOutputFormatter,Skyward.Popcorn.Expander,System.Collections.Generic.Dictionary{System.String,System.Object},System.Func{System.Object,System.Object,System.Object})">
+        <member name="M:Skyward.Popcorn.Core.PopcornJsonFormatter.#ctor(Skyward.Popcorn.Expander,System.Collections.Generic.Dictionary{System.String,System.Object},System.Func{System.Object,System.Object,System.Object})">
             <summary>
             The only constructor
             </summary>
@@ -70,7 +70,7 @@
             Some useful extensions for Web App style configuration
             </summary>
         </member>
-        <member name="M:Skyward.Popcorn.Core.ApiExpanderJsonFormatterExtensions.ConfigureApiExpansion(Microsoft.AspNetCore.Mvc.MvcOptions,System.Action{Skyward.Popcorn.PopcornConfiguration})">
+        <member name="M:Skyward.Popcorn.Core.ApiExpanderJsonFormatterExtensions.UsePopcorn(Microsoft.AspNetCore.Mvc.MvcOptions,System.Action{Skyward.Popcorn.PopcornConfiguration})">
             <summary>
             Configure the AspNet Core MVC options to include an Api Expander.  Allow the caller to configure it with an action.
             </summary>
