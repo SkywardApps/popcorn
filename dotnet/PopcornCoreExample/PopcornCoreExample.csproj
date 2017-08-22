@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\docs\dotnet\DotNetTutorialGettingStarted.md" Link="DotNetTutorialGettingStarted.md" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\PopcornCore\PopcornCore.csproj" />
     <ProjectReference Include="..\PopcornStandard\PopcornStandard.csproj" />
   </ItemGroup>
