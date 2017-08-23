@@ -21,7 +21,6 @@ Which returns a list of contacts in the form:
 ``` 
 [
  {
-    
    "Id":1,
    "Name":"Liz Lemon"
  },
@@ -31,7 +30,7 @@ Which returns a list of contacts in the form:
  },
  {
    "Id":3,
-   "Name": "Jack Donaghy"
+   "Name":"Jack Donaghy"
  },
  ...
 }
@@ -46,7 +45,7 @@ of calls to further endpoints, one for each contact you want to look up the info
   {"Type":"cell","Number":"867-5309"}
 ]
 ```
-``` https://myserver.com/api/1/contacts/2/ ```
+``` https://myserver.com/api/1/contacts/2/phonenumbers ```
 ```
 [
   {"Type":"landline","Number":"555-5555"}
@@ -110,14 +109,14 @@ Presto! All the information we wanted at our fingertips, and none of the data we
 ## Why would I use it?
 
 By implementing the Popcorn protocol, you get a consistent, well defined API abstraction that your
-API consumers will be able to easily utilize.  You will able to take advantage of the various
+API consumers will be able to easily utilize.  You will be able to take advantage of the various
 libraries and tools Popcorn offers; right now this includes a C# automatic implementation for 
-asp.net core and entityframework core, but many more platforms are on the roadmap.
+Asp.Net Core and EntityFramework Core, but many more platforms are on the roadmap.
 
 ### Pros
 + Faster calls
-+ Saves Data
-+ Potential for Server-Side optimization
++ Saves data
++ Potential for server-side optimization
 + Less boilerplate code to write
 
 ### Cons
