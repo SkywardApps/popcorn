@@ -6,9 +6,11 @@ This tutorial will walk through a simple Asp.Net Core application demonstrating 
 All source code is available in the 'PopcornCoreExample' project in the dotnet solution.
 
 To get us started off, create a brand new 'Asp.Net Core' project.
+
 ![Project Type](QS.01.ProjectType.png)
 
 Make sure to choose 'Web Api' as your project type to get the appropriate templates in place.
+
 ![Project Type](QS.02.ProjectSettings.png)
 
 You should now have a 'Program.cs' file that sets up the hosting environment,
@@ -80,7 +82,7 @@ public class Car
 
 These are the entities we'll be querying for via the API.
 
-Lets add a 'ExampleContext' class that will act as a in-memory repository for our test data.
+Lets add an 'ExampleContext' class that will act as an in-memory repository for our test data.
 ```csharp
 public class ExampleContext
 {
