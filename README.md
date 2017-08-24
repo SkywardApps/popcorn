@@ -1,7 +1,7 @@
 # Popcorn
 
 ## What is Popcorn?
-Popcorn is a specification layer on top of a RESTful API that allows requesting clients to 
+Popcorn is a communication protocol on top of a RESTful API that allows requesting clients to 
 identify individual fields of resources to include when retrieving the resource or resource
 collection.
 
