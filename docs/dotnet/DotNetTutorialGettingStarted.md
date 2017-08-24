@@ -1,4 +1,4 @@
-# [Popcorn](../../README.md) > [Documentation](../Documentation.md) > DotNet > Tutorial: Getting Started
+# [Popcorn](../../README.md) > [Documentation](../Documentation.md) > DotNet(DotNetDocumentation.md) > Tutorial: Getting Started
 
 Ok, so you want to jump in with both feet and get Popcorn set up and running.
 This tutorial will walk through a simple Asp.Net Core application demonstrating the basic functionality.
@@ -192,7 +192,12 @@ If you haven't already, now would be a great time to visit the [Quick Start Guid
 your project correctly.
 
 To utilize Popcorn we need to do three things (in the future, only one, so come back when v2 is released!).  
-Add two 'projections', which are the data types that format our outgoing data. Create a 'Projections' folder in our solution, then add:
+Add two 'projections', which are the data types that format our outgoing data.  A projection is simply a class that reflects what an entity
+should look like before being sent to a client.  Check out this answer on [stack overflow](https://stackoverflow.com/a/3461116/169813) for a better description.
+You may be more familiar with the name [DTO, Data Transfer Object](https://en.wikipedia.org/wiki/Data_transfer_object), I simply prefer pronounceable names
+over acronyms.
+
+Create a 'Projections' folder in our solution, then add:
 
 ```csharp
 public class EmployeeProjection
