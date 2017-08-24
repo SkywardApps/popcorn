@@ -2,7 +2,7 @@
 
 This document contains protocol level documentation -- that is, the contract defined with the API consumer, regardless of platform-specific implementation.
 
-Platform-specific implementation documentation can be found:
+Platform-specific implementation documentation can be found here:
 + [DotNet](dotnet/DotNetDocumentation.md)
  
 ## Declaring included fields
@@ -12,25 +12,33 @@ There are intended to be two main mechanisms for specifying which fields are to 
  
 Currently only the query string mechanism is actually supported in any provider.
 
-## Including fields
+## Including Fields
 Fields shall be listed, in any order, as a comma delimited list surrounded by square brackets `[` and `]`.  The list shall start with an open bracket, contain zero or more valid property names, and terminate with a close bracket.
 
 Valid field names shall be any characters matching the regular expression `/[A-Za-z_][A-Za-z0-9_]*[A-Za-z0-9]+[A-Za-z0-9_]*/`.
 This basically means a simple name that starts with an alphabetical or underscore (not a number), then contains at least one non-underscore.
 The minimum field name length is two characters.
 
-As an example, all the following are acceptable:
+### Examples
+All the following are acceptable:
 
-`[]`  
-`[FirstName,LastName]`  
-`[MyProperty1,_ASecondProperty,_0]`  
+No properties referenced: `[]`  
+Properties with simple names: `[FirstName,LastName]`  
+Properties with numbers and underscores: `[MyProperty1,_ASecondProperty,_0]`  
 
+Some disallowed field names are:
 
-## Including subentities
-Subentities are referred to as traditional fields, and can be embedded by simply referencing the subentity field name.  Optionally, after the field name, an additional include list may be emdedded in the larger call, 
+Starting with a number: `1One`  
+Punctuation: `Property!Name`  
+Single character: `A`
+Only underscores: `___`
+
+## Including Sub-entities
+Sub-entities are referred to as traditional fields, and can be embedded by simply referencing the subentity field name.  Optionally, after the field name, an additional include list may be emdedded in the larger call, 
 listing field names of the subentity to include.  These declarations can be recursive, allowing as many nested field lists as needed to define the full scope of the desired response.
 
-Assuming a subentity field named 'Child', examples of including subentities are:
+### Examples
+Assuming a subentity field named 'Child':
 
 `[Child]`
 
@@ -40,13 +48,13 @@ Assuming a subentity field named 'Child', examples of including subentities are:
 
 `[Child[FirstName,GrandChild[FirstName]]]`
 
-## Including collections
+## Including Collections
 Collections shall behave as any other field.  If the collection is of a simple type, simply reference the field that contains the collection and the contents of the collection shall be returned.  If the collection is of a subentity type,
-then an additional include list may be emdedded in the larger call, listing field names of each subentity in the list to include.  As with direct subentities, these may be nested.
+then an additional include list may be emdedded in the larger call, listing field names of each subentity in the list to include.  As with direct sub-entities, these may be nested.
 
-Examples include:
+### Examples
 
-`[ArrayOfNumber]`
+`[ArrayOfNumbers]`
 
 `[AllMyChildren]`
 
@@ -63,7 +71,7 @@ Each entity type shall define its own default fields.  These are the implicit fi
 
 ## Methods
 While designed around resource querying and retrieval, this syntax can be utilized in POST or PUT methods in order to control what is returned as a result of the action.  For example, if you have an endpoint to POST a 'Car' entity to, you can 
-indicate which fields are returned of the newly created car.  This may be particuary important if there are fields that are generated or populated on the client.
+indicate which fields are returned of the newly created car.  This may be particularly important if there are fields that are generated or populated on the client.
 
 ```javascript
 POST "https://myserver.com/api/1/employee/5390/cars?include=[Id,Owner[Id,FirstName,LastName],Model]"
