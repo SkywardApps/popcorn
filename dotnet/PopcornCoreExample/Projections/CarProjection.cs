@@ -7,7 +7,7 @@ namespace PopcornCoreExample.Projections
 {
     public class CarProjection
     {
-        //public EmployeeProjection Owner { get; set; }
+        public EmployeeProjection Owner { get; set; }
         public string Model { get; set; }
         public string Make { get; set; }
         public int? Year { get; set; }

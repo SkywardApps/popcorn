@@ -39,6 +39,7 @@ namespace Skyward.Popcorn
 
             ConstructorInfo constructor = null;
 
+            /* This calls unintended constructors so we may need a way of providing a constructor for this type
             // We want to check for four constructors in descending order:
             if (context != null)
             {
@@ -59,6 +60,7 @@ namespace Skyward.Popcorn
             constructor = destinationType.GetTypeInfo().GetConstructor(new Type[] { sourceType });
             if (constructor != null)
                 return constructor.Invoke(new object[] { source });
+                */
 
             // One with no parameters
             constructor = destinationType.GetTypeInfo().GetConstructor(Type.EmptyTypes);

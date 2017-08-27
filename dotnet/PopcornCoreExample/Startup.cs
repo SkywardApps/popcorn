@@ -39,9 +39,17 @@ namespace PopcornCoreExample
                 mvcOptions.UsePopcorn((popcornConfig) => {
                     popcornConfig
                         .Map<Employee, EmployeeProjection>(config: (employeeConfig) => {
-                            employeeConfig.Translate(ep => ep.FullName, (e) => e.FirstName + " " + e.LastName);
+                            employeeConfig
+                                .Translate(ep => ep.FullName, (e) => e.FirstName + " " + e.LastName)
+                                .Translate(ep => ep.Birthday, (e) => e.Birthday.ToString("MM/dd/yyyy"));
                         })
-                        .Map<Car, CarProjection>(defaultIncludes: "[Model,Make,Year]");
+                        .Map<Car, CarProjection>(defaultIncludes: "[Model,Make,Year]", config: (carConfig) => {
+                            carConfig.Translate(cp => cp.Owner,
+                                (car, context) => (context["database"] as ExampleContext).Employees.FirstOrDefault(e => e.Vehicles.Contains(car)));
+                        })
+                        .SetContext(new Dictionary<string, object> {
+                            ["database"] = database
+                        });
                 });
             });
         }

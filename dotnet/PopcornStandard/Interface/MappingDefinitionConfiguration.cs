@@ -31,6 +31,14 @@ namespace Skyward.Popcorn
             string propertyName = member.Member.Name;
             return TranslateByName(propertyName, (source, context) => func((TSourceType)source, context));
         }
+        public MappingDefinitionConfiguration<TSourceType, TDestType> Translate<TProperty>(
+            Expression<Func<TDestType, TProperty>> memberExpression,
+            Func<TSourceType, ContextType, object> func)
+        {
+            var member = (memberExpression.Body as MemberExpression);
+            string propertyName = member.Member.Name;
+            return TranslateByName(propertyName, (source, context) => func((TSourceType)source, context));
+        }
 
         /// <summary>
         /// Add a translation for a specific property on the destination type.
