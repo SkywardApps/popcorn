@@ -15,7 +15,7 @@ Our 'FullName' with be FirstName and LastName concatenated together with a space
 A transltion is a custom unit of code you can add to convert the source object into a property on the destination projection.  It can translate an
 existing property on the source, aggreate or combine multiple properties, or create data that doesn't exist at all on the source object.
 
-But as every English teacher I've ever had has drilled into my head, "Show don't tell", so go ahead an throw a translation into the configuration object:
+But as every English teacher I've ever had has drilled into my head, "Show don't tell", so go ahead and throw a translation into the configuration object:
 
 ```csharp
 mvcOptions.UsePopcorn((popcornConfig) => {
@@ -55,9 +55,9 @@ Don't worry, there are a couple of actually pertinent situations that a translat
 
 ### Situation 1: Altering incoming data
 
-Our 'Birthday' output format is a standard ISO datetime, which includes a time -- which doesn't really make sense to track for a birthday (Unless we have the 
-most obsessive HR department ever). We can update the generated output to only display the day/month/year part by changing the projection's property to a
-string type, and add a translation to convert:
+Our 'Birthday' output format is a standard ISO datetime, which includes a time -- which doesn't really make sense to track for a birthday (unless we have the 
+most obsessive HR department ever). We can update the generated output to display *only* the day/month/year part by changing the projection's property to a
+string type, and adding a translation to convert:
 
 ```csharp
 public string Birthday { get; set; }
