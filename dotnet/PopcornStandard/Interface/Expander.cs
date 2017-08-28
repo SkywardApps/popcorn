@@ -29,6 +29,10 @@ namespace Skyward.Popcorn
         /// </summary>
         internal Dictionary<Type, MappingDefinition> Mappings { get; } = new Dictionary<Type, MappingDefinition>();
         internal Dictionary<Type, Func<ContextType, object>> Factories { get; } = new Dictionary<Type, Func<ContextType, object>>();
+        internal HashSet<Type> BlacklistExpansion = new HashSet<Type>
+        {
+            typeof(string),
+        };
         
         /// <summary>
         /// Query whether or not a particular object is either a Mapped type or a collection of a Mapped type.
@@ -49,9 +53,14 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public bool WillExpandType(Type sourceType)
         {
+            if (BlacklistExpansion.Contains(sourceType))
+                return false;
+
             if (WillExpandDirect(sourceType))
                 return true;
-            return WillExpandCollection(sourceType);
+            if (WillExpandCollection(sourceType))
+                return true;
+            return WillExpandBlind(sourceType);
         }
 
         /// <summary>
@@ -64,8 +73,9 @@ namespace Skyward.Popcorn
         /// <param name="context">A context dictionary that will be passed around to all conversion routines.</param>
         /// <param name="includes"></param>
         /// <param name="visited"></param>
+        /// <param name="destinationTypeHint">todo: describe destinationTypeHint parameter on Expand</param>
         /// <returns></returns>
-        public object Expand(object source, ContextType context = null, IEnumerable<PropertyReference> includes = null, HashSet<int> visited = null)
+        public object Expand(object source, ContextType context = null, IEnumerable<PropertyReference> includes = null, HashSet<int> visited = null, Type destinationTypeHint = null)
         {
             // Create a context if one wasn't provided
             if (context == null)
@@ -89,17 +99,19 @@ namespace Skyward.Popcorn
             // Otherwise, see if this is a collection of an expandable type
             if (WillExpandCollection(sourceType))
             {
-                var interfaceType = sourceType.GetTypeInfo().GetInterfaces()
-                   .First(t => t.IsConstructedGenericType
-                   && t.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+                return ExpandCollection(source, destinationTypeHint??typeof(ArrayList), context, includes, visited);
+            }
 
-                // Verify that the generic parameter is something we would expand
-                var genericType = interfaceType.GenericTypeArguments[0];
-                return ExpandCollection(source, typeof(ArrayList), context, includes, visited);
+            if (WillExpandBlind(sourceType))
+            {
+                return ExpandBlindObject(source, context, includes, visited);
             }
 
             // Otherwise, the caller requested that we expand a type we have no knowledge of.
             throw new UnknownMappingException(sourceType.ToString());
         }
+
+
+
     }
 }

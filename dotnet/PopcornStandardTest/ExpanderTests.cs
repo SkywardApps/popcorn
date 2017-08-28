@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Shouldly;
+using System.Collections;
 
 namespace PopcornStandardTest
 {
@@ -131,6 +132,13 @@ namespace PopcornStandardTest
         {
             public string Name { get; set; }
             public string ShouldBeEmpty { get; set; }
+        }
+
+        public class NonMappedType
+        {
+            public string Name { get; set; }
+            public string Title { get; set; }
+            public List<NonMappedType> Children { get; set; }
         }
 
         Expander _expander;
@@ -622,6 +630,49 @@ namespace PopcornStandardTest
 
             var entityProjection = result as EntityFromFactoryProjection;
             entityProjection.ShouldBeEmpty.ShouldBe("Generated");
+        }
+
+        [TestMethod]
+        public void BlindExpansion()
+        {
+            var entity = new NonMappedType
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[Name,Children[Title]]"));
+            result.ShouldNotBeNull();
+
+            var mappedEntity = result as Dictionary<string, object>;
+            mappedEntity.ShouldNotBeNull();
+
+            mappedEntity["Name"].ShouldBe(nameof(BlindExpansion));
+            mappedEntity.ContainsKey("Title").ShouldBeFalse();
+            mappedEntity["Children"].ShouldNotBeNull();
+            var children = new List<Dictionary<string, object>>();
+            foreach(var item in mappedEntity["Children"] as ArrayList)
+            {
+                children.Add(item as Dictionary<string, object>);
+            };
+            children.Count.ShouldBe(3);
+            children.Count(c => c.ContainsKey("Name")).ShouldBe(0);
+            children.Count(c => c.ContainsKey("Title") && (string)c["Title"] == "Test").ShouldBe(3);
         }
     }
 }

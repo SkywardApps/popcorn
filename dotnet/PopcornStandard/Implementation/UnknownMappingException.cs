@@ -2,7 +2,7 @@
 
 namespace Skyward.Popcorn
 {
-    internal class UnknownMappingException : Exception
+    public class UnknownMappingException : Exception
     {
         public UnknownMappingException()
         {

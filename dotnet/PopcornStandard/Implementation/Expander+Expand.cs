@@ -43,7 +43,7 @@ namespace Skyward.Popcorn
 
                 // Verify that the generic parameter is something we would expand
                 var genericType = interfaceType.GenericTypeArguments[0];
-                if (this.WillExpandDirect(genericType))
+                if (this.WillExpand(genericType))
                 {
                     return true;
                 }
@@ -52,24 +52,188 @@ namespace Skyward.Popcorn
             return false;
         }
 
+        protected bool WillExpandBlind(Type sourceType)
+        {
+            return (!WillExpandDirect(sourceType)
+                && !WillExpandCollection(sourceType)
+                && sourceType.GetTypeInfo().IsClass
+                && sourceType != typeof(string) ); // Do we really have to blacklist classes here? 
+            // We'll also need to exclude basically anything that is already trivially serializable 
+            // Dictionaries and Lists should be excluded (at least for now...)
+            // So how do we know where the list of items we should serialize ends, and what we should ignore starts?
+        }
+
         /// <summary>
         /// Expand a mapped type
         /// </summary>
         /// <param name="source"></param>
         /// <param name="context"></param>
         /// <param name="includes"></param>
+        /// <param name="visited">todo: describe visited parameter on ExpandDirectObject</param>
         /// <returns></returns>
         protected object ExpandDirectObject(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
         {
-            var key = RuntimeHelpers.GetHashCode(source);
-            if (visited.Contains(key))
-            {
-                throw new SelfReferencingLoopException();
-            }
-            visited = new HashSet<int>(visited);
-            visited.Add(key);
+            visited = UniqueVisit(source, visited);
 
             Type sourceType = source.GetType();
+            includes = ValidateIncludes(includes, sourceType);
+
+            // Attempt to create a projection object we'll map the data into
+            object destinationObject = CreateObjectInContext(context, sourceType);
+
+            // Allow any actions to run ahead of mapping
+            foreach (var action in Mappings[sourceType]._BeforeExpansion)
+                action(destinationObject, source, context);
+
+            // Iterate over only the requested properties
+            foreach (var propertyReference in includes)
+            {
+                string propertyName = propertyReference.PropertyName;
+                var translators = Mappings[sourceType].Translators;
+                var preparers = Mappings[sourceType].PrepareProperties;
+
+                // if this property doesn't even exist on the destination object, cry about it
+                var destinationProperty = Mappings[sourceType].DestinationType.GetTypeInfo().GetProperty(propertyName);
+                if (destinationProperty == null)
+                    throw new ArgumentOutOfRangeException(propertyName);
+
+                // See if there's a propertyPreparer
+                if (preparers.ContainsKey(propertyName))
+                {
+                    preparers[propertyName](destinationObject, destinationProperty, source, context);
+                }
+
+                // Transform the input value as needed
+                var valueToAssign = GetSourceValue(source, context, propertyReference.PropertyName, Mappings[sourceType].Translators);
+                
+                // Attempt to assign the property - this will expand the item if needed
+                if (!SetValueToProperty(valueToAssign, destinationProperty, destinationObject, context, propertyReference, visited))
+                {
+                    // Couldn't map it, but it was explicitly requested, so throw an error
+                    throw new InvalidCastException(propertyReference.PropertyName);
+                }
+            }
+
+            // Allow any actions to run after the mapping
+            /// @Todo should this be in reverse order so we have a nested stack style FILO?
+            foreach (var action in Mappings[sourceType]._AfterExpansion)
+                action(destinationObject, source, context);
+
+            return destinationObject;
+        }
+
+        /// <summary>
+        /// Take a complex object, and transfer properties requested into a dictionary
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="context"></param>
+        /// <param name="includes"></param>
+        /// <param name="visited"></param>
+        /// <returns></returns>
+        protected Dictionary<string, object> ExpandBlindObject(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
+        {
+            visited = UniqueVisit(source, visited);
+
+            Type sourceType = source.GetType();
+            includes = ValidateIncludes(includes, sourceType);
+
+            // Attempt to create a projection object we'll map the data into
+            var destinationObject = new Dictionary<string, object>();
+
+            MappingDefinition mappingDefinition = null;
+
+            // Allow any actions to run ahead of mapping
+            if (Mappings.ContainsKey(sourceType))
+            {
+                foreach (var action in Mappings[sourceType]._BeforeExpansion)
+                    action(destinationObject, source, context);
+
+                mappingDefinition = Mappings[source.GetType()];
+            }
+
+            // Iterate over only the requested properties
+            foreach (var propertyReference in includes)
+            {
+                string propertyName = propertyReference.PropertyName;
+
+                if (mappingDefinition != null)
+                {
+                    var preparers = mappingDefinition.PrepareProperties;
+
+                    // See if there's a propertyPreparer
+                    if (preparers.ContainsKey(propertyName))
+                    {
+                        preparers[propertyName](destinationObject, null, source, context);
+                    }
+                }
+
+                // Transform the input value as needed
+                object valueToAssign = GetSourceValue(source, context, propertyName, mappingDefinition?.Translators);
+
+                if (WillExpand(valueToAssign))
+                {
+                    valueToAssign = Expand(valueToAssign, context, propertyReference.Children, visited);
+                }
+
+                destinationObject[propertyName] = valueToAssign;
+            }
+
+            // Allow any actions to run after the mapping
+            /// @Todo should this be in reverse order so we have a nested stack style FILO?
+            if (Mappings.ContainsKey(sourceType))
+                foreach (var action in Mappings[sourceType]._AfterExpansion)
+                    action(destinationObject, source, context);
+
+            return destinationObject;
+        }
+
+        private static object GetSourceValue(object source, ContextType context, string propertyName, Dictionary<string, Func<object, ContextType, object>> translators = null)
+        {
+            object valueToAssign = null;
+            Type sourceType = source.GetType();
+            var matchingProperty = sourceType.GetTypeInfo().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+            var matchingMethod = sourceType.GetTypeInfo().GetMethod(propertyName, BindingFlags.Instance | BindingFlags.Public);
+
+            // if there's a custom entry for this, it gets first crack
+            if (translators != null && translators.ContainsKey(propertyName))
+            {
+                valueToAssign = translators[propertyName](source, context);
+            }
+
+            // if there's an existing property on the source, try to blind-assign it
+            else if (matchingProperty != null)
+            {
+                valueToAssign = matchingProperty.GetValue(source);
+            }
+
+            // If there's a simple method we can call, invoke it and assign the results
+            else if (matchingMethod != null
+                && matchingMethod.ReturnType != null
+                && matchingMethod.ReturnType != typeof(void)
+                && !matchingMethod.GetParameters().Any())
+            {
+                valueToAssign = matchingMethod.Invoke(source, new object[] { });
+            }
+            else
+            {
+                // Couldn't map it, but it was explicitly requested, so throw an error
+                throw new InvalidCastException(propertyName);
+            }
+
+            return valueToAssign;
+        }
+
+        private IEnumerable<PropertyReference> ValidateIncludes(IEnumerable<PropertyReference> includes, Type sourceType)
+        {
+            if (includes.Any())
+                return includes;
+
+            if (!Mappings.ContainsKey(sourceType))
+            {
+                // in the case of a blind object, default to source properties.  This is a bit dangerous!
+                includes = sourceType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Select(p => new PropertyReference() { PropertyName = p.Name });
+            }
 
             // if this doesn't have any includes specified, use the default
             if (!includes.Any())
@@ -84,32 +248,19 @@ namespace Skyward.Popcorn
                     .Select(p => new PropertyReference() { PropertyName = p.Name });
             }
 
-            // Attempt to create a projection object we'll map the data into
-            object destinationObject = CreateObjectInContext(context, sourceType);
+            return includes;
+        }
 
-            // Allow any actions to run ahead of mapping
-            foreach (var action in Mappings[sourceType]._BeforeExpansion)
-                action(destinationObject, source, context);
-
-            // Iterate over only the requested properties
-            foreach (var propertyReference in includes)
+        private static HashSet<int> UniqueVisit(object source, HashSet<int> visited)
+        {
+            var key = RuntimeHelpers.GetHashCode(source);
+            if (visited.Contains(key))
             {
-                // Attempt to assign the property
-                if (AssignProperty(propertyReference, destinationObject, source, Mappings[sourceType], context, visited))
-                    continue;
-
-                // @todo Try to do funky stuff as far as camelcasing!
-
-                // Couldn't map it, but it was explicitly requested, so throw an error
-                throw new InvalidCastException(propertyReference.PropertyName);
+                throw new SelfReferencingLoopException();
             }
-
-            // Allow any actions to run after the mapping
-            /// @Todo should this be in reverse order so we have a nested stack style FILO?
-            foreach (var action in Mappings[sourceType]._AfterExpansion)
-                action(destinationObject, source, context);
-
-            return destinationObject;
+            visited = new HashSet<int>(visited);
+            visited.Add(key);
+            return visited;
         }
 
         private object CreateObjectInContext(ContextType context, Type sourceType)
@@ -129,16 +280,11 @@ namespace Skyward.Popcorn
         /// <param name="destinationType"></param>
         /// <param name="context"></param>
         /// <param name="includes"></param>
+        /// <param name="visited">todo: describe visited parameter on ExpandCollection</param>
         /// <returns></returns>
         protected IList ExpandCollection(object originalValue, Type destinationType, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
         {
-            var key = RuntimeHelpers.GetHashCode(originalValue);
-            if (visited.Contains(key))
-            {
-                throw new SelfReferencingLoopException();
-            }
-            visited = new HashSet<int>(visited);
-            visited.Add(key);
+            visited = UniqueVisit(originalValue, visited);
 
             var interfaceType = originalValue.GetType().GetTypeInfo().GetInterfaces()
                     .First(t => t.IsConstructedGenericType
@@ -146,7 +292,7 @@ namespace Skyward.Popcorn
 
             // Verify that the generic parameter is something we would expand
             var genericType = interfaceType.GenericTypeArguments[0];
-            var expandedType = this.Mappings[genericType].DestinationType;
+            var expandedType = this.Mappings.ContainsKey(genericType) ? this.Mappings[genericType].DestinationType : typeof(Dictionary<string, object>);
 
             // Ok, now we need to try and instantiate the destination type (if it is concrete) or take a guess 
             // at a concrete type if it is an interface
@@ -163,68 +309,12 @@ namespace Skyward.Popcorn
             // try to assign the data item by item
             foreach (var item in (IEnumerable)originalValue)
             {
-                instantiatedDestinationType.Add(this.Expand(item, context, includes, visited));
+                instantiatedDestinationType.Add(this.Expand(item, context, includes, visited, expandedType));
             }
 
             return instantiatedDestinationType;
         }
-
-        /// <summary>
-        /// Attempt to find and assign a value for a property on the source object.  This may be a direct mapping, indirect, or from a provided translator.
-        /// </summary>
-        /// <param name="propertyReference"></param>
-        /// <param name="destinationObject"></param>
-        /// <param name="source"></param>
-        /// <param name="mappingDefinition"></param>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        private bool AssignProperty(PropertyReference propertyReference, object destinationObject, object source, MappingDefinition mappingDefinition, ContextType context, HashSet<int> visited)
-        {
-            string propertyName = propertyReference.PropertyName;
-            var translators = mappingDefinition.Translators;
-            var preparers = mappingDefinition.PrepareProperties;
-            Type destinationType = mappingDefinition.DestinationType;
-            Type sourceType = source.GetType();
-
-            // if this property doesn't even exist on the destination object, cry about it
-            var destinationProperty = destinationType.GetTypeInfo().GetProperty(propertyName);
-            if (destinationProperty == null)
-                throw new ArgumentOutOfRangeException(propertyName);
-
-            // See if there's a propertyPreparer
-            if (preparers.ContainsKey(propertyName))
-            {
-                preparers[propertyName](destinationObject, destinationProperty, source, context);
-            }
-
-            // if there's a custom entry for this, it gets first crack
-            if (translators.ContainsKey(propertyName)
-                && SetValueToProperty(translators[propertyName](source, context), destinationProperty, destinationObject, context, propertyReference, visited))
-            {
-                return true;
-            }
-
-            // if there's an existing property on the source, try to blind-assign it
-            var matchingProperty = sourceType.GetTypeInfo().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
-            if (matchingProperty != null
-                && SetValueToProperty(matchingProperty.GetValue(source), destinationProperty, destinationObject, context, propertyReference, visited))
-            {
-                return true;
-            }
-
-            // If there's a simple method we can call, invoke it and assign the results
-            var matchingMethod = sourceType.GetTypeInfo().GetMethod(propertyName, BindingFlags.Instance | BindingFlags.Public);
-            if (matchingMethod != null
-                && matchingMethod.ReturnType != null
-                && matchingMethod.ReturnType != typeof(void)
-                && !matchingMethod.GetParameters().Any()
-                && SetValueToProperty(matchingMethod.Invoke(source, new object[] { }), destinationProperty, destinationObject, context, propertyReference, visited))
-            {
-                return true;
-            }
-
-            return false;
-        }
+        
 
         /// <summary>
         /// Given a value, attempt to set it to a property on a destination object.  This may involve changing the object,
@@ -235,6 +325,7 @@ namespace Skyward.Popcorn
         /// <param name="destinationObject"></param>
         /// <param name="context"></param>
         /// <param name="propertyReference"></param>
+        /// <param name="visited">todo: describe visited parameter on SetValueToProperty</param>
         /// <returns></returns>
         private bool SetValueToProperty(object originalValue, PropertyInfo destinationProperty, object destinationObject, ContextType context, PropertyReference propertyReference, HashSet<int> visited)
         {
@@ -251,48 +342,34 @@ namespace Skyward.Popcorn
                 return true;
             }
 
-            // If we can expand the source object into the destination object, do that.
-            if (this.WillExpand(originalValue))
+            if (WillExpand(originalValue))
             {
-                // If the requestor didn't define any fields to include, check if the property has any default fields
-                IEnumerable<PropertyReference> propertySubReferences = propertyReference.Children;
-                if(!propertySubReferences.Any())
-                {
-                    // check if there's a property attribute
-                    var includes = destinationProperty.GetCustomAttribute<DefaultIncludesAttribute>();
-                    if(includes != null)
-                    {
-                        propertySubReferences = PropertyReference.Parse(includes.Includes);
-                    }
-                }
-
-                var expandedValue = this.Expand(originalValue, context, propertySubReferences, visited);
-                // Lets hope we can indeed assign this now
-
+                IEnumerable<PropertyReference> propertySubReferences = CreatePropertyReferenceList(destinationProperty, propertyReference);
+                var expandedValue = Expand(originalValue, context, propertySubReferences, visited, destinationProperty.PropertyType);
                 if (destinationProperty.TrySetValueHandleConvert(destinationObject, expandedValue))
                 {
                     return true;
                 }
             }
 
-            // Is this a list of items we need to project, we have to do a bit of extra magic to create a new collection
-            if (this.WillExpandCollection(originalValue.GetType()))
-            {
-                IList instantiatedDestinationType = ExpandCollection(originalValue, destinationProperty.PropertyType, context, propertyReference.Children, visited);
-                
-                if (instantiatedDestinationType == null)
-                {
-                    return false;
-                }
+            return false;
+        }
 
-                // And actually assign it
-                if (destinationProperty.TrySetValueHandleConvert(destinationObject, instantiatedDestinationType))
+        private static IEnumerable<PropertyReference> CreatePropertyReferenceList(PropertyInfo destinationProperty, PropertyReference propertyReference)
+        {
+            // If the requestor didn't define any fields to include, check if the property has any default fields
+            IEnumerable<PropertyReference> propertySubReferences = propertyReference.Children;
+            if (!propertySubReferences.Any())
+            {
+                // check if there's a property attribute
+                var includes = destinationProperty.GetCustomAttribute<DefaultIncludesAttribute>();
+                if (includes != null)
                 {
-                    return true;
+                    propertySubReferences = PropertyReference.Parse(includes.Includes);
                 }
             }
 
-            return false;
+            return propertySubReferences;
         }
     }
 }

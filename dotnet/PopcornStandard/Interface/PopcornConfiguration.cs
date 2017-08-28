@@ -130,5 +130,18 @@ namespace Skyward.Popcorn
             }
             return this;
         }
+
+        public PopcornConfiguration BlacklistExpansion<TSourceType>()
+        {
+            _expander.BlacklistExpansion.Add(typeof(TSourceType));
+            return this;
+        }
+
+        public PopcornConfiguration BlacklistExpansion(Type type)
+        {
+            _expander.BlacklistExpansion.Add(type);
+            return this;
+        }
+
     }
 }
