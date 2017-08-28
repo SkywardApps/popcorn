@@ -2,7 +2,7 @@
 
 Tutorials:
 + [Getting Started](DotNetTutorialGettingStarted.md)
-+ Advanced Projections
++ [Advanced Projections](DotNetTutorialAdvancedProjections.md)
 + Lazy Loading
 
 Implementation Details:
