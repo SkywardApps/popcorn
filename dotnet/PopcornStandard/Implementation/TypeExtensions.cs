@@ -33,37 +33,9 @@ namespace Skyward.Popcorn
         /// <param name="source"></param>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static object CreateObjectFromSource(this Type destinationType, object source, ContextType context)
+        public static object CreateDefaultObject(this Type destinationType)
         {
-            var sourceType = source.GetType();
-
-            ConstructorInfo constructor = null;
-
-            /* This calls unintended constructors so we may need a way of providing a constructor for this type
-            // We want to check for four constructors in descending order:
-            if (context != null)
-            {
-                var contextType = context.GetType();
-
-                // One that takes a source and context object
-                constructor = destinationType.GetTypeInfo().GetConstructor(new Type[] { sourceType, contextType });
-                if (constructor != null)
-                    return constructor.Invoke(new object[] { source, context });
-
-                // One that takes a context
-                constructor = destinationType.GetTypeInfo().GetConstructor(new Type[] { contextType });
-                if (constructor != null)
-                    return constructor.Invoke(new object[] { context });
-            }
-
-            // One that takes a source
-            constructor = destinationType.GetTypeInfo().GetConstructor(new Type[] { sourceType });
-            if (constructor != null)
-                return constructor.Invoke(new object[] { source });
-                */
-
-            // One with no parameters
-            constructor = destinationType.GetTypeInfo().GetConstructor(Type.EmptyTypes);
+            ConstructorInfo constructor = destinationType.GetTypeInfo().GetConstructor(Type.EmptyTypes);
             if (constructor != null)
                 return constructor.Invoke(new object[] { });
 

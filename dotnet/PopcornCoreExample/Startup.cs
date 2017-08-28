@@ -39,15 +39,20 @@ namespace PopcornCoreExample
                 mvcOptions.UsePopcorn((popcornConfig) => {
                     popcornConfig
                         .Map<Employee, EmployeeProjection>(config: (employeeConfig) => {
+                            // For employees we will determine a full name and reformat the date to include only the day portion.
                             employeeConfig
                                 .Translate(ep => ep.FullName, (e) => e.FirstName + " " + e.LastName)
                                 .Translate(ep => ep.Birthday, (e) => e.Birthday.ToString("MM/dd/yyyy"));
                         })
                         .Map<Car, CarProjection>(defaultIncludes: "[Model,Make,Year]", config: (carConfig) => {
-                            carConfig.Translate(cp => cp.Owner,
-                                (car, context) => (context["database"] as ExampleContext).Employees.FirstOrDefault(e => e.Vehicles.Contains(car)));
+                            // For cars we will query to find out the Employee who owns the car.
+                            carConfig.Translate(cp => cp.Owner, (car, context) =>
+                                // The car parameter is the source object; the context parameter is the dictionary we configure below.
+                                (context["database"] as ExampleContext).Employees.FirstOrDefault(e => e.Vehicles.Contains(car)));
                         })
-                        .SetContext(new Dictionary<string, object> {
+                        // Pass in our 'database' via the context
+                        .SetContext(new Dictionary<string, object>
+                        {
                             ["database"] = database
                         });
                 });

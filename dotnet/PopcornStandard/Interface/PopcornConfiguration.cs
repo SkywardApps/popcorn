@@ -72,7 +72,7 @@ namespace Skyward.Popcorn
             {
                 if (_expander.Mappings[sourceType].DestinationType != destType)
                     throw new InvalidOperationException(
-                        $"Expander was mapped multiple times by types do not match."
+                        $"Expander was mapped multiple times but types do not match."
                         + " {sourceType} was previously mapped to {this.Mappings[sourceType].DestinationType} and attempted to remap to {destType}."
                         + "  Only one destination type can be specified.");
                 if (defaultIncludes != null)
@@ -90,6 +90,44 @@ namespace Skyward.Popcorn
             if (config != null)
                 config(definition);
 
+            return this;
+        }
+
+        /// <summary>
+        /// Assign a factory function to create a specific type
+        /// </summary>
+        /// <typeparam name="TSourceType"></typeparam>
+        /// <param name="factory"></param>
+        /// <returns></returns>
+        public PopcornConfiguration AssignFactory<TSourceType>(Func<TSourceType> factory)
+        {
+            if (factory != null)
+            {
+                _expander.Factories.Add(typeof(TSourceType), (context) => factory());
+            }
+            else if(_expander.Factories.ContainsKey(typeof(TSourceType)))
+            {
+                _expander.Factories.Remove(typeof(TSourceType));
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// Assign a factory function to create a specific type from a context object
+        /// </summary>
+        /// <typeparam name="TSourceType"></typeparam>
+        /// <param name="factory"></param>
+        /// <returns></returns>
+        public PopcornConfiguration AssignFactory<TSourceType>(Func<ContextType, TSourceType> factory)
+        {
+            if (factory != null)
+            {
+                _expander.Factories.Add(typeof(TSourceType), (context) => factory(context));
+            }
+            else if (_expander.Factories.ContainsKey(typeof(TSourceType)))
+            {
+                _expander.Factories.Remove(typeof(TSourceType));
+            }
             return this;
         }
     }

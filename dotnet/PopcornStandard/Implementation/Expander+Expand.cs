@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Skyward.Popcorn
 {
@@ -58,8 +59,16 @@ namespace Skyward.Popcorn
         /// <param name="context"></param>
         /// <param name="includes"></param>
         /// <returns></returns>
-        protected object ExpandDirectObject(object source, ContextType context, IEnumerable<PropertyReference> includes)
+        protected object ExpandDirectObject(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
         {
+            var key = RuntimeHelpers.GetHashCode(source);
+            if (visited.Contains(key))
+            {
+                throw new SelfReferencingLoopException();
+            }
+            visited = new HashSet<int>(visited);
+            visited.Add(key);
+
             Type sourceType = source.GetType();
 
             // if this doesn't have any includes specified, use the default
@@ -76,7 +85,7 @@ namespace Skyward.Popcorn
             }
 
             // Attempt to create a projection object we'll map the data into
-            object destinationObject = Mappings[sourceType].DestinationType.CreateObjectFromSource(source, context);
+            object destinationObject = CreateObjectInContext(context, sourceType);
 
             // Allow any actions to run ahead of mapping
             foreach (var action in Mappings[sourceType]._BeforeExpansion)
@@ -86,7 +95,7 @@ namespace Skyward.Popcorn
             foreach (var propertyReference in includes)
             {
                 // Attempt to assign the property
-                if (AssignProperty(propertyReference, destinationObject, source, Mappings[sourceType], context))
+                if (AssignProperty(propertyReference, destinationObject, source, Mappings[sourceType], context, visited))
                     continue;
 
                 // @todo Try to do funky stuff as far as camelcasing!
@@ -103,6 +112,16 @@ namespace Skyward.Popcorn
             return destinationObject;
         }
 
+        private object CreateObjectInContext(ContextType context, Type sourceType)
+        {
+            object destinationObject;
+            if (Factories.ContainsKey(Mappings[sourceType].DestinationType))
+                destinationObject = Factories[Mappings[sourceType].DestinationType](context);
+            else
+                destinationObject = Mappings[sourceType].DestinationType.CreateDefaultObject();
+            return destinationObject;
+        }
+
         /// <summary>
         /// Map a collection of mapped types
         /// </summary>
@@ -111,8 +130,16 @@ namespace Skyward.Popcorn
         /// <param name="context"></param>
         /// <param name="includes"></param>
         /// <returns></returns>
-        protected IList ExpandCollection(object originalValue, Type destinationType, ContextType context, IEnumerable<PropertyReference> includes)
+        protected IList ExpandCollection(object originalValue, Type destinationType, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
         {
+            var key = RuntimeHelpers.GetHashCode(originalValue);
+            if (visited.Contains(key))
+            {
+                throw new SelfReferencingLoopException();
+            }
+            visited = new HashSet<int>(visited);
+            visited.Add(key);
+
             var interfaceType = originalValue.GetType().GetTypeInfo().GetInterfaces()
                     .First(t => t.IsConstructedGenericType
                     && t.GetGenericTypeDefinition() == typeof(IEnumerable<>));
@@ -121,22 +148,22 @@ namespace Skyward.Popcorn
             var genericType = interfaceType.GenericTypeArguments[0];
             var expandedType = this.Mappings[genericType].DestinationType;
 
-            // Ok, now we need to try and instatiate the destination type (if it is concrete) or take a guess 
+            // Ok, now we need to try and instantiate the destination type (if it is concrete) or take a guess 
             // at a concrete type if it is an interface
 
             /// @TODO IList is an easy way of being able to add, but not all collections implement IList (like hashset)
             /// really we want to work with ICollection<T>, although for some reason ICollection (non-generic) doesn't have Add
-            var instantiatedDestinationType = destinationType.CreateObjectFromSource(originalValue, context) as IList;
+            var instantiatedDestinationType = destinationType.CreateDefaultObject() as IList;
             if (instantiatedDestinationType == null)
             {
                 var concreteType = typeof(List<>).MakeGenericType(expandedType);
-                instantiatedDestinationType = concreteType.CreateObjectFromSource(originalValue, context) as IList;
+                instantiatedDestinationType = concreteType.CreateDefaultObject() as IList;
             }
 
             // try to assign the data item by item
             foreach (var item in (IEnumerable)originalValue)
             {
-                instantiatedDestinationType.Add(this.Expand(item, context, includes));
+                instantiatedDestinationType.Add(this.Expand(item, context, includes, visited));
             }
 
             return instantiatedDestinationType;
@@ -151,7 +178,7 @@ namespace Skyward.Popcorn
         /// <param name="mappingDefinition"></param>
         /// <param name="context"></param>
         /// <returns></returns>
-        private bool AssignProperty(PropertyReference propertyReference, object destinationObject, object source, MappingDefinition mappingDefinition, ContextType context)
+        private bool AssignProperty(PropertyReference propertyReference, object destinationObject, object source, MappingDefinition mappingDefinition, ContextType context, HashSet<int> visited)
         {
             string propertyName = propertyReference.PropertyName;
             var translators = mappingDefinition.Translators;
@@ -172,7 +199,7 @@ namespace Skyward.Popcorn
 
             // if there's a custom entry for this, it gets first crack
             if (translators.ContainsKey(propertyName)
-                && SetValueToProperty(translators[propertyName](source, context), destinationProperty, destinationObject, context, propertyReference))
+                && SetValueToProperty(translators[propertyName](source, context), destinationProperty, destinationObject, context, propertyReference, visited))
             {
                 return true;
             }
@@ -180,7 +207,7 @@ namespace Skyward.Popcorn
             // if there's an existing property on the source, try to blind-assign it
             var matchingProperty = sourceType.GetTypeInfo().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
             if (matchingProperty != null
-                && SetValueToProperty(matchingProperty.GetValue(source), destinationProperty, destinationObject, context, propertyReference))
+                && SetValueToProperty(matchingProperty.GetValue(source), destinationProperty, destinationObject, context, propertyReference, visited))
             {
                 return true;
             }
@@ -191,7 +218,7 @@ namespace Skyward.Popcorn
                 && matchingMethod.ReturnType != null
                 && matchingMethod.ReturnType != typeof(void)
                 && !matchingMethod.GetParameters().Any()
-                && SetValueToProperty(matchingMethod.Invoke(source, new object[] { }), destinationProperty, destinationObject, context, propertyReference))
+                && SetValueToProperty(matchingMethod.Invoke(source, new object[] { }), destinationProperty, destinationObject, context, propertyReference, visited))
             {
                 return true;
             }
@@ -209,7 +236,7 @@ namespace Skyward.Popcorn
         /// <param name="context"></param>
         /// <param name="propertyReference"></param>
         /// <returns></returns>
-        private bool SetValueToProperty(object originalValue, PropertyInfo destinationProperty, object destinationObject, ContextType context, PropertyReference propertyReference)
+        private bool SetValueToProperty(object originalValue, PropertyInfo destinationProperty, object destinationObject, ContextType context, PropertyReference propertyReference, HashSet<int> visited)
         {
             // If it is null then just do a direct assignment
             if (originalValue == null)
@@ -227,7 +254,19 @@ namespace Skyward.Popcorn
             // If we can expand the source object into the destination object, do that.
             if (this.WillExpand(originalValue))
             {
-                var expandedValue = this.Expand(originalValue, context, propertyReference.Children);
+                // If the requestor didn't define any fields to include, check if the property has any default fields
+                IEnumerable<PropertyReference> propertySubReferences = propertyReference.Children;
+                if(!propertySubReferences.Any())
+                {
+                    // check if there's a property attribute
+                    var includes = destinationProperty.GetCustomAttribute<DefaultIncludesAttribute>();
+                    if(includes != null)
+                    {
+                        propertySubReferences = PropertyReference.Parse(includes.Includes);
+                    }
+                }
+
+                var expandedValue = this.Expand(originalValue, context, propertySubReferences, visited);
                 // Lets hope we can indeed assign this now
 
                 if (destinationProperty.TrySetValueHandleConvert(destinationObject, expandedValue))
@@ -239,7 +278,7 @@ namespace Skyward.Popcorn
             // Is this a list of items we need to project, we have to do a bit of extra magic to create a new collection
             if (this.WillExpandCollection(originalValue.GetType()))
             {
-                IList instantiatedDestinationType = ExpandCollection(originalValue, destinationProperty.PropertyType, context, propertyReference.Children);
+                IList instantiatedDestinationType = ExpandCollection(originalValue, destinationProperty.PropertyType, context, propertyReference.Children, visited);
                 
                 if (instantiatedDestinationType == null)
                 {

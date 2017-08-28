@@ -28,6 +28,7 @@ namespace Skyward.Popcorn
         /// entities.  Top-level entities will always need a 'default' outgoing type.
         /// </summary>
         internal Dictionary<Type, MappingDefinition> Mappings { get; } = new Dictionary<Type, MappingDefinition>();
+        internal Dictionary<Type, Func<ContextType, object>> Factories { get; } = new Dictionary<Type, Func<ContextType, object>>();
         
         /// <summary>
         /// Query whether or not a particular object is either a Mapped type or a collection of a Mapped type.
@@ -62,8 +63,9 @@ namespace Skyward.Popcorn
         /// <param name="source"></param>
         /// <param name="context">A context dictionary that will be passed around to all conversion routines.</param>
         /// <param name="includes"></param>
+        /// <param name="visited"></param>
         /// <returns></returns>
-        public object Expand(object source, ContextType context = null, IEnumerable<PropertyReference> includes = null)
+        public object Expand(object source, ContextType context = null, IEnumerable<PropertyReference> includes = null, HashSet<int> visited = null)
         {
             // Create a context if one wasn't provided
             if (context == null)
@@ -75,10 +77,13 @@ namespace Skyward.Popcorn
 
             Type sourceType = source.GetType();
 
+            if(visited == null)
+                visited = new HashSet<int>();
+
             // See if this is a directly expandable type (Mapped Type)
             if (WillExpandDirect(sourceType))
             {
-                return ExpandDirectObject(source, context, includes);
+                return ExpandDirectObject(source, context, includes, visited);
             }
 
             // Otherwise, see if this is a collection of an expandable type
@@ -90,11 +95,11 @@ namespace Skyward.Popcorn
 
                 // Verify that the generic parameter is something we would expand
                 var genericType = interfaceType.GenericTypeArguments[0];
-                return ExpandCollection(source, typeof(ArrayList), context, includes);
+                return ExpandCollection(source, typeof(ArrayList), context, includes, visited);
             }
 
             // Otherwise, the caller requested that we expand a type we have no knowledge of.
-            throw new InvalidOperationException(sourceType.ToString());
+            throw new UnknownMappingException(sourceType.ToString());
         }
     }
 }

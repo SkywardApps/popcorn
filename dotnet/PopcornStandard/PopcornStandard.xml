@@ -33,7 +33,7 @@
             <param name="sourceType"></param>
             <returns></returns>
         </member>
-        <member name="M:Skyward.Popcorn.Expander.ExpandDirectObject(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference})">
+        <member name="M:Skyward.Popcorn.Expander.ExpandDirectObject(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
             <summary>
             Expand a mapped type
             </summary>
@@ -42,7 +42,7 @@
             <param name="includes"></param>
             <returns></returns>
         </member>
-        <member name="M:Skyward.Popcorn.Expander.ExpandCollection(System.Object,System.Type,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference})">
+        <member name="M:Skyward.Popcorn.Expander.ExpandCollection(System.Object,System.Type,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
             <summary>
             Map a collection of mapped types
             </summary>
@@ -52,7 +52,7 @@
             <param name="includes"></param>
             <returns></returns>
         </member>
-        <member name="M:Skyward.Popcorn.Expander.AssignProperty(Skyward.Popcorn.PropertyReference,System.Object,System.Object,Skyward.Popcorn.MappingDefinition,System.Collections.Generic.Dictionary{System.String,System.Object})">
+        <member name="M:Skyward.Popcorn.Expander.AssignProperty(Skyward.Popcorn.PropertyReference,System.Object,System.Object,Skyward.Popcorn.MappingDefinition,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.HashSet{System.Int32})">
             <summary>
             Attempt to find and assign a value for a property on the source object.  This may be a direct mapping, indirect, or from a provided translator.
             </summary>
@@ -63,7 +63,7 @@
             <param name="context"></param>
             <returns></returns>
         </member>
-        <member name="M:Skyward.Popcorn.Expander.SetValueToProperty(System.Object,System.Reflection.PropertyInfo,System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},Skyward.Popcorn.PropertyReference)">
+        <member name="M:Skyward.Popcorn.Expander.SetValueToProperty(System.Object,System.Reflection.PropertyInfo,System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},Skyward.Popcorn.PropertyReference,System.Collections.Generic.HashSet{System.Int32})">
             <summary>
             Given a value, attempt to set it to a property on a destination object.  This may involve changing the object,
             such as converting an int to a double, or an int to an int?, or expanding an object into its projection
@@ -98,7 +98,7 @@
             <param name="sourceType"></param>
             <returns></returns>
         </member>
-        <member name="M:Skyward.Popcorn.Expander.Expand(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference})">
+        <member name="M:Skyward.Popcorn.Expander.Expand(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
             <summary>
             The entry point method for converting a type into its projection an selectively including data.
             This will work on either a Mapped Type or a collection of a Mapped Type.
@@ -108,6 +108,7 @@
             <param name="source"></param>
             <param name="context">A context dictionary that will be passed around to all conversion routines.</param>
             <param name="includes"></param>
+            <param name="visited"></param>
             <returns></returns>
         </member>
         <member name="T:Skyward.Popcorn.MappingDefinition">

@@ -36,7 +36,7 @@ namespace PopcornStandardTest
 
             public string FromMethod() { return nameof(FromMethod); }
             public ChildObject ComplexFromMethod() { return new ChildObject { Id = Guid.NewGuid(), Name = "ComplexFromMethod ChildObject", Description = "This proves that an object returned from a method will also be projected." }; }
-            
+
         }
 
 
@@ -104,6 +104,35 @@ namespace PopcornStandardTest
             public string ExtendedProperty { get; set; }
         }
 
+
+        public class Loop
+        {
+            public Loop Next { get; set; }
+            public string Name { get; set; }
+            public Loop NextWithDefaultIncludes { get; set; }
+        }
+
+        public class LoopProjection
+        {
+            public LoopProjection Next { get; set; }
+
+            public string Name { get; set; }
+            [DefaultIncludes("[Name]")]
+            public LoopProjection NextWithDefaultIncludes { get; set; }
+        }
+
+
+        public class EntityFromFactory
+        {
+            public string Name { get; set; }
+        }
+
+        public class EntityFromFactoryProjection
+        {
+            public string Name { get; set; }
+            public string ShouldBeEmpty { get; set; }
+        }
+
         Expander _expander;
 
         [TestInitialize]
@@ -119,6 +148,9 @@ namespace PopcornStandardTest
 
             config.Map<ChildObject, ChildObjectProjection>();
             config.Map<DerivedChildObject, DerivedChildObjectProjection>();
+            config.Map<Loop, LoopProjection>();
+            config.Map<EntityFromFactory, EntityFromFactoryProjection>();
+            config.AssignFactory<EntityFromFactoryProjection>(() => new EntityFromFactoryProjection { ShouldBeEmpty = "Generated" });
         }
 
         // Things to test
@@ -544,5 +576,52 @@ namespace PopcornStandardTest
 
         }
 
+
+        [TestMethod]
+        public void SelfReferencingLoop()
+        {
+            var firstObject = new Loop();
+            var secondObject = new Loop();
+            firstObject.Next = secondObject;
+            var thirdObject = new Loop();
+            secondObject.Next = thirdObject;
+            thirdObject.Next = firstObject;
+
+            Should.Throw<SelfReferencingLoopException>(() => _expander.Expand(firstObject, null, PropertyReference.Parse($"[]")));
+        }
+
+        [TestMethod]
+        public void DefaultIncludeAttribute()
+        {
+            var firstObject = new Loop { Name = "firstObject" };
+            var secondObject = new Loop { Name = "secondObject" };
+            var thirdObject = new Loop { Name = "thirdObject" };
+
+            firstObject.NextWithDefaultIncludes = secondObject;
+            secondObject.NextWithDefaultIncludes = thirdObject;
+            thirdObject.NextWithDefaultIncludes = firstObject;
+
+            var result = _expander.Expand(firstObject, null, PropertyReference.Parse($"[Name,NextWithDefaultIncludes]"));
+            result.ShouldNotBeNull();
+
+            var loopProjection = result as LoopProjection;
+            loopProjection.ShouldNotBeNull();
+            loopProjection.Name.ShouldBe(firstObject.Name);
+            loopProjection.NextWithDefaultIncludes.ShouldNotBeNull();
+            loopProjection.NextWithDefaultIncludes.Name.ShouldBe(secondObject.Name);
+            loopProjection.NextWithDefaultIncludes.NextWithDefaultIncludes.ShouldBeNull();
+        }
+
+        [TestMethod]
+        public void CreateWithTypeFactory()
+        {
+            var entity = new EntityFromFactory();
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[Name]"));
+            result.ShouldNotBeNull();
+
+            var entityProjection = result as EntityFromFactoryProjection;
+            entityProjection.ShouldBeEmpty.ShouldBe("Generated");
+        }
     }
 }

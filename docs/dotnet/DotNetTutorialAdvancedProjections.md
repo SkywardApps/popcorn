@@ -29,10 +29,9 @@ mvcOptions.UsePopcorn((popcornConfig) => {
 
 Send that Employee Api endpoint out on a test drive, and you should get something like:
 
-```
-http://localhost:50353/api/example/employees?include=[FirstName,LastName,FullName,Birthday]
-```
 ```javascript
+http://localhost:50353/api/example/employees?include=[FirstName,LastName,FullName,Birthday]
+
 {
     "FirstName": "Liz",
     "LastName": "Lemon",
@@ -78,11 +77,9 @@ mvcOptions.UsePopcorn((popcornConfig) => {
 
 Spin up that same endpoint and witness the magestic transformation our data has undergone:
 
-```
-http://localhost:50353/api/example/employees?include=[FirstName,LastName,FullName,Birthday]
-```
-
 ```javascript
+http://localhost:50353/api/example/employees?include=[FirstName,LastName,FullName,Birthday]
+
 {
     "FirstName": "Liz",
     "LastName": "Lemon",
@@ -94,6 +91,15 @@ http://localhost:50353/api/example/employees?include=[FirstName,LastName,FullNam
 
 ### Situation 2: Integrating data external to the source object
 
+Sometimes we want to add information to a projection that simply wasn't contained in the source object.  In order to get access to the additional
+information, Popcorn has a concept of a 'context' -- that is, a Dictionary<string,object> -- that can be passed into your custom translations.  
+Your translations can use this entry point to access whatever they want outside of the source object.
+
+We can demonstrate this by adding an 'Owner' property to the CarProjection.  This owner will reference the Employee whose 'vehicles' list contains this
+car.  The car entity itself has no knowledge of this, so we'll have to iterate over each employee to figure the relationship out.  (This is not a recommended
+solution as the performance here for any non-trivial number of entities will be like walking through a wet marsh in clown shoes, but again, demonstration
+of a concept at work here).
+
 ```csharp
 public EmployeeProjection Owner { get; set; }
 ```
@@ -102,25 +108,29 @@ public EmployeeProjection Owner { get; set; }
 mvcOptions.UsePopcorn((popcornConfig) => {
     popcornConfig
         .Map<Employee, EmployeeProjection>(config: (employeeConfig) => {
+            // For employees we will determine a full name and reformat the date to include only the day portion.
             employeeConfig
                 .Translate(ep => ep.FullName, (e) => e.FirstName + " " + e.LastName)
                 .Translate(ep => ep.Birthday, (e) => e.Birthday.ToString("MM/dd/yyyy"));
         })
         .Map<Car, CarProjection>(defaultIncludes: "[Model,Make,Year]", config: (carConfig) => {
+            // For cars we will query to find out the Employee who owns the car.
             carConfig.Translate(cp => cp.Owner, (car, context) => 
+                // The car parameter is the source object; the context parameter is the dictionary we configure below.
                 (context["database"] as ExampleContext).Employees.FirstOrDefault(e => e.Vehicles.Contains(car)));
         })
+        // Pass in our 'database' via the context
         .SetContext(new Dictionary<string, object> {
             ["database"] = database
         });
 });
 ```
 
-```
-http://localhost:50353/api/example/cars?include=[Model,Make,Year,Color,Owner[FullName]]
-```
+Now if we request the Owner property, we'll get the details of the employee too!
 
 ```javascript
+http://localhost:50353/api/example/cars?include=[Model,Make,Year,Color,Owner[FullName]]
+
 [
     {
         "Owner": {
@@ -151,3 +161,4 @@ http://localhost:50353/api/example/cars?include=[Model,Make,Year,Color,Owner[Ful
     }
 ]
 ```
+
