@@ -43,7 +43,7 @@ namespace Skyward.Popcorn
 
                 // Verify that the generic parameter is something we would expand
                 var genericType = interfaceType.GenericTypeArguments[0];
-                if (this.WillExpand(genericType))
+                if (this.WillExpandType(genericType))
                 {
                     return true;
                 }
@@ -54,6 +54,8 @@ namespace Skyward.Popcorn
 
         protected bool WillExpandBlind(Type sourceType)
         {
+            if (!this.ExpandBlindObjects)
+                return false;
             return (!WillExpandDirect(sourceType)
                 && !WillExpandCollection(sourceType)
                 && sourceType.GetTypeInfo().IsClass

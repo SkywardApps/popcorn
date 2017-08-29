@@ -635,6 +635,7 @@ namespace PopcornStandardTest
         [TestMethod]
         public void BlindExpansion()
         {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
             var entity = new NonMappedType
             {
                 Name = nameof(BlindExpansion),
@@ -673,6 +674,7 @@ namespace PopcornStandardTest
             children.Count.ShouldBe(3);
             children.Count(c => c.ContainsKey("Name")).ShouldBe(0);
             children.Count(c => c.ContainsKey("Title") && (string)c["Title"] == "Test").ShouldBe(3);
+            new PopcornConfiguration(_expander).EnableBlindExpansion(false);
         }
     }
 }

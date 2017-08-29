@@ -143,5 +143,10 @@ namespace Skyward.Popcorn
             return this;
         }
 
+        public PopcornConfiguration EnableBlindExpansion(bool v)
+        {
+            _expander.ExpandBlindObjects = v;
+            return this;
+        }
     }
 }

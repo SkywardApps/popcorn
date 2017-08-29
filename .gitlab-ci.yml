@@ -89,6 +89,8 @@ nuget:
   - dotnet restore
   - dotnet build -c Release
   - cd ../Build/Release
+  - ls
   - dotnet nuget push Skyward.Api.Popcorn.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
+  - dotnet nuget push Skyward.Api.Popcorn.DotNetCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
  tags:
   - x86

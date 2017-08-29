@@ -33,7 +33,8 @@ namespace Skyward.Popcorn
         {
             typeof(string),
         };
-        
+        internal bool ExpandBlindObjects { get; set; } = false;
+
         /// <summary>
         /// Query whether or not a particular object is either a Mapped type or a collection of a Mapped type.
         /// </summary>
