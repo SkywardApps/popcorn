@@ -40,6 +40,17 @@
             <param name="source"></param>
             <param name="context"></param>
             <param name="includes"></param>
+            <param name="visited">todo: describe visited parameter on ExpandDirectObject</param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.ExpandBlindObject(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
+            <summary>
+            Take a complex object, and transfer properties requested into a dictionary
+            </summary>
+            <param name="source"></param>
+            <param name="context"></param>
+            <param name="includes"></param>
+            <param name="visited"></param>
             <returns></returns>
         </member>
         <member name="M:Skyward.Popcorn.Expander.ExpandCollection(System.Object,System.Type,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
@@ -50,17 +61,7 @@
             <param name="destinationType"></param>
             <param name="context"></param>
             <param name="includes"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Skyward.Popcorn.Expander.AssignProperty(Skyward.Popcorn.PropertyReference,System.Object,System.Object,Skyward.Popcorn.MappingDefinition,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.HashSet{System.Int32})">
-            <summary>
-            Attempt to find and assign a value for a property on the source object.  This may be a direct mapping, indirect, or from a provided translator.
-            </summary>
-            <param name="propertyReference"></param>
-            <param name="destinationObject"></param>
-            <param name="source"></param>
-            <param name="mappingDefinition"></param>
-            <param name="context"></param>
+            <param name="visited">todo: describe visited parameter on ExpandCollection</param>
             <returns></returns>
         </member>
         <member name="M:Skyward.Popcorn.Expander.SetValueToProperty(System.Object,System.Reflection.PropertyInfo,System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},Skyward.Popcorn.PropertyReference,System.Collections.Generic.HashSet{System.Int32})">
@@ -73,6 +74,7 @@
             <param name="destinationObject"></param>
             <param name="context"></param>
             <param name="propertyReference"></param>
+            <param name="visited">todo: describe visited parameter on SetValueToProperty</param>
             <returns></returns>
         </member>
         <member name="P:Skyward.Popcorn.Expander.Mappings">
@@ -98,7 +100,7 @@
             <param name="sourceType"></param>
             <returns></returns>
         </member>
-        <member name="M:Skyward.Popcorn.Expander.Expand(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
+        <member name="M:Skyward.Popcorn.Expander.Expand(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32},System.Type)">
             <summary>
             The entry point method for converting a type into its projection an selectively including data.
             This will work on either a Mapped Type or a collection of a Mapped Type.
@@ -109,6 +111,7 @@
             <param name="context">A context dictionary that will be passed around to all conversion routines.</param>
             <param name="includes"></param>
             <param name="visited"></param>
+            <param name="destinationTypeHint">todo: describe destinationTypeHint parameter on Expand</param>
             <returns></returns>
         </member>
         <member name="T:Skyward.Popcorn.MappingDefinition">
@@ -173,7 +176,7 @@
             <param name="type"></param>
             <returns></returns>
         </member>
-        <member name="M:Skyward.Popcorn.TypeExtensions.CreateObjectFromSource(System.Type,System.Object,System.Collections.Generic.Dictionary{System.String,System.Object})">
+        <member name="M:Skyward.Popcorn.TypeExtensions.CreateDefaultObject(System.Type)">
             <summary>
             Do our best to construct an object of the given type.
             This will look for public constructors:
@@ -302,6 +305,22 @@
             <typeparam name="TDestType"></typeparam>
             <param name="defaultIncludes"></param>
             <param name="config"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.PopcornConfiguration.AssignFactory``1(System.Func{``0})">
+            <summary>
+            Assign a factory function to create a specific type
+            </summary>
+            <typeparam name="TSourceType"></typeparam>
+            <param name="factory"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.PopcornConfiguration.AssignFactory``1(System.Func{System.Collections.Generic.Dictionary{System.String,System.Object},``0})">
+            <summary>
+            Assign a factory function to create a specific type from a context object
+            </summary>
+            <typeparam name="TSourceType"></typeparam>
+            <param name="factory"></param>
             <returns></returns>
         </member>
         <member name="T:Skyward.Popcorn.PropertyReference">
