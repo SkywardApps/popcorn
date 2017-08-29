@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\docs\dotnet\DotNetTutorialAdvancedProjections.md" Link="DotNetTutorialAdvancedProjections.md" />
     <None Include="..\..\docs\dotnet\DotNetTutorialGettingStarted.md" Link="DotNetTutorialGettingStarted.md" />
   </ItemGroup>
 
