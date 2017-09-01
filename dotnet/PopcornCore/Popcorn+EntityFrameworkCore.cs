@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using System.Linq;
 
 namespace Skyward.Popcorn.Core
 {
@@ -76,7 +77,20 @@ namespace Skyward.Popcorn.Core
                 // actually requested for expansion
                 using (DbContext db = ConstructDbContextWithOptions(optionsBuilder))
                 {
-                    foreach (var prop in typeof(TSourceType).GetNavigationProperties(db))
+                    foreach (var prop in typeof(TSourceType).GetNavigationReferenceProperties(db))
+                    {
+                        definition.PrepareProperty(prop.Name, (destinationObject, destinationProperty, sourceObject, context) =>
+                        {
+                            if (context.ContainsKey(DbKey))
+                            {
+                                var expandDb = context[DbKey] as TContext;
+                                expandDb.Attach(sourceObject as TSourceType);
+                                expandDb.Entry(sourceObject as TSourceType).Reference(prop.Name).Load();
+                            }
+                        });
+                    }
+
+                    foreach (var prop in typeof(TSourceType).GetNavigationCollectionProperties(db))
                     {
                         definition.PrepareProperty(prop.Name, (destinationObject, destinationProperty, sourceObject, context) =>
                         {
@@ -107,13 +121,13 @@ namespace Skyward.Popcorn.Core
 
 
         /// <summary>
-        /// Method that uses a DbContext to get a list of 'Navigation' properties -- that is, properties that represent other entities
+        /// Method that uses a DbContext to get a list of 'Navigation' properties that are collections -- that is, properties that represent other entities
         /// rather than strictly data on THIS entity.
         /// </summary>
         /// <param name="entityType"></param>
         /// <param name="context"></param>
         /// <returns></returns>
-        public static List<PropertyInfo> GetNavigationProperties(this Type entityType, DbContext context)
+        public static List<PropertyInfo> GetNavigationCollectionProperties(this Type entityType, DbContext context)
         {
             var properties = new List<PropertyInfo>();
             //Get the System.Data.Entity.Core.Metadata.Edm.EntityType
@@ -124,7 +138,32 @@ namespace Skyward.Popcorn.Core
             //System.Data.Entity.Core.Metadata.Edm.NavigationProperty
             //in EntityType.NavigationProperties, get the actual property 
             //using the entityType name, and add it to the return set.
-            foreach (var navigationProperty in entityElementType.GetNavigations())
+            foreach (var navigationProperty in entityElementType.GetNavigations().Where(np => np.IsCollection()))
+            {
+                properties.Add(entityType.GetProperty(navigationProperty.Name));
+            }
+            return properties;
+        }
+
+        /// <summary>
+        /// Method that uses a DbContext to get a list of 'Navigation' properties -- that is, properties that represent other entities
+        /// rather than strictly data on THIS entity.
+        /// </summary>
+        /// <param name="entityType"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public static List<PropertyInfo> GetNavigationReferenceProperties(this Type entityType, DbContext context)
+        {
+            var properties = new List<PropertyInfo>();
+            //Get the System.Data.Entity.Core.Metadata.Edm.EntityType
+            //associated with the entity.
+            var entityElementType = context.Model.FindEntityType(entityType);
+
+            //Iterate each 
+            //System.Data.Entity.Core.Metadata.Edm.NavigationProperty
+            //in EntityType.NavigationProperties, get the actual property 
+            //using the entityType name, and add it to the return set.
+            foreach (var navigationProperty in entityElementType.GetNavigations().Where(np => !np.IsCollection()))
             {
                 properties.Add(entityType.GetProperty(navigationProperty.Name));
             }
