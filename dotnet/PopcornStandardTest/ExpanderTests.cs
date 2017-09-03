@@ -28,7 +28,10 @@ namespace PopcornStandardTest
             public double Downconvert { get; set; }
 
             public ChildObject Child { get; set; }
+            public ChildObject Child2 { get; set; }
+            public ChildObject ChildExcludedFromProjection { get; set; }
             public List<ChildObject> Children { get; set; }
+            public List<ChildObject> Children2 { get; set; }
             public IEnumerable<ChildObject> ChildrenInterface { get; set; }
             public HashSet<ChildObject> ChildrenSet { get; set; }
             public DerivedChildObject SubclassInOriginal { get; set; }
@@ -81,7 +84,9 @@ namespace PopcornStandardTest
             public ChildObjectProjection ComplexFromTranslator { get; set; }
 
             public ChildObjectProjection Child { get; set; }
+            public ChildObjectProjection Child2 { get; set; }
             public List<ChildObjectProjection> Children { get; set; }
+            public List<ChildObjectProjection> Children2 { get; set; }
             public IEnumerable<ChildObjectProjection> ChildrenInterface { get; set; }
             public HashSet<ChildObjectProjection> ChildrenSet { get; set; }
             public ChildObjectProjection SubclassInOriginal { get; set; }
@@ -152,6 +157,7 @@ namespace PopcornStandardTest
                 (definition) =>
                 {
                     definition.Translate(o => o.ValueFromTranslator, () => 5.2);
+                    definition.Translate(o => o.ComplexFromTranslator, () => new ChildObjectProjection { Id = new Guid(), Name = "Complex trans name", Description = "Complex trans description" });
                 });
 
             config.Map<ChildObject, ChildObjectProjection>();
@@ -389,7 +395,6 @@ namespace PopcornStandardTest
             RootObjectProjection projection = result as RootObjectProjection;
             projection.ShouldNotBeNull();
             projection.ValueFromTranslator.ShouldBe(5.2);
-
         }
 
         // child
@@ -419,7 +424,6 @@ namespace PopcornStandardTest
 
 
         // list of children 
-
         [TestMethod]
         public void ListOfChildren()
         {
@@ -521,60 +525,241 @@ namespace PopcornStandardTest
         }
 
         // assign complex from a translator
-
-        [TestMethod, Ignore]
+        [TestMethod]
         public void ComplexFromTranslator()
         {
+            var root = new RootObject
+            {
+            };
 
-        }
-        // 
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.ComplexFromTranslator)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.ComplexFromTranslator.Id.ShouldBe(new Guid());
+            projection.ComplexFromTranslator.Name.ShouldBe("Complex trans name");
+            projection.ComplexFromTranslator.Description.ShouldBe("Complex trans description");
+        } 
 
         // Default
-
-        [TestMethod, Ignore]
-        public void UseDefaultsIncludes()
+        [TestMethod]
+        public void UseDefaultIncludes()
         {
-        }
-        // Default on child
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+            };
 
-        [TestMethod, Ignore]
+            object result = _expander.Expand(root);
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.StringValue.ShouldBe(root.StringValue);
+            projection.Id.ShouldBe(root.Id);
+            projection.NonIncluded.ShouldBe(root.NonIncluded);
+
+            projection.Additional.ShouldBeNull();
+            projection.Child.ShouldBeNull();
+            projection.Children.ShouldBeNull();
+            projection.Upconvert.ShouldBeNull();
+            projection.ValueFromTranslator.ShouldBeNull();
+            projection.Downconvert.ShouldBeNull();
+        }
+
+        // Default on child
+        [TestMethod]
         public void UseDefaultIncludesOnChild()
         {
+            var root = new RootObject
+            {
+                Children = new List<ChildObject>
+                {
+                    new ChildObject
+                    {
+                        Name = "Item1",
+                        Description = "Description1"
+                    },
+                    new ChildObject
+                    {
+                        Name = "Item2",
+                        Description = "Description2"
+                    }
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Children)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+
+            projection.Children.ShouldNotBeNull();
+            projection.Children.Count.ShouldBe(2);
+            projection.Children.Any(c => c.Name == "Item1").ShouldBeTrue();
+            projection.Children.Any(c => c.Name == "Item2").ShouldBeTrue();
+            projection.Children.Any(c => c.Description == "Description1").ShouldBeTrue();
+            projection.Children.Any(c => c.Description == "Description2").ShouldBeTrue();
         }
 
         // empty includes
-
-        [TestMethod, Ignore]
+        [TestMethod]
         public void EmptyIncludes()
         {
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                Children = new List<ChildObject>
+                {
+                    new ChildObject
+                    {
+                        Name = "Item1",
+                        Description = "Description1"
+                    },
+                    new ChildObject
+                    {
+                        Name = "Item2",
+                        Description = "Description2"
+                    }
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse("[]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+
+            projection.Children.ShouldBeNull();
+            projection.StringValue.ShouldBe(root.StringValue);
+            projection.Id.ShouldBe(root.Id);
+
+            projection.NonIncluded.ShouldBeNull();
+            projection.Additional.ShouldBeNull();
+            projection.Child.ShouldBeNull();
+            projection.Children.ShouldBeNull();
+            projection.Upconvert.ShouldBeNull();
+            projection.ValueFromTranslator.ShouldBeNull();
+            projection.Downconvert.ShouldBeNull();
+
         }
 
         // multiple different children with different includes
-
-        [TestMethod, Ignore]
+        [TestMethod]
         public void DifferingChildren()
         {
+            var root = new RootObject
+            {
+                Child = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Child1",
+                    Description = "Child Description1"
+                },
+                Child2 = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Child2",
+                    Description = "Child Description2"
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Child)}[{nameof(ChildObjectProjection.Name)}],{nameof(RootObjectProjection.Child2)}[{nameof(ChildObjectProjection.Id)},{nameof(ChildObjectProjection.Description)}]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.Child.Name.ShouldBe(root.Child.Name);
+            projection.Child.Description.ShouldBeNull();
+            projection.Child.Id.ShouldBe(Guid.Empty);
+
+            projection.Child2.Name.ShouldBeNull();
+            projection.Child2.Description.ShouldBe(root.Child2.Description);
+            projection.Child2.Id.ShouldBe(root.Child2.Id);
         }
 
         // multiple different lists with different includes
-
-        [TestMethod, Ignore]
+        [TestMethod]
         public void ListOfDifferingChildren()
         {
+            var root = new RootObject
+            {
+                Children = new List<ChildObject>
+                {
+                    new ChildObject
+                    {
+                        Name = "C1Item1",
+                        Description = "C1Description1"
+                    },
+                    new ChildObject
+                    {
+                        Name = "C1Item2",
+                        Description = "C1Description2"
+                    }
+                },
+                Children2 = new List<ChildObject>
+                {
+                    new ChildObject
+                    {
+                        Name = "C2Item1",
+                        Description = "C2Description1"
+                    },
+                    new ChildObject
+                    {
+                        Name = "C2Item2",
+                        Description = "C2Description2"
+                    }
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Children)}[{nameof(ChildObjectProjection.Name)}],{nameof(RootObjectProjection.Children2)}[{nameof(ChildObjectProjection.Description)}]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+
+            projection.Children.ShouldNotBeNull();
+            projection.Children.Count.ShouldBe(2);
+            projection.Children.Any(c => c.Name == "C1Item1").ShouldBeTrue();
+            projection.Children.Any(c => c.Name == "C1Item2").ShouldBeTrue();
+            projection.Children.Any(c => c.Description != null).ShouldBeFalse();
+            projection.Children.Any(c => c.Id != Guid.Empty).ShouldBeFalse();
+
+            projection.Children2.ShouldNotBeNull();
+            projection.Children2.Count.ShouldBe(2);
+            projection.Children2.Any(c => c.Description == "C2Description1").ShouldBeTrue();
+            projection.Children2.Any(c => c.Description == "C2Description2").ShouldBeTrue();
+            projection.Children2.Any(c => c.Name != null).ShouldBeFalse();
+            projection.Children2.Any(c => c.Id != Guid.Empty).ShouldBeFalse();
         }
 
-        // non-projected child
-
+        // non-projected child // STILL A WORK IN PROGRESS
         [TestMethod, Ignore]
         public void UnprojectedChild()
         {
+            var root = new RootObject
+            {
+                ChildExcludedFromProjection = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Child1",
+                    Description = "Child Description1"
+                }
+            };
+
+            object result = null;
+            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); }).Message.ShouldBe(nameof(RootObjectProjection.InvalidCastType));
         }
 
         // non-projected list of children
-
         [TestMethod, Ignore]
         public void UnprojectedChildList()
         {
+
         }
 
         // Database navigation property
