@@ -190,7 +190,6 @@ namespace PopcornStandardTest
             projection.Upconvert.ShouldBeNull();
             projection.ValueFromTranslator.ShouldBeNull();
             projection.Downconvert.ShouldBeNull();
-
         }
 
         // assign a null
@@ -208,6 +207,27 @@ namespace PopcornStandardTest
             RootObjectProjection projection = result as RootObjectProjection;
             projection.ShouldNotBeNull();
             projection.StringValue.ShouldBe(null);
+        }
+
+        // spaces in includes
+        [TestMethod]
+        public void SpacesInIncludes()
+        {
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[ {nameof(RootObjectProjection.Id)} , {nameof(RootObjectProjection.StringValue)} ]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.StringValue.ShouldBe(root.StringValue);
+            projection.Id.ShouldBe(root.Id);
         }
 
         // Assign to nullable

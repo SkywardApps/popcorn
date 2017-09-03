@@ -41,13 +41,16 @@ namespace Skyward.Popcorn
                     case '[':
                         stack.Push(new PropertyReference());
                         break;
+                    // Spaces should simply be ignored
+                    case ' ':
+                        break;
                     // finished a reference, so add it as a child and start a peer
                     case ',':
                         child = stack.Pop();
                         stack.Peek().Children.Add(child);
                         stack.Push(new PropertyReference());
                         break;
-                   // Completed a child list, so add the last item as a child and pop up the stack
+                    // Completed a child list, so add the last item as a child and pop up the stack
                     case ']':
                         child = stack.Pop();
                         if (!String.IsNullOrWhiteSpace(child.PropertyName))

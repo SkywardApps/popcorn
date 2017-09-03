@@ -65,7 +65,7 @@ namespace Skyward.Popcorn
         }
 
         /// <summary>
-        /// The entry point method for converting a type into its projection an selectively including data.
+        /// The entry point method for converting a type into its projection and selectively including data.
         /// This will work on either a Mapped Type or a collection of a Mapped Type.
         /// This version using anonymous objects works well for the Api use case.  We may want a generic typed
         /// version if we ever think of a reason to use this elsewhere.
