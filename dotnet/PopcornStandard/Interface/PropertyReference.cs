@@ -51,9 +51,9 @@ namespace Skyward.Popcorn
                     // Completed a child list, so add the last item as a child and pop up the stack
                     case ']':
                         child = stack.Pop();
-                        child.PropertyName = child.PropertyName.TrimStart(' ').TrimEnd(' ');
                         if (!String.IsNullOrWhiteSpace(child.PropertyName))
                         {
+                            child.PropertyName = child.PropertyName.TrimStart(' ').TrimEnd(' ');
                             stack.Peek().Children.Add(child);
                         }
                         break;
