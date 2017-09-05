@@ -32,6 +32,7 @@ namespace PopcornStandardTest
             public ChildObject ChildExcludedFromProjection { get; set; }
             public List<ChildObject> Children { get; set; }
             public List<ChildObject> Children2 { get; set; }
+            public List<UnprojectedChildObject> ChildListExcludedFromProjection { get; set; }
             public IEnumerable<ChildObject> ChildrenInterface { get; set; }
             public HashSet<ChildObject> ChildrenSet { get; set; }
             public DerivedChildObject SubclassInOriginal { get; set; }
@@ -48,6 +49,16 @@ namespace PopcornStandardTest
         /// A sub-entity used to test collections
         /// </summary>
         public class ChildObject
+        {
+            public Guid Id { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+        }
+
+        /// <summary>
+        /// A sub-entity that is not projected  used to test collections
+        /// </summary>
+        public class UnprojectedChildObject
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
@@ -87,6 +98,7 @@ namespace PopcornStandardTest
             public ChildObjectProjection Child2 { get; set; }
             public List<ChildObjectProjection> Children { get; set; }
             public List<ChildObjectProjection> Children2 { get; set; }
+            public List<ChildObjectProjection> ChildListExcludedFromProjection { get; set; }
             public IEnumerable<ChildObjectProjection> ChildrenInterface { get; set; }
             public HashSet<ChildObjectProjection> ChildrenSet { get; set; }
             public ChildObjectProjection SubclassInOriginal { get; set; }
@@ -737,8 +749,8 @@ namespace PopcornStandardTest
             projection.Children2.Any(c => c.Id != Guid.Empty).ShouldBeFalse();
         }
 
-        // non-projected child // STILL A WORK IN PROGRESS
-        [TestMethod, Ignore]
+        // non-projected child
+        [TestMethod]
         public void UnprojectedChild()
         {
             var root = new RootObject
@@ -752,14 +764,32 @@ namespace PopcornStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); }).Message.ShouldBe(nameof(RootObjectProjection.InvalidCastType));
+            Shouldly.Should.Throw<ArgumentOutOfRangeException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); });
         }
 
         // non-projected list of children
-        [TestMethod, Ignore]
+        [TestMethod]
         public void UnprojectedChildList()
         {
+            var root = new RootObject
+            {
+                ChildListExcludedFromProjection = new List<UnprojectedChildObject>
+                {
+                    new UnprojectedChildObject
+                    {
+                        Name = "Item1",
+                        Description = "Description1"
+                    },
+                    new UnprojectedChildObject
+                    {
+                        Name = "Item2",
+                        Description = "Description2"
+                    }
+                }
+            };
 
+            object result = null;
+            Shouldly.Should.Throw<ArgumentOutOfRangeException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); });
         }
 
         // Database navigation property
