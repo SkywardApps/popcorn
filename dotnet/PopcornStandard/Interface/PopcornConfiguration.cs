@@ -16,6 +16,8 @@ namespace Skyward.Popcorn
         public ContextType Context { get; private set; }
         public Func<object, object, object> Inspector { get; private set; }
 
+        public bool ApplyToAllEndpoints { get; private set; } = true;
+
         /// <summary>
         /// Designate the context for this target
         /// </summary>
@@ -40,6 +42,16 @@ namespace Skyward.Popcorn
             if (Inspector != null)
                 throw new InvalidOperationException("Inspector has already been assigned");
             Inspector = inspector;
+            return this;
+        }
+
+        /// <summary>
+        /// Set this configuration to only expand endpoints that have the ExpandResult attribute set
+        /// </summary>
+        /// <returns></returns>
+        public PopcornConfiguration SetOptIn()
+        {
+            ApplyToAllEndpoints = false;
             return this;
         }
 
