@@ -54,12 +54,7 @@ namespace Skyward.Popcorn.Core
                 if (_inspector != null)
                     resultObject = _inspector(resultObject, _context);
 
-                context.Result = new JsonResult(resultObject,
-                   new JsonSerializerSettings
-                   {
-                       NullValueHandling = NullValueHandling.Ignore,
-                       DefaultValueHandling = DefaultValueHandling.Ignore
-                   });
+                context.Result = new JsonResult(resultObject);
             }
             base.OnActionExecuted(context);
         }

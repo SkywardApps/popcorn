@@ -25,6 +25,12 @@ namespace PopcornCoreExample.Controllers
             return _context.Employees;
         }
 
+        [HttpGet, Route("null")]
+        public List<Employee> Null()
+        {
+            return null;
+        }
+
         [HttpGet, Route("cars")]
         public List<Car> Cars()
         {

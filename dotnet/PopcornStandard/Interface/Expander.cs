@@ -42,6 +42,7 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public bool WillExpand(object source)
         {
+            if (source == null) { return false; } // handling the null response
             Type sourceType = source.GetType();
             return WillExpandType(sourceType);
 
