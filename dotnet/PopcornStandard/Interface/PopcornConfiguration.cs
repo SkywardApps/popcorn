@@ -1,5 +1,6 @@
 ﻿using System;
-
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace Skyward.Popcorn
 {
@@ -69,12 +70,17 @@ namespace Skyward.Popcorn
         {
             var sourceType = typeof(TSourceType);
             var destType = typeof(TDestType);
+
+            var destTypeInfo = typeof(TDestType).GetTypeInfo();
+            var parsedDefaultIncludes = (defaultIncludes == null) ? new List<PropertyReference> { } : (List<PropertyReference>)PropertyReference.Parse(defaultIncludes);
+            defaultIncludes = CompareAndConstructDefaultIncludes(parsedDefaultIncludes, destTypeInfo);
+
             var definition = new MappingDefinitionConfiguration<TSourceType, TDestType>
             {
                 InternalDefinition = new MappingDefinition
                 {
                     DestinationType = destType,
-                    DefaultIncludes = defaultIncludes ?? "[]"
+                    DefaultIncludes = defaultIncludes
                 }
             };
 
@@ -141,6 +147,64 @@ namespace Skyward.Popcorn
                 _expander.Factories.Remove(typeof(TSourceType));
             }
             return this;
+        }
+
+        /// <summary>
+        /// Assign a factory function to create a specific type from a context object
+        /// </summary>
+        /// <typeparam name="TSourceType"></typeparam>
+        /// <param name="factory"></param>
+        /// <returns></returns>
+        public string CompareAndConstructDefaultIncludes(List<PropertyReference> parsedDefaultIncludes, TypeInfo destTypeInfo)
+        {
+            foreach (PropertyInfo propertyInfo in destTypeInfo.DeclaredProperties)
+            {
+                var customAttributesOriginal = (Array)propertyInfo.GetCustomAttributes();
+                if (customAttributesOriginal.Length == 0)
+                {
+                    continue;
+                }
+                else
+                {
+                    foreach (Attribute customAttribute in customAttributesOriginal)
+                    {
+                        var type = customAttribute.GetType();
+                        if (type.Namespace == "Skyward.Popcorn" && type.Name == "IncludeByDefault")
+                        {
+                            foreach (PropertyReference reference in parsedDefaultIncludes)
+                            {
+                                if (reference.PropertyName == propertyInfo.Name)
+                                {
+                                    throw new Exception($"Property {propertyInfo.Name} is marked as [IncludeByDefault] and declared in the config.map function.");
+                                }
+                            }
+
+                            parsedDefaultIncludes.Add(new PropertyReference { PropertyName = propertyInfo.Name });
+                        }
+                    }
+                }
+            }
+
+            if (parsedDefaultIncludes.Count == 0)
+            {
+                return "[]";
+            } else
+            {
+                string includesStringConstructor = "[";
+                for (int i = 0; i < parsedDefaultIncludes.Count; i++)
+                {
+                    int adjustedCount = parsedDefaultIncludes.Count - 1;
+                    if (i < adjustedCount)
+                    {
+                        includesStringConstructor = includesStringConstructor + parsedDefaultIncludes[i].PropertyName + ",";
+                    } else if (i == adjustedCount)
+                    {
+                        includesStringConstructor = includesStringConstructor + parsedDefaultIncludes[i].PropertyName + "]";
+                    }
+                }
+
+                return includesStringConstructor;
+            }
         }
 
         public PopcornConfiguration BlacklistExpansion<TSourceType>()
