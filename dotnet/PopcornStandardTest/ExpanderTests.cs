@@ -118,7 +118,7 @@ namespace PopcornStandardTest
             public LoopProjection Next { get; set; }
 
             public string Name { get; set; }
-            [DefaultIncludes("[Name]")]
+            [SubPropertyIncludeByDefault("[Name]")]
             public LoopProjection NextWithDefaultIncludes { get; set; }
         }
 

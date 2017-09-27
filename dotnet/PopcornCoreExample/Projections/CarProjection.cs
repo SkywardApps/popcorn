@@ -8,10 +8,9 @@ namespace PopcornCoreExample.Projections
 {
     public class CarProjection
     {
-        [Skyward.Popcorn.DefaultIncludes("[FullName]")]
+        [SubPropertyIncludeByDefault("[FullName,Birthday]")]
         public EmployeeProjection Owner { get; set; }
 
-        [IncludeByDefault]
         public string Model { get; set; }
         public string Make { get; set; }
         public int? Year { get; set; }

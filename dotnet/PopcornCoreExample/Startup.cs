@@ -45,7 +45,7 @@ namespace PopcornCoreExample
                                 .Translate(ep => ep.FullName, (e) => e.FirstName + " " + e.LastName)
                                 .Translate(ep => ep.Birthday, (e) => e.Birthday.ToString("MM/dd/yyyy"));
                         })
-                        .Map<Car, CarProjection>(defaultIncludes: "[Make,Year]", config: (carConfig) => {
+                        .Map<Car, CarProjection>(defaultIncludes: "[Model,Make,Year]", config: (carConfig) => {
                             // For cars we will query to find out the Employee who owns the car.
                             carConfig.Translate(cp => cp.Owner, (car, context) =>
                                 // The car parameter is the source object; the context parameter is the dictionary we configure below.

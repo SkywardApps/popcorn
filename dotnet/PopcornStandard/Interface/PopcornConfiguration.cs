@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace Skyward.Popcorn
@@ -71,6 +72,7 @@ namespace Skyward.Popcorn
             var sourceType = typeof(TSourceType);
             var destType = typeof(TDestType);
 
+            // Validate and construct the actual default includes from both attributes and those passed in at the time of the mapping
             var destTypeInfo = typeof(TDestType).GetTypeInfo();
             var parsedDefaultIncludes = (defaultIncludes == null) ? new List<PropertyReference> { } : (List<PropertyReference>)PropertyReference.Parse(defaultIncludes);
             defaultIncludes = CompareAndConstructDefaultIncludes(parsedDefaultIncludes, destTypeInfo);
@@ -150,60 +152,53 @@ namespace Skyward.Popcorn
         }
 
         /// <summary>
-        /// Assign a factory function to create a specific type from a context object
+        /// A function to validate and apply the attribute level or mapping level defaults for a projected entity
         /// </summary>
-        /// <typeparam name="TSourceType"></typeparam>
-        /// <param name="factory"></param>
+        /// <param name="parsedDefaultIncludes"></param>
+        /// <param name="destTypeInfo"></param>
         /// <returns></returns>
         public string CompareAndConstructDefaultIncludes(List<PropertyReference> parsedDefaultIncludes, TypeInfo destTypeInfo)
         {
+            // Loop through each property on an entity to see if anything is declared to IncludeByDefault
             foreach (PropertyInfo propertyInfo in destTypeInfo.DeclaredProperties)
             {
                 var customAttributesOriginal = (Array)propertyInfo.GetCustomAttributes();
                 if (customAttributesOriginal.Length == 0)
                 {
+                    // No custom attributes means the next steps can be ignored
                     continue;
                 }
                 else
                 {
+                    // Circle through the attributes to see if our IncludeByDefault is one of them
                     foreach (Attribute customAttribute in customAttributesOriginal)
                     {
                         var type = customAttribute.GetType();
-                        if (type.Namespace == "Skyward.Popcorn" && type.Name == "IncludeByDefault")
-                        {
-                            foreach (PropertyReference reference in parsedDefaultIncludes)
-                            {
-                                if (reference.PropertyName == propertyInfo.Name)
-                                {
-                                    throw new Exception($"Property {propertyInfo.Name} is marked as [IncludeByDefault] and declared in the config.map function.");
-                                }
-                            }
 
+                        // We don't want to allow a user to set defaults in both the mapping and at the attribute level
+                        if (type == typeof(IncludeByDefault) && parsedDefaultIncludes.Count == 0)
+                        {
+                            throw new MultipleDefaultsException($"Defaults are declared for {destTypeInfo.Name} in the configuration mapping and on the projection attributes.");
+                        }
+                        if (type == typeof(IncludeByDefault))
+                        {
                             parsedDefaultIncludes.Add(new PropertyReference { PropertyName = propertyInfo.Name });
                         }
                     }
                 }
             }
 
+            // Handle no defaults
             if (parsedDefaultIncludes.Count == 0)
             {
                 return "[]";
             } else
             {
-                string includesStringConstructor = "[";
-                for (int i = 0; i < parsedDefaultIncludes.Count; i++)
-                {
-                    int adjustedCount = parsedDefaultIncludes.Count - 1;
-                    if (i < adjustedCount)
-                    {
-                        includesStringConstructor = includesStringConstructor + parsedDefaultIncludes[i].PropertyName + ",";
-                    } else if (i == adjustedCount)
-                    {
-                        includesStringConstructor = includesStringConstructor + parsedDefaultIncludes[i].PropertyName + "]";
-                    }
-                }
-
-                return includesStringConstructor;
+                // construct the proper result
+                string result = String.Join(",", parsedDefaultIncludes.Select(m => m.PropertyName));
+                result = result.Insert(0, "[").Insert(result.Length+1, "]");
+                
+                return result;
             }
         }
 

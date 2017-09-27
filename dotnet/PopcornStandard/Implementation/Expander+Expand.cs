@@ -364,7 +364,7 @@ namespace Skyward.Popcorn
             if (!propertySubReferences.Any())
             {
                 // check if there's a property attribute
-                var includes = destinationProperty.GetCustomAttribute<DefaultIncludesAttribute>();
+                var includes = destinationProperty.GetCustomAttribute<SubPropertyIncludeByDefault>();
                 if (includes != null)
                 {
                     propertySubReferences = PropertyReference.Parse(includes.Includes);
