@@ -37,7 +37,6 @@ namespace PopcornStandardTest
 
             public string FromMethod() { return nameof(FromMethod); }
             public ChildObject ComplexFromMethod() { return new ChildObject { Id = Guid.NewGuid(), Name = "ComplexFromMethod ChildObject", Description = "This proves that an object returned from a method will also be projected." }; }
-
         }
 
 
@@ -92,6 +91,36 @@ namespace PopcornStandardTest
             public ChildObjectProjection ComplexFromMethod { get; set; }
         }
 
+        public class IncludeByDefaultRootObjectProjection
+        {
+            //public string Excluded { get; set; } // this one doesn't exist in the projection
+            public string Additional { get; set; } // this one doesn't exist in the root
+
+            [IncludeByDefault]
+            public Guid Id { get; set; } // a non-simple type
+            public Guid? Nullable { get; set; }
+            [IncludeByDefault]
+            public string StringValue { get; set; }
+            public string NonIncluded { get; set; }
+
+            public double? Upconvert { get; set; } // we sneakily changed the type here
+            public int? Downconvert { get; set; }
+
+            public double? ValueFromTranslator { get; set; }
+            public ChildObjectProjection ComplexFromTranslator { get; set; }
+
+            public ChildObjectProjection Child { get; set; }
+            public List<ChildObjectProjection> Children { get; set; }
+            public IEnumerable<ChildObjectProjection> ChildrenInterface { get; set; }
+            public HashSet<ChildObjectProjection> ChildrenSet { get; set; }
+            public ChildObjectProjection SubclassInOriginal { get; set; }
+            public DerivedChildObjectProjection SuperclassInOriginal { get; set; }
+            public string InvalidCastType { get; set; }
+
+            public string FromMethod { get; set; }
+            public ChildObjectProjection ComplexFromMethod { get; set; }
+        }
+
         public class ChildObjectProjection
         {
             public Guid Id { get; set; }
@@ -118,7 +147,7 @@ namespace PopcornStandardTest
             public LoopProjection Next { get; set; }
 
             public string Name { get; set; }
-            [DefaultIncludes("[Name]")]
+            [SubPropertyIncludeByDefault("[Name]")]
             public LoopProjection NextWithDefaultIncludes { get; set; }
         }
 
@@ -162,7 +191,6 @@ namespace PopcornStandardTest
         }
 
         // Things to test
-
         // Specific includes
         [TestMethod]
         public void SimpleMapping()
@@ -619,7 +647,7 @@ namespace PopcornStandardTest
         }
 
         [TestMethod]
-        public void DefaultIncludeAttribute()
+        public void SubPropertyDefaultIncludeAttribute()
         {
             var firstObject = new Loop { Name = "firstObject" };
             var secondObject = new Loop { Name = "secondObject" };
@@ -638,6 +666,47 @@ namespace PopcornStandardTest
             loopProjection.NextWithDefaultIncludes.ShouldNotBeNull();
             loopProjection.NextWithDefaultIncludes.Name.ShouldBe(secondObject.Name);
             loopProjection.NextWithDefaultIncludes.NextWithDefaultIncludes.ShouldBeNull();
+        }
+
+        [TestMethod]
+        public void DefaultIncludesAttribute()
+        {
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            config.Map<RootObject, IncludeByDefaultRootObjectProjection>();
+
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Name",
+                    Description = "Description"
+                }
+            };
+
+            var result = _expander.Expand(root);
+            result.ShouldNotBeNull();
+
+            IncludeByDefaultRootObjectProjection projection = result as IncludeByDefaultRootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.StringValue.ShouldBe(root.StringValue);
+            projection.Id.ShouldBe(root.Id);
+
+            projection.NonIncluded.ShouldBeNull();
+            projection.Child.ShouldBeNull();
+        }
+
+        [TestMethod]
+        public void MapAndDefaultIncludesAttribute()
+        {
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            Assert.ThrowsException<MultipleDefaultsException>(() => config.Map<RootObject, IncludeByDefaultRootObjectProjection>($"[{nameof(IncludeByDefaultRootObjectProjection.Id)},{nameof(IncludeByDefaultRootObjectProjection.StringValue)}]"));
         }
 
         [TestMethod]
