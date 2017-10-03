@@ -1,7 +1,7 @@
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Advanced Projections
 
 By now you've learned how to 'project' a data entity into another type, allowing you to filter out any properties that your api consumer didn't want.
-If that sentence didn't make sense, you should probably go back and complete [Gettings Started](DotNetTutorialGettingStarted.md) first.
+If that sentence didn't make sense, you should probably go back and complete [Getting Started](DotNetTutorialGettingStarted.md) first.
 We'll still be here when you get back.
 
 Next we'll explore some of the other options that using a projection exposes.  We will start out with something simple; attaching a new property.  
@@ -12,7 +12,7 @@ public string FullName { get; set; }
 ```
 
 Our 'FullName' with be FirstName and LastName concatenated together with a space in between.  To incorporate this, we need to add a 'Translation'.
-A transltion is a custom unit of code you can add to convert the source object into a property on the destination projection.  It can translate an
+A translation is a custom unit of code you can add to convert the source object into a property on the destination projection.  It can translate an
 existing property on the source, aggreate or combine multiple properties, or create data that doesn't exist at all on the source object.
 
 But as every English teacher I've ever had has drilled into my head, "Show don't tell", so go ahead and throw a translation into the configuration object:
