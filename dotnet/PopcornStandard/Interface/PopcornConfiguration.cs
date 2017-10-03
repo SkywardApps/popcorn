@@ -159,6 +159,10 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public string CompareAndConstructDefaultIncludes(List<PropertyReference> parsedDefaultIncludes, TypeInfo destTypeInfo)
         {
+            // Create a variable to allow looping through adding all the defaultIncludes properties that are tagged
+            var parsedDefaultIncludesHolder = new List<PropertyReference> { };
+            parsedDefaultIncludesHolder.AddRange(parsedDefaultIncludes);
+
             // Loop through each property on an entity to see if anything is declared to IncludeByDefault
             foreach (PropertyInfo propertyInfo in destTypeInfo.DeclaredProperties)
             {
@@ -176,26 +180,26 @@ namespace Skyward.Popcorn
                         var type = customAttribute.GetType();
 
                         // We don't want to allow a user to set defaults in both the mapping and at the attribute level
-                        if (type == typeof(IncludeByDefault) && parsedDefaultIncludes.Count == 0)
+                        if (type == typeof(IncludeByDefault) && parsedDefaultIncludes.Count != 0)
                         {
                             throw new MultipleDefaultsException($"Defaults are declared for {destTypeInfo.Name} in the configuration mapping and on the projection attributes.");
                         }
                         if (type == typeof(IncludeByDefault))
                         {
-                            parsedDefaultIncludes.Add(new PropertyReference { PropertyName = propertyInfo.Name });
+                            parsedDefaultIncludesHolder.Add(new PropertyReference { PropertyName = propertyInfo.Name });
                         }
                     }
                 }
             }
 
             // Handle no defaults
-            if (parsedDefaultIncludes.Count == 0)
+            if (parsedDefaultIncludesHolder.Count == 0)
             {
                 return "[]";
             } else
             {
                 // construct the proper result
-                string result = String.Join(",", parsedDefaultIncludes.Select(m => m.PropertyName));
+                string result = String.Join(",", parsedDefaultIncludesHolder.Select(m => m.PropertyName));
                 result = result.Insert(0, "[").Insert(result.Length+1, "]");
                 
                 return result;
