@@ -16,16 +16,19 @@
 
 ---
 #### Patch Release: 1.1.2
-+ 
++ **Bug Fixes:**
+	+ Got reference navigation properties working again.
 
 ---
 #### Patch Release: 1.1.1
-+
++ **Bug Fixes:**
+	+ Allowed blind expansion to be accomplished when specifically designated
 
 --- 
 ### Minor Release: 1.1.0
-+ 
++ **Feature Additions:**  
+	+ Added all initial documentation
 
 ---
 ## Major Release: 1.0.0
-+ Project inception!
+	+ Project inception!
