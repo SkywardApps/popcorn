@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.3
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornCoreTest", "PopcornCoreTest\PopcornCoreTest.csproj", "{EB9B2D00-1545-4AC3-8F52-49BE4DD0D69C}"
 EndProject
@@ -24,12 +24,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentat
 		..\markdown.json = ..\markdown.json
 		..\docs\QuickStart.md = ..\docs\QuickStart.md
 		..\README.md = ..\README.md
+		..\docs\Releases.md = ..\docs\Releases.md
 		..\docs\Roadmap.md = ..\docs\Roadmap.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{6927209F-F97B-4039-9702-1544DF636EFB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornCoreExample", "PopcornCoreExample\PopcornCoreExample.csproj", "{BEA584BD-D6AC-43BB-98D7-C375522C25ED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornCoreExample", "PopcornCoreExample\PopcornCoreExample.csproj", "{BEA584BD-D6AC-43BB-98D7-C375522C25ED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
