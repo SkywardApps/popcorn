@@ -2,11 +2,6 @@ Issue tracker is **ONLY** used for reporting bugs. NO NEW FEATURE ACCEPTED! Use 
 
 <!--- Provide a general summary of the issue in the Title above -->
 
-## Expected Behavior
-<!--- Tell us what should happen -->
-
-## Current Behavior
-<!--- Tell us what happens instead of the expected behavior -->
 
 ## Possible Solution
 <!--- Not obligatory, but suggest a fix/reason for the bug, -->
@@ -18,6 +13,12 @@ Issue tracker is **ONLY** used for reporting bugs. NO NEW FEATURE ACCEPTED! Use 
 2.
 3.
 4.
+
+## Expected Behavior
+<!--- Tell us what should happen -->
+
+## Actual Behavior
+<!--- Tell us what happens instead of the expected behavior -->
 
 ## Context (Environment)
 <!--- How has this issue affected you? What are you trying to accomplish? -->
