@@ -52,6 +52,11 @@ namespace Skyward.Popcorn
             return false;
         }
 
+        /// <summary>
+        /// Query if this is a type that can be expanded with no projected type, i.e. blind
+        /// </summary>
+        /// <param name="sourceType"></param>
+        /// <returns></returns>
         protected bool WillExpandBlind(Type sourceType)
         {
             if (!this.ExpandBlindObjects)
@@ -364,7 +369,7 @@ namespace Skyward.Popcorn
             if (!propertySubReferences.Any())
             {
                 // check if there's a property attribute
-                var includes = destinationProperty.GetCustomAttribute<DefaultIncludesAttribute>();
+                var includes = destinationProperty.GetCustomAttribute<SubPropertyIncludeByDefault>();
                 if (includes != null)
                 {
                     propertySubReferences = PropertyReference.Parse(includes.Includes);

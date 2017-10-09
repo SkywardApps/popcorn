@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Skyward.Popcorn;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,7 +8,7 @@ namespace PopcornCoreExample.Projections
 {
     public class CarProjection
     {
-        [Skyward.Popcorn.DefaultIncludes("[FullName]")]
+        [SubPropertyIncludeByDefault("[FullName,Birthday]")]
         public EmployeeProjection Owner { get; set; }
 
         public string Model { get; set; }

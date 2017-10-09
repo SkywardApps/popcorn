@@ -140,6 +140,7 @@ to contribute any platform-specific providers you come up with!
 + [Quick Start](docs/QuickStart.md)
 + [Documentation](docs/Documentation.md)
 + [Roadmap](docs/Roadmap.md)
++ [Releases and Release Notes](docs/Releases.md)
 + [Contributing](docs/Contributing.md)
 + [License](LICENSE)
 + [Meet the Maintainers](docs/Maintainers.md)
