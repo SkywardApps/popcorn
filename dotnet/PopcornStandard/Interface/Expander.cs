@@ -113,7 +113,102 @@ namespace Skyward.Popcorn
             throw new UnknownMappingException(sourceType.ToString());
         }
 
+        public object Sort(object source, string sortTarget, string sortDirection)
+        {
+            var originalList = (IList)source;
 
+            // Start by finding all of the properties on the entity in question
+            var typeInfo = originalList[0].GetType().GetTypeInfo();
+
+            if (typeInfo.DeclaredProperties.FirstOrDefault(values => values.Name.Contains(sortTarget)) == null)
+            {
+                // TODO: Consider making an "InvalidSortError"
+                throw new InvalidCastException(sortTarget);
+            }
+
+            foreach (PropertyInfo info in typeInfo.DeclaredProperties)
+            {
+                // Make sure the property target passed in exists on the result and that there is more than 1 result
+                if (info.Name == sortTarget && originalList.Count > 1)
+                {
+                    // Instantiate a list to hold the sorting results as we add them
+                    var sortingList = new List<object> { };
+
+                    // Loop through each result on the original list to place it in the holder list
+                    for (int j = 0; j < originalList.Count; j++)
+                    {
+                        // This will throw an InvalidCastException for more complex types
+                        IComparable targetObject = (IComparable)info.GetValue(originalList[j]);
+
+                        if (sortDirection == "descending")
+                        {
+                            // Loop through the sorted list to put the object where it belongs
+                            int originalCount = sortingList.Count;
+                            for (int i = 0; i <= originalCount; i++)
+                            {
+                                // Add initial result
+                                if (sortingList.Count == 0)
+                                {
+                                    sortingList.Insert((0), originalList[j]);
+                                    break;
+                                }
+
+                                IComparable indexedObject = (IComparable)info.GetValue(sortingList[i]);
+                                int compareResult = targetObject.CompareTo(indexedObject);
+
+                                // Sort to see where the result should be added
+                                if (compareResult < 0)
+                                {
+                                    sortingList.Insert((i), originalList[j]);
+                                    break;
+                                }
+                                // Check forward to see if this is the end of the values to poll through and tack to the end
+                                else if ((i + 1) == originalCount)
+                                {
+                                    sortingList.Insert((originalCount), originalList[j]);
+                                    break;
+                                }
+                            }
+                        }
+                        else if (sortDirection == "ascending")
+                        {
+                            // Loop through the sorted list to put the object where it belongs
+                            int originalCount = sortingList.Count;
+                            for (int i = originalCount; i >= 0; i--)
+                            {
+                                // Add initial result
+                                if (originalCount == 0)
+                                {
+                                    sortingList.Insert((0), originalList[j]);
+                                    break;
+                                }
+
+                                IComparable indexedObject = (IComparable)info.GetValue(sortingList[i-1]);
+                                int compareResult = targetObject.CompareTo(indexedObject);
+
+                                // Sort to see where the result should be added
+                                if (compareResult < 0)
+                                {
+                                    sortingList.Insert((i), originalList[j]);
+                                    break;
+                                }
+                                // Check forward to see if this is the end of the values to poll through and tack to the end
+                                else if ((i - 1) == 0)
+                                {
+                                    sortingList.Insert((0), originalList[j]);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Reset the orginal list to sortingList to return the correct results
+                    originalList = sortingList;
+                }
+            }
+
+            return originalList;
+        }
 
     }
 }

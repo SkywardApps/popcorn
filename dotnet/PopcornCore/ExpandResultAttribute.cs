@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using System.Buffers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
-
+using System.Collections;
 
 namespace Skyward.Popcorn.Core
 {
@@ -48,6 +48,31 @@ namespace Skyward.Popcorn.Core
 
                     // Use our expander and expand the object
                     resultObject = _expander.Expand(resultObject, _context, PropertyReference.Parse(includes));
+                }
+
+                // Validate sortDirection first to error out before starting if necessary
+                string sortDirection = null;
+                if (context.HttpContext.Request.Query.ContainsKey("sortDirection"))
+                {
+                    sortDirection = context.HttpContext.Request.Query["sortDirection"];
+                    if (sortDirection != "ascending" && sortDirection != "descending")
+                    {
+                        //TODO: Maybe consider making a custom exception here
+                        throw new InvalidCastException(sortDirection);
+                    }
+                }
+
+                // Do any sorting as specified
+                if (context.HttpContext.Request.Query.ContainsKey("sort") && resultObject != null)
+                {
+                    if (sortDirection != null)
+                    {
+                        resultObject = _expander.Sort(resultObject, context.HttpContext.Request.Query["sort"], sortDirection);
+                    } else
+                    {
+                        // default sort descending
+                        resultObject = _expander.Sort(resultObject, context.HttpContext.Request.Query["sort"], "descending");
+                    }
                 }
 
                 // Apply our inspector to the expanded content
