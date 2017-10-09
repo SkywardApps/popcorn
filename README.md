@@ -142,4 +142,4 @@ to contribute any platform-specific providers you come up with!
 + [Roadmap](docs/Roadmap.md)
 + [Contributing](docs/Contributing.md)
 + [License](LICENSE)
-+ [Meet the Maintainers](docsMaintainers.md)
++ [Meet the Maintainers](docs/Maintainers.md)
