@@ -980,5 +980,100 @@ namespace PopcornStandardTest
             children.Count(c => c.ContainsKey("Title") && (string)c["Title"] == "Test").ShouldBe(3);
             new PopcornConfiguration(_expander).EnableBlindExpansion(false);
         }
+
+        // Successfully sort a list ascending
+        [TestMethod]
+        public void SortAscending()
+        {
+            List<RootObject> holder = new List<RootObject>();
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "1st person",
+                NonIncluded = "A description"
+            };
+            var rootOne = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "2nd person",
+                NonIncluded = "A description"
+            };
+            var rootTwo = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "3rd person",
+                NonIncluded = "A description"
+            };
+
+            holder.Add(rootOne);
+            holder.Add(rootTwo);
+            holder.Add(root);
+
+            object objectConversion = holder;
+            objectConversion = _expander.Sort(objectConversion, "StringValue", 0);
+
+            var results = (IList)objectConversion;
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[0]), root.StringValue);
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[1]), rootOne.StringValue);
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[2]), rootTwo.StringValue);
+        }
+
+        // assign to subclass Subclass
+        [TestMethod]
+        public void SortDescending()
+        {
+            List<RootObject> holder = new List<RootObject>();
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "1st person",
+                NonIncluded = "A description"
+            };
+            var rootOne = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "2nd person",
+                NonIncluded = "A description"
+            };
+            var rootTwo = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "3rd person",
+                NonIncluded = "A description"
+            };
+
+            holder.Add(rootOne);
+            holder.Add(rootTwo);
+            holder.Add(root);
+
+            object objectConversion = holder;
+            objectConversion = _expander.Sort(objectConversion, "StringValue", 1);
+
+            var results = (IList)objectConversion;
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[0]), rootTwo.StringValue);
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[1]), rootOne.StringValue);
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[2]), root.StringValue);
+        }
+
+        // assign to subclass Subclass
+        [TestMethod]
+        public void SortUnknown()
+        {
+
+        }
+
+        // assign to subclass Subclass
+        [TestMethod]
+        public void SortUnmappedProperty()
+        {
+
+        }
+
+        // assign to subclass Subclass
+        [TestMethod]
+        public void SortObject()
+        {
+
+        }
     }
 }

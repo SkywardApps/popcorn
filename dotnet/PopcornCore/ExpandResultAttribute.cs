@@ -17,6 +17,7 @@ namespace Skyward.Popcorn.Core
         static Expander _expander;
         static Dictionary<string, object> _context;
         static Func<object, object, object> _inspector;
+        public enum SortDirection { Ascending, Descending, Unknown }
 
         public ExpandResultAttribute() { }
 
@@ -51,28 +52,27 @@ namespace Skyward.Popcorn.Core
                 }
 
                 // Validate sortDirection first to error out before starting if necessary
-                string sortDirection = null;
+                var sortDirectionKey = SortDirection.Ascending; // Default value if not sort applied
                 if (context.HttpContext.Request.Query.ContainsKey("sortDirection"))
                 {
-                    sortDirection = context.HttpContext.Request.Query["sortDirection"];
-                    if (sortDirection != "ascending" && sortDirection != "descending")
+                    // Assign the proper sort value
+                    string sortDirectionText = context.HttpContext.Request.Query["sortDirection"];
+                    if (sortDirectionText == "ascending")
+                    {
+                        sortDirectionKey = SortDirection.Ascending;
+                    } else if (sortDirectionText == "descending") {
+                        sortDirectionKey = SortDirection.Descending;
+                    } else
                     {
                         //TODO: Maybe consider making a custom exception here
-                        throw new InvalidCastException(sortDirection);
+                        throw new InvalidCastException(sortDirectionText);
                     }
                 }
 
                 // Do any sorting as specified
                 if (context.HttpContext.Request.Query.ContainsKey("sort") && resultObject != null)
                 {
-                    if (sortDirection != null)
-                    {
-                        resultObject = _expander.Sort(resultObject, context.HttpContext.Request.Query["sort"], sortDirection);
-                    } else
-                    {
-                        // default sort descending
-                        resultObject = _expander.Sort(resultObject, context.HttpContext.Request.Query["sort"], "descending");
-                    }
+                    resultObject = _expander.Sort(resultObject, context.HttpContext.Request.Query["sort"], (int)sortDirectionKey);
                 }
 
                 // Apply our inspector to the expanded content

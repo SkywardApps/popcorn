@@ -89,7 +89,7 @@ namespace Skyward.Popcorn
 
             Type sourceType = source.GetType();
 
-            if(visited == null)
+            if (visited == null)
                 visited = new HashSet<int>();
 
             // See if this is a directly expandable type (Mapped Type)
@@ -101,7 +101,7 @@ namespace Skyward.Popcorn
             // Otherwise, see if this is a collection of an expandable type
             if (WillExpandCollection(sourceType))
             {
-                return ExpandCollection(source, destinationTypeHint??typeof(ArrayList), context, includes, visited);
+                return ExpandCollection(source, destinationTypeHint ?? typeof(ArrayList), context, includes, visited);
             }
 
             if (WillExpandBlind(sourceType))
@@ -113,102 +113,48 @@ namespace Skyward.Popcorn
             throw new UnknownMappingException(sourceType.ToString());
         }
 
-        public object Sort(object source, string sortTarget, string sortDirection)
+        public object Sort(object source, string sortTarget, int sortDirection)
         {
             var originalList = (IList)source;
-
-            // Start by finding all of the properties on the entity in question
-            var typeInfo = originalList[0].GetType().GetTypeInfo();
-
-            if (typeInfo.DeclaredProperties.FirstOrDefault(values => values.Name.Contains(sortTarget)) == null)
+            // Make sure that there is more than 1 result so we actually hav something to sort
+            if (originalList.Count > 1)
             {
-                // TODO: Consider making an "InvalidSortError"
-                throw new InvalidCastException(sortTarget);
-            }
 
-            foreach (PropertyInfo info in typeInfo.DeclaredProperties)
-            {
-                // Make sure the property target passed in exists on the result and that there is more than 1 result
-                if (info.Name == sortTarget && originalList.Count > 1)
+                // Start by finding all of the properties on the entity in question
+                TypeInfo typeInfo = originalList[0].GetType().GetTypeInfo();
+                if (typeInfo.DeclaredProperties.FirstOrDefault(values => values.Name.Equals(sortTarget)) == null)
                 {
-                    // Instantiate a list to hold the sorting results as we add them
-                    var sortingList = new List<object> { };
-
-                    // Loop through each result on the original list to place it in the holder list
-                    for (int j = 0; j < originalList.Count; j++)
-                    {
-                        // This will throw an InvalidCastException for more complex types
-                        IComparable targetObject = (IComparable)info.GetValue(originalList[j]);
-
-                        if (sortDirection == "descending")
-                        {
-                            // Loop through the sorted list to put the object where it belongs
-                            int originalCount = sortingList.Count;
-                            for (int i = 0; i <= originalCount; i++)
-                            {
-                                // Add initial result
-                                if (sortingList.Count == 0)
-                                {
-                                    sortingList.Insert((0), originalList[j]);
-                                    break;
-                                }
-
-                                IComparable indexedObject = (IComparable)info.GetValue(sortingList[i]);
-                                int compareResult = targetObject.CompareTo(indexedObject);
-
-                                // Sort to see where the result should be added
-                                if (compareResult < 0)
-                                {
-                                    sortingList.Insert((i), originalList[j]);
-                                    break;
-                                }
-                                // Check forward to see if this is the end of the values to poll through and tack to the end
-                                else if ((i + 1) == originalCount)
-                                {
-                                    sortingList.Insert((originalCount), originalList[j]);
-                                    break;
-                                }
-                            }
-                        }
-                        else if (sortDirection == "ascending")
-                        {
-                            // Loop through the sorted list to put the object where it belongs
-                            int originalCount = sortingList.Count;
-                            for (int i = originalCount; i >= 0; i--)
-                            {
-                                // Add initial result
-                                if (originalCount == 0)
-                                {
-                                    sortingList.Insert((0), originalList[j]);
-                                    break;
-                                }
-
-                                IComparable indexedObject = (IComparable)info.GetValue(sortingList[i-1]);
-                                int compareResult = targetObject.CompareTo(indexedObject);
-
-                                // Sort to see where the result should be added
-                                if (compareResult < 0)
-                                {
-                                    sortingList.Insert((i), originalList[j]);
-                                    break;
-                                }
-                                // Check forward to see if this is the end of the values to poll through and tack to the end
-                                else if ((i - 1) == 0)
-                                {
-                                    sortingList.Insert((0), originalList[j]);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Reset the orginal list to sortingList to return the correct results
-                    originalList = sortingList;
+                    // TODO: Consider making an "InvalidSortError"
+                    throw new InvalidCastException(sortTarget);
                 }
+
+                // Get the property we actually want to target for sorting
+                var sortProperty = typeInfo.GetProperty(sortTarget);
+
+                // Instantiate a list that allows for easier sorting
+                var sortingList = new List<object> { };
+                foreach (object holder in originalList)
+                {
+                    sortingList.Add(holder);
+                }
+
+                switch (sortDirection)
+                {
+                    case 0: // Ascending
+                        sortingList = sortingList.OrderBy(i => sortProperty.GetValue(i)).ToList();
+                        break;
+                    case 1: // Descending
+                        sortingList = sortingList.OrderByDescending(i => sortProperty.GetValue(i)).ToList();
+                        break;
+                    case 2:
+                        throw new InvalidCastException("Unknown sort");
+                }
+
+                // Reset the original object
+                originalList = sortingList;
             }
 
             return originalList;
         }
-
     }
 }
