@@ -1,5 +1,9 @@
 # Popcorn
 
+## Jump straight in
+We have a [.net core middleware](docs/dotnet/DotNetDocumentation.md) that you can drop in to enable Popcorn on Web Apis. 
+Feel free to grab it on [nuget](https://www.nuget.org/packages/Skyward.Api.Popcorn.DotNetCore).
+
 ## What is Popcorn?
 Popcorn is a communication protocol on top of a RESTful API that allows requesting clients to 
 identify individual fields of resources to include when retrieving the resource or resource
