@@ -1018,7 +1018,7 @@ namespace PopcornStandardTest
             Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[2]), rootTwo.StringValue);
         }
 
-        // assign to subclass Subclass
+        // Successfully sort a list descending
         [TestMethod]
         public void SortDescending()
         {
@@ -1055,25 +1055,121 @@ namespace PopcornStandardTest
             Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[2]), root.StringValue);
         }
 
-        // assign to subclass Subclass
+        // Sort with an Unknown sort direction
         [TestMethod]
         public void SortUnknown()
         {
+            List<RootObject> holder = new List<RootObject>();
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "1st person",
+                NonIncluded = "A description"
+            };
+            var rootOne = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "2nd person",
+                NonIncluded = "A description"
+            };
+            var rootTwo = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "3rd person",
+                NonIncluded = "A description"
+            };
 
+            holder.Add(rootOne);
+            holder.Add(rootTwo);
+            holder.Add(root);
+
+            object objectConversion = holder;
+            Assert.ThrowsException<InvalidCastException>(() => _expander.Sort(objectConversion, "StringValue", 2));
         }
 
-        // assign to subclass Subclass
+        // Attempt to sort a property that doesn't exist on the object
         [TestMethod]
-        public void SortUnmappedProperty()
+        public void SortNonExistentProperty()
         {
+            List<RootObject> holder = new List<RootObject>();
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "1st person",
+                NonIncluded = "A description"
+            };
+            var rootOne = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "2nd person",
+                NonIncluded = "A description"
+            };
+            var rootTwo = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "3rd person",
+                NonIncluded = "A description"
+            };
 
+            holder.Add(rootOne);
+            holder.Add(rootTwo);
+            holder.Add(root);
+
+            object objectConversion = holder;
+            Assert.ThrowsException<InvalidCastException>(() => _expander.Sort(objectConversion, "IDontExist", 2));
         }
 
-        // assign to subclass Subclass
+        // Attempt to sort a complex object
         [TestMethod]
         public void SortObject()
         {
+            List<RootObject> holder = new List<RootObject>();
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Name",
+                    Description = "Description"
+                }
+            };
+            var rootOne = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Name",
+                    Description = "Description"
+                }
+            };
+            var rootTwo = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Name",
+                    Description = "Description"
+                }
+            };
 
+            holder.Add(rootOne);
+            holder.Add(rootTwo);
+            holder.Add(root);
+
+            object objectConversion = holder;
+            Assert.ThrowsException<ArgumentException>(() => _expander.Sort(objectConversion, "Child", 0));
         }
     }
 }
