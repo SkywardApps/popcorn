@@ -52,7 +52,7 @@ namespace Skyward.Popcorn.Core
                 }
 
                 // Validate sortDirection first to error out before starting if necessary
-                var sortDirectionKey = SortDirection.Ascending; // Default value if not sort applied
+                var sortDirectionKey = SortDirection.Ascending; // Default value if sort applied
                 if (context.HttpContext.Request.Query.ContainsKey("sortDirection"))
                 {
                     // Assign the proper sort value

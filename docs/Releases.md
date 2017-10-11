@@ -1,5 +1,14 @@
 # [Popcorn](../README.md) > Releases and Release Notes
 ---
+### Minor Release: 1.3.0
++ **Feature Additions:**  
+    + Query parameter "sort" added to allow the sorting of responses based on a simple comparable property
+		+ Query parameter "sortDirection" added to be used in conjunction with "sort" to specify ascending or descending sort order
+    + Added [Sorting](dotnet/DotNetTutorialSorting.md) tutorial
++ **Maintenance:**
+    + Test additions
+
+---
 ### Minor Release: 1.2.0
 + **Feature Additions:**  
     + [IncludeByDefault] added as a property option for projections to allow users to set their default return properties in the projection itself.
