@@ -20,9 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\docs\dotnet\DotNetTutorialDefaultIncludes.md" Link="DotNetTutorialDefaultIncludes.md" />
-    <None Include="..\..\docs\dotnet\DotNetTutorialAdvancedProjections.md" Link="DotNetTutorialAdvancedProjections.md" />
+    <None Include="..\..\docs\dotnet\DotNetQuickStart.md" Link="DotNetQuickStart.md" />
+    <None Include="..\..\docs\dotnet\DotNetDocumentation.md" Link="DotNetDocumentation.md" />
     <None Include="..\..\docs\dotnet\DotNetTutorialGettingStarted.md" Link="DotNetTutorialGettingStarted.md" />
+    <None Include="..\..\docs\dotnet\DotNetTutorialAdvancedProjections.md" Link="DotNetTutorialAdvancedProjections.md" />
+    <None Include="..\..\docs\dotnet\DotNetTutorialDefaultIncludes.md" Link="DotNetTutorialDefaultIncludes.md" />
+    <None Include="..\..\docs\dotnet\DotNetTutorialSorting.md" Link="DotNetTutorialSorting.md" />
   </ItemGroup>
 
   <ItemGroup>

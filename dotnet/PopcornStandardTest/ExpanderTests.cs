@@ -980,5 +980,206 @@ namespace PopcornStandardTest
             children.Count(c => c.ContainsKey("Title") && (string)c["Title"] == "Test").ShouldBe(3);
             new PopcornConfiguration(_expander).EnableBlindExpansion(false);
         }
+
+        // Successfully sort a list ascending
+        [TestMethod]
+        public void SortAscending()
+        {
+            List<RootObject> holder = new List<RootObject>();
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "1st person",
+                NonIncluded = "A description"
+            };
+            var rootOne = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "2nd person",
+                NonIncluded = "A description"
+            };
+            var rootTwo = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "3rd person",
+                NonIncluded = "A description"
+            };
+
+            holder.Add(rootOne);
+            holder.Add(rootTwo);
+            holder.Add(root);
+
+            object objectConversion = holder;
+            objectConversion = _expander.Sort(objectConversion, "StringValue", Skyward.Popcorn.SortDirection.Ascending);
+
+            var results = (IList)objectConversion;
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[0]), root.StringValue);
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[1]), rootOne.StringValue);
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[2]), rootTwo.StringValue);
+        }
+
+        // Successfully sort a list descending
+        [TestMethod]
+        public void SortDescending()
+        {
+            List<RootObject> holder = new List<RootObject>();
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "1st person",
+                NonIncluded = "A description"
+            };
+            var rootOne = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "2nd person",
+                NonIncluded = "A description"
+            };
+            var rootTwo = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "3rd person",
+                NonIncluded = "A description"
+            };
+
+            holder.Add(rootOne);
+            holder.Add(rootTwo);
+            holder.Add(root);
+
+            object objectConversion = holder;
+            objectConversion = _expander.Sort(objectConversion, "StringValue", Skyward.Popcorn.SortDirection.Descending);
+
+            var results = (IList)objectConversion;
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[0]), rootTwo.StringValue);
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[1]), rootOne.StringValue);
+            Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[2]), root.StringValue);
+        }
+
+        // Sort with an Unknown sort direction
+        [TestMethod]
+        public void SortUnknown()
+        {
+            List<RootObject> holder = new List<RootObject>();
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "1st person",
+                NonIncluded = "A description"
+            };
+            var rootOne = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "2nd person",
+                NonIncluded = "A description"
+            };
+            var rootTwo = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "3rd person",
+                NonIncluded = "A description"
+            };
+
+            holder.Add(rootOne);
+            holder.Add(rootTwo);
+            holder.Add(root);
+
+            object objectConversion = holder;
+            Assert.ThrowsException<ArgumentException>(() => _expander.Sort(objectConversion, "StringValue", Skyward.Popcorn.SortDirection.Unknown));
+        }
+
+        // Attempt to sort a property that doesn't exist on the object
+        [TestMethod]
+        public void SortNonExistentProperty()
+        {
+            List<RootObject> holder = new List<RootObject>();
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "1st person",
+                NonIncluded = "A description"
+            };
+            var rootOne = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "2nd person",
+                NonIncluded = "A description"
+            };
+            var rootTwo = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "3rd person",
+                NonIncluded = "A description"
+            };
+
+            holder.Add(rootOne);
+            holder.Add(rootTwo);
+            holder.Add(root);
+
+            object objectConversion = holder;
+            Assert.ThrowsException<InvalidCastException>(() => _expander.Sort(objectConversion, "IDontExist", Skyward.Popcorn.SortDirection.Ascending));
+        }
+
+        // Attempt to sort a complex object
+        [TestMethod]
+        public void SortObject()
+        {
+            List<RootObject> holder = new List<RootObject>();
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Name",
+                    Description = "Description"
+                }
+            };
+            var rootOne = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Name",
+                    Description = "Description"
+                }
+            };
+            var rootTwo = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Name",
+                    Description = "Description"
+                }
+            };
+
+            holder.Add(rootOne);
+            holder.Add(rootTwo);
+            holder.Add(root);
+
+            object objectConversion = holder;
+            Assert.ThrowsException<ArgumentException>(() => _expander.Sort(objectConversion, "Child", 0));
+        }
+
+        // Sort a non IEnumerable object
+        [TestMethod]
+        public void SortNonIEnumerable()
+        {
+            int test = 1;
+
+            object objectConversion = test;
+            Assert.ThrowsException<ArgumentException>(() => _expander.Sort(objectConversion, "StringValue", Skyward.Popcorn.SortDirection.Ascending));
+        }
     }
 }

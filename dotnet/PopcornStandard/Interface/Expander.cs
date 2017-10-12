@@ -8,6 +8,9 @@ using System.Runtime.CompilerServices;
 namespace Skyward.Popcorn
 {
     using ContextType = System.Collections.Generic.Dictionary<string, object>;
+
+    public enum SortDirection { Unknown, Ascending, Descending }
+
     /// <summary>
     /// This is the public interface part for the 'Expander' class.
     /// The expander will allow you to project from one type to another, dynamically selecting which properties to include and
@@ -89,7 +92,7 @@ namespace Skyward.Popcorn
 
             Type sourceType = source.GetType();
 
-            if(visited == null)
+            if (visited == null)
                 visited = new HashSet<int>();
 
             // See if this is a directly expandable type (Mapped Type)
@@ -101,7 +104,7 @@ namespace Skyward.Popcorn
             // Otherwise, see if this is a collection of an expandable type
             if (WillExpandCollection(sourceType))
             {
-                return ExpandCollection(source, destinationTypeHint??typeof(ArrayList), context, includes, visited);
+                return ExpandCollection(source, destinationTypeHint ?? typeof(ArrayList), context, includes, visited);
             }
 
             if (WillExpandBlind(sourceType))
@@ -113,7 +116,58 @@ namespace Skyward.Popcorn
             throw new UnknownMappingException(sourceType.ToString());
         }
 
+        /// <summary>
+        /// The entry point method for sorting an unknown object.
+        /// This will work on either a Mapped Simple Type only.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="sortTarget">The parameter desired to be sorted on.</param>
+        /// <param name="sortDirection">An enumeration of possible options</param>
+        /// <returns></returns>
+        public object Sort(object source, string sortTarget, SortDirection sortDirection)
+        {
+            if (!(source is IEnumerable))
+                throw new ArgumentException("'source' is not of a type that can be converted to an IEnumerable");
+            IEnumerable<object> originalList = (source as IEnumerable).Cast<object>();
 
+            // Make sure that there is more than 1 result so we actually hav something to sort
+            if (originalList.Count() <= 1)
+                return source;
 
+            // Start by finding all of the properties on the entity in question
+            TypeInfo typeInfo = originalList.First().GetType().GetTypeInfo();
+            if (typeInfo.DeclaredProperties.FirstOrDefault(values => values.Name.Equals(sortTarget)) == null)
+            {
+                // TODO: Consider making an "InvalidSortError"
+                throw new InvalidCastException(sortTarget);
+            }
+
+            // Get the property we actually want to target for sorting
+            var sortProperty = typeInfo.GetProperty(sortTarget);
+
+            // Instantiate a list that allows for easier sorting
+            var sortingList = new List<object> { };
+            foreach (object holder in originalList)
+            {
+                sortingList.Add(holder);
+            }
+
+            switch (sortDirection)
+            {
+                case SortDirection.Unknown:
+                    throw new ArgumentException("Unknown sort");
+                case SortDirection.Ascending:
+                    sortingList = sortingList.OrderBy(i => sortProperty.GetValue(i)).ToList();
+                    break;
+                case SortDirection.Descending:
+                    sortingList = sortingList.OrderByDescending(i => sortProperty.GetValue(i)).ToList();
+                    break;
+            }
+
+            // Reset the original object
+            originalList = sortingList;
+
+            return originalList;
+        }
     }
 }
