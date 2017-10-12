@@ -17,7 +17,6 @@ namespace Skyward.Popcorn.Core
         static Expander _expander;
         static Dictionary<string, object> _context;
         static Func<object, object, object> _inspector;
-        public enum SortDirection { Ascending, Descending, Unknown }
 
         public ExpandResultAttribute() { }
 
@@ -51,28 +50,28 @@ namespace Skyward.Popcorn.Core
                     resultObject = _expander.Expand(resultObject, _context, PropertyReference.Parse(includes));
                 }
 
-                // Validate sortDirection first to error out before starting if necessary
-                var sortDirectionKey = SortDirection.Ascending; // Default value if sort applied
-                if (context.HttpContext.Request.Query.ContainsKey("sortDirection"))
+                // Sort should there be anything to sort
+                if (resultObject != null)
                 {
-                    // Assign the proper sort value
-                    string sortDirectionText = context.HttpContext.Request.Query["sortDirection"];
-                    if (sortDirectionText == "ascending")
+                    // Assign sortDirection where necessary, but default to Ascending if nothing passed in
+                    SortDirection sortDirection = SortDirection.Ascending;
+                    if (context.HttpContext.Request.Query.ContainsKey("sortDirection"))
                     {
-                        sortDirectionKey = SortDirection.Ascending;
-                    } else if (sortDirectionText == "descending") {
-                        sortDirectionKey = SortDirection.Descending;
-                    } else
-                    {
-                        //TODO: Maybe consider making a custom exception here
-                        throw new InvalidCastException(sortDirectionText);
+                        // Assign the proper sort direction, but invalidate an invalid value
+                        try
+                        {
+                            sortDirection = (SortDirection)Enum.Parse(typeof(SortDirection), context.HttpContext.Request.Query["sortDirection"]);
+                        } catch (ArgumentException)
+                        {
+                            throw new ArgumentException(context.HttpContext.Request.Query["sortDirection"]);
+                        }
                     }
-                }
 
-                // Do any sorting as specified
-                if (context.HttpContext.Request.Query.ContainsKey("sort") && resultObject != null)
-                {
-                    resultObject = _expander.Sort(resultObject, context.HttpContext.Request.Query["sort"], (int)sortDirectionKey);
+                    // Do any sorting as specified
+                    if (context.HttpContext.Request.Query.ContainsKey("sort"))
+                    {
+                        resultObject = _expander.Sort(resultObject, context.HttpContext.Request.Query["sort"], sortDirection);
+                    }
                 }
 
                 // Apply our inspector to the expanded content

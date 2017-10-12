@@ -105,13 +105,13 @@ and we'd love to work with you on that.
 
 ### "sortDirection" Parameter
 
-"sortDirection" is a far more simple query parameter as it just accepts two values, "ascending" and "descending" (case sensitive) 
+"sortDirection" is a far more simple query parameter as it just accepts two values, "Ascending" and "Descending" (case sensitive) 
 and specifies the way the specified sort target is to be sorted.
-Just remember, as we mentioned already, the sort direction defaults to "ascending" should a sort be provided and no "sortDirection".
+Just remember, as we mentioned already, the sort direction defaults to "Ascending" should a sort be provided and no "sortDirection".
 
 Without further ado, here we see it being used in the wild (with our standard Cars example)
 ```javascript
-http://localhost:49695/api/example/cars?include=[Make, Model, Color, Owner[FirstName, LastName]]&sort=Model&sortDirection=descending
+http://localhost:49695/api/example/cars?include=[Make, Model, Color, Owner[FirstName, LastName]]&sort=Model&sortDirection=Descending
 
 {
     "Success": true,

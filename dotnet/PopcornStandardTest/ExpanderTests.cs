@@ -1010,7 +1010,7 @@ namespace PopcornStandardTest
             holder.Add(root);
 
             object objectConversion = holder;
-            objectConversion = _expander.Sort(objectConversion, "StringValue", 0);
+            objectConversion = _expander.Sort(objectConversion, "StringValue", Skyward.Popcorn.SortDirection.Ascending);
 
             var results = (IList)objectConversion;
             Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[0]), root.StringValue);
@@ -1047,7 +1047,7 @@ namespace PopcornStandardTest
             holder.Add(root);
 
             object objectConversion = holder;
-            objectConversion = _expander.Sort(objectConversion, "StringValue", 1);
+            objectConversion = _expander.Sort(objectConversion, "StringValue", Skyward.Popcorn.SortDirection.Descending);
 
             var results = (IList)objectConversion;
             Assert.AreEqual(root.GetType().GetProperty("StringValue").GetValue(results[0]), rootTwo.StringValue);
@@ -1084,7 +1084,7 @@ namespace PopcornStandardTest
             holder.Add(root);
 
             object objectConversion = holder;
-            Assert.ThrowsException<InvalidCastException>(() => _expander.Sort(objectConversion, "StringValue", 2));
+            Assert.ThrowsException<ArgumentException>(() => _expander.Sort(objectConversion, "StringValue", Skyward.Popcorn.SortDirection.Unknown));
         }
 
         // Attempt to sort a property that doesn't exist on the object
@@ -1116,7 +1116,7 @@ namespace PopcornStandardTest
             holder.Add(root);
 
             object objectConversion = holder;
-            Assert.ThrowsException<InvalidCastException>(() => _expander.Sort(objectConversion, "IDontExist", 2));
+            Assert.ThrowsException<InvalidCastException>(() => _expander.Sort(objectConversion, "IDontExist", Skyward.Popcorn.SortDirection.Ascending));
         }
 
         // Attempt to sort a complex object
@@ -1170,6 +1170,16 @@ namespace PopcornStandardTest
 
             object objectConversion = holder;
             Assert.ThrowsException<ArgumentException>(() => _expander.Sort(objectConversion, "Child", 0));
+        }
+
+        // Sort a non IEnumerable object
+        [TestMethod]
+        public void SortNonIEnumerable()
+        {
+            int test = 1;
+
+            object objectConversion = test;
+            Assert.ThrowsException<ArgumentException>(() => _expander.Sort(objectConversion, "StringValue", Skyward.Popcorn.SortDirection.Ascending));
         }
     }
 }
