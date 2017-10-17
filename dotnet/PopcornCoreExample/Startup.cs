@@ -38,7 +38,7 @@ namespace PopcornCoreExample
             {
                 mvcOptions.UsePopcorn((popcornConfig) => {
                     popcornConfig
-                        .SetInspector((data, context) => new Wire.Response { Data = data, Success = true })
+                        .SetInspector((data, context, resultException) => new Wire.Response { Data = resultException == null ? data : resultException.Message, Success = resultException == null ? true : false })
                         .Map<Employee, EmployeeProjection>(config: (employeeConfig) => {
                             // For employees we will determine a full name and reformat the date to include only the day portion.
                             employeeConfig

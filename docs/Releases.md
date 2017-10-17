@@ -1,5 +1,14 @@
 # [Popcorn](../README.md) > Releases and Release Notes
 ---
+## Major Release: 2.0.0
++ **Feature Additions:**  
+	+ The inspector has been slightly revamped to also require a handle for exceptions!
+	+ A SetDefaultApiResponseInspector option has been added to the configuration for easier out of the box usage
+	+ Added [Setting Inspectors](dotnet/DotNetTutorialInspectors.md) tutorial
++ **Maintenance:**
+    + Test additions
+
+---
 ### Minor Release: 1.3.0
 + **Feature Additions:**  
     + Query parameter "sort" added to allow the sorting of responses based on a simple comparable property
