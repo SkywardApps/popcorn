@@ -114,7 +114,7 @@ namespace Skyward.Popcorn
                 var valueToAssign = GetSourceValue(source, context, propertyReference.PropertyName, Mappings[sourceType].Translators);
 
 
-                /// If authorization indicates this should not in face be authorized, skip it
+                /// If authorization indicates this should not in fact be authorized, skip it
                 if(!AuthorizeValue(source, context, valueToAssign))
                 {
                     continue;
@@ -212,7 +212,7 @@ namespace Skyward.Popcorn
                 // Transform the input value as needed
                 object valueToAssign = GetSourceValue(source, context, propertyName, mappingDefinition?.Translators);
                 
-                /// If authorization indicates this should not in face be authorized, skip it
+                /// If authorization indicates this should not in fact be authorized, skip it
                 if (!AuthorizeValue(source, context, valueToAssign))
                 {
                     continue;
@@ -358,7 +358,7 @@ namespace Skyward.Popcorn
             foreach (var item in (IEnumerable)originalValue)
             {
 
-                /// If authorization indicates this should not in face be authorized, skip it
+                /// If authorization indicates this should not in fact be authorized, skip it
                 if (!AuthorizeValue(originalValue, context,  item))
                 {
                     continue;
