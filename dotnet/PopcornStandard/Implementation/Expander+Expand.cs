@@ -112,14 +112,6 @@ namespace Skyward.Popcorn
 
                 // Transform the input value as needed
                 var valueToAssign = GetSourceValue(source, context, propertyReference.PropertyName, Mappings[sourceType].Translators);
-
-
-                /// If authorization indicates this should not in fact be authorized, skip it
-                if(!AuthorizeValue(source, context, valueToAssign))
-                {
-                    continue;
-                }
-
                 
                 // Attempt to assign the property - this will expand the item if needed
                 if (!SetValueToProperty(valueToAssign, destinationProperty, destinationObject, context, propertyReference, visited))
@@ -135,33 +127,6 @@ namespace Skyward.Popcorn
                 action(destinationObject, source, context);
 
             return destinationObject;
-        }
-
-        /// <summary>
-        /// Test if an object is authorized in a given context, from the given source.
-        /// Source may be an object (if value was from a property) or the collection 
-        /// (if value is contained within it).
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="context"></param>
-        /// <param name="valueToAssign"></param>
-        /// <returns>True if authorized, false if rejected</returns>
-        private bool AuthorizeValue(object source, ContextType context, object valueToAssign)
-        {
-            if (valueToAssign == null)
-                return true;
-
-            var sourceType = source.GetType();
-            var assignType = valueToAssign.GetType();
-
-            if (Mappings.ContainsKey(assignType))
-            {
-                foreach (var authorization in Mappings[assignType]._Authorizers)
-                    if (!authorization(source, context, valueToAssign))
-                        return false;
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -211,12 +176,6 @@ namespace Skyward.Popcorn
 
                 // Transform the input value as needed
                 object valueToAssign = GetSourceValue(source, context, propertyName, mappingDefinition?.Translators);
-                
-                /// If authorization indicates this should not in fact be authorized, skip it
-                if (!AuthorizeValue(source, context, valueToAssign))
-                {
-                    continue;
-                }
 
                 if (WillExpand(valueToAssign))
                 {
@@ -357,13 +316,6 @@ namespace Skyward.Popcorn
             // try to assign the data item by item
             foreach (var item in (IEnumerable)originalValue)
             {
-
-                /// If authorization indicates this should not in fact be authorized, skip it
-                if (!AuthorizeValue(originalValue, context,  item))
-                {
-                    continue;
-                }
-
                 instantiatedDestinationType.Add(this.Expand(item, context, includes, visited, expandedType));
             }
 
