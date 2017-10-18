@@ -114,25 +114,6 @@ namespace Skyward.Popcorn
         }
 
         /// <summary>
-        /// Attach a function that accepts the source object (if there is one), the context, and the target
-        /// object itself.  It returns true (passed) or false (fail).  If any fails are encountered, then
-        /// the object is not returned.
-        /// </summary>
-        /// <typeparam name="TSourceType"></typeparam>
-        /// <param name="authorizer"></param>
-        /// <returns></returns>
-        public PopcornConfiguration Authorize<TSourceType>(Func<object, ContextType, TSourceType, bool> authorizer)
-        {
-            var sourceType = typeof(TSourceType);
-            if (!_expander.Mappings.ContainsKey(sourceType))
-                throw new InvalidOperationException($"Can only authorize a type that has a mapping previously specified: {sourceType}");
-
-            _expander.Mappings[sourceType]._Authorizers.Add((s,c,v) => authorizer(s,c,(TSourceType)v));
-
-            return this;
-        }
-
-        /// <summary>
         /// Assign a factory function to create a specific type
         /// </summary>
         /// <typeparam name="TSourceType"></typeparam>
