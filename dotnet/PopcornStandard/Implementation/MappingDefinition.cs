@@ -11,7 +11,6 @@ namespace Skyward.Popcorn
     /// </summary>
     internal class MappingDefinition
     {
-
         /// <summary>
         /// The type to map to
         /// </summary>
@@ -32,10 +31,6 @@ namespace Skyward.Popcorn
         /// Any actions to handle source objects after they are expanded
         /// </summary>
         public List<Action<object, object, ContextType>> _AfterExpansion { get; } = new List<Action<object, object, ContextType>>();
-        /// <summary>
-        /// Any actions to verify that an object is authorized in the current context
-        /// </summary>
-        public List<Func<object, ContextType, object,bool>> _Authorizers { get; } = new List<Func<object, ContextType, object, bool>>();
         /// <summary>
         /// The list of includes to use if none are explicitly requested
         /// </summary>

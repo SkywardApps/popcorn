@@ -1,11 +1,12 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Shouldly;
 using Skyward.Popcorn;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using Shouldly;
+using System.Collections;
 
 namespace PopcornStandardTest
 {
@@ -1179,114 +1180,6 @@ namespace PopcornStandardTest
 
             object objectConversion = test;
             Assert.ThrowsException<ArgumentException>(() => _expander.Sort(objectConversion, "StringValue", Skyward.Popcorn.SortDirection.Ascending));
-        }
-
-
-        [TestMethod]
-        public void Authorization()
-        {
-            new PopcornConfiguration(_expander).Authorize<ChildObject>((source, context, value) => {
-                return value.Name == "YES";
-            });
-
-            var root = new RootObject
-            {
-                Children = new List<ChildObject>
-                {
-                    new ChildObject
-                    {
-                        Name = "YES"
-                    },
-                    new ChildObject
-                    {
-                        Name = "YES"
-                    },
-                    new ChildObject
-                    {
-                        Name = "NO"
-                    },
-                    new ChildObject
-                    {
-                        Name = "NO"
-                    },
-                    new ChildObject
-                    {
-                        Name = "YES"
-                    }
-                },
-                Child = new ChildObject
-                {
-                    Name = "NO"
-                },
-                Child2 = new ChildObject
-                {
-                    Name = "YES"
-                },
-            };
-
-            var result = _expander.Expand(root, includes: PropertyReference.Parse($"[{nameof(RootObjectProjection.Children)},{nameof(RootObjectProjection.Child)},{nameof(RootObjectProjection.Child2)}]")) as RootObjectProjection;
-            result.ShouldNotBeNull();
-            result.Children.Count.ShouldBe(3);
-            result.Children.Any(c => c.Name == "NO").ShouldBeFalse();
-            result.Children.All(c => c.Name == "YES").ShouldBeTrue();
-            result.Child.ShouldBeNull();
-            result.Child2.ShouldNotBeNull();
-        }
-
-
-        [TestMethod]
-        public void AuthorizeWithContext()
-        {
-            new PopcornConfiguration(_expander).Authorize<ChildObject>((source, context, value) => {
-                return value.Name ==  context["Name"];
-            });
-
-            var root = new RootObject
-            {
-                Children = new List<ChildObject>
-                {
-                    new ChildObject
-                    {
-                        Name = "YES"
-                    },
-                    new ChildObject
-                    {
-                        Name = "YES"
-                    },
-                    new ChildObject
-                    {
-                        Name = "NO"
-                    },
-                    new ChildObject
-                    {
-                        Name = "NO"
-                    },
-                    new ChildObject
-                    {
-                        Name = "YES"
-                    }
-                },
-                Child = new ChildObject
-                {
-                    Name = "NO"
-                },
-                Child2 = new ChildObject
-                {
-                    Name = "YES"
-                },
-            };
-
-            var result = _expander.Expand(
-                root, 
-                context: new Dictionary<string, object> { ["Name"] = "YES"},
-                includes: PropertyReference.Parse($"[{nameof(RootObjectProjection.Children)},{nameof(RootObjectProjection.Child)},{nameof(RootObjectProjection.Child2)}]")) as RootObjectProjection;
-            result.ShouldNotBeNull();
-            result.Children.Count.ShouldBe(3);
-            result.Children.Any(c => c.Name == "NO").ShouldBeFalse();
-            result.Children.All(c => c.Name == "YES").ShouldBeTrue();
-            result.Child.ShouldBeNull();
-            result.Child2.ShouldNotBeNull();
-
         }
     }
 }
