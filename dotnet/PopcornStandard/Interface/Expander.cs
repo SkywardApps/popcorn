@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
 namespace Skyward.Popcorn
 {
@@ -74,6 +73,17 @@ namespace Skyward.Popcorn
         /// This version using anonymous objects works well for the Api use case.  We may want a generic typed
         /// version if we ever think of a reason to use this elsewhere.
         /// </summary>
+        public object Expand(object source, ContextType context, string includes, HashSet<int> visited = null, Type destinationTypeHint = null)
+        {
+            return Expand(source, context, PropertyReference.Parse(includes), visited, destinationTypeHint);
+        }
+
+        /// <summary>
+        /// The entry point method for converting a type into its projection and selectively including data.
+        /// This will work on either a Mapped Type or a collection of a Mapped Type.
+        /// This version using anonymous objects works well for the Api use case.  We may want a generic typed
+        /// version if we ever think of a reason to use this elsewhere.
+        /// </summary>
         /// <param name="source"></param>
         /// <param name="context">A context dictionary that will be passed around to all conversion routines.</param>
         /// <param name="includes"></param>
@@ -98,7 +108,7 @@ namespace Skyward.Popcorn
             // See if this is a directly expandable type (Mapped Type)
             if (WillExpandDirect(sourceType))
             {
-                return ExpandDirectObject(source, context, includes, visited);
+                return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
             }
 
             // Otherwise, see if this is a collection of an expandable type
@@ -115,6 +125,37 @@ namespace Skyward.Popcorn
             // Otherwise, the caller requested that we expand a type we have no knowledge of.
             throw new UnknownMappingException(sourceType.ToString());
         }
+
+        /// <summary>
+        /// A generic overload that automatically provides the type hint.
+        /// This accepts a string include list of the form "[Prop1,Prop2[SubProp1]]"
+        /// </summary>
+        /// <typeparam name="TDestType"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="includes"></param>
+        /// <param name="context"></param>
+        /// <param name="visited"></param>
+        /// <returns></returns>
+        public TDestType Expand<TDestType>(object source, string includes, ContextType context = null, HashSet<int> visited = null)
+        {
+            return (TDestType)Expand(source, context, PropertyReference.Parse(includes), visited, typeof(TDestType));
+        }
+
+        /// <summary>
+        /// A generic overload that automatically provides the type hint.
+        /// This optionally accepts a list of PropertyReferences
+        /// </summary>
+        /// <typeparam name="TDestType"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="includes"></param>
+        /// <param name="context"></param>
+        /// <param name="visited"></param>
+        /// <returns></returns>
+        public TDestType Expand<TDestType>(object source, IEnumerable<PropertyReference> includes = null, ContextType context = null, HashSet<int> visited = null)
+        {
+            return (TDestType)Expand(source, context, includes, visited, typeof(TDestType));
+        }
+
 
         /// <summary>
         /// The entry point method for sorting an unknown object.

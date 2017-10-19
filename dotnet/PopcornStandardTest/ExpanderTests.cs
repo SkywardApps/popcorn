@@ -398,7 +398,7 @@ namespace PopcornStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.SuperclassInOriginal)}]")); }).Message.ShouldBe(nameof(RootObjectProjection.SuperclassInOriginal));
+            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.SuperclassInOriginal)}]")); });
             result.ShouldBeNull();
         }
 
@@ -546,6 +546,47 @@ namespace PopcornStandardTest
             projection.ChildrenInterface.Count().ShouldBe(2);
             projection.ChildrenInterface.Any(c => c.Name == "Item1").ShouldBeTrue();
             projection.ChildrenInterface.Any(c => c.Name == "Item2").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => c.Description != null).ShouldBeFalse();
+        }
+
+        /// <summary>
+        /// Make sure that we handle polymorphic lists (list<BaseClass> containing DerivedClass)
+        /// </summary>
+        [TestMethod]
+        public void ListOfChildrenInterfaceDerivedClass()
+        {
+            var root = new RootObject
+            {
+                ChildrenInterface = new List<ChildObject>
+                {
+                    new DerivedChildObject
+                    {
+                        Name = "Item1",
+                        Description = "Description1",
+                        ExtendedProperty = "ExtendedProperty1"
+                    },
+                    new DerivedChildObject
+                    {
+                        Name = "Item2",
+                        Description = "Description2",
+                        ExtendedProperty = "ExtendedProperty2"
+                    }
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.ChildrenInterface)}[{nameof(ChildObject.Name)},{nameof(DerivedChildObject.ExtendedProperty)}]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+
+            projection.ChildrenInterface.ShouldNotBeNull();
+            projection.ChildrenInterface.Count().ShouldBe(2);
+            projection.ChildrenInterface.All(c => c as DerivedChildObjectProjection != null).ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => c.Name == "Item1").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => c.Name == "Item2").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => (c as DerivedChildObjectProjection).ExtendedProperty == "ExtendedProperty1").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => (c as DerivedChildObjectProjection).ExtendedProperty == "ExtendedProperty2").ShouldBeTrue();
             projection.ChildrenInterface.Any(c => c.Description != null).ShouldBeFalse();
         }
 
