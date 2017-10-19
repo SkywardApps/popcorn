@@ -15,5 +15,7 @@ namespace PopcornCoreExample.Projections
         public string Make { get; set; }
         public int? Year { get; set; }
         public string Color { get; set; }
+
+        public string User { get; set; }
     }
 }
