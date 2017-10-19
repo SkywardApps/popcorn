@@ -977,7 +977,6 @@ namespace PopcornStandardTest
             children.Count.ShouldBe(3);
             children.Count(c => c.ContainsKey("Name")).ShouldBe(0);
             children.Count(c => c.ContainsKey("Title") && (string)c["Title"] == "Test").ShouldBe(3);
-            new PopcornConfiguration(_expander).EnableBlindExpansion(false);
         }
 
         // Successfully sort a list ascending
