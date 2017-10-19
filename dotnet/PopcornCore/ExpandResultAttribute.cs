@@ -30,11 +30,23 @@ namespace Skyward.Popcorn.Core
 
         public override void OnActionExecuted(ActionExecutedContext context)
         {
-            if (context.Result is ObjectResult)
+            Exception exceptionResult = null;
+            object resultObject = null;
+
+            // Set the error out of the gate should something have gone wrong coming into Popcorn
+            if (context.Exception != null)
             {
-                var resultObject = ((ObjectResult)context.Result).Value;
-                Exception exceptionResult = null;
-                
+                exceptionResult = context.Exception;
+                if (context.HttpContext.Response.StatusCode == 200)
+                {
+                    context.HttpContext.Response.StatusCode = 500;
+                }
+                context.ExceptionHandled = true; // Setting this so the inspector is still respected
+            }
+            else if (context.Result is ObjectResult) // Disect the response if there is something to unfold and no exception
+            {
+                resultObject = ((ObjectResult)context.Result).Value;
+
                 // Wrap the main work here in a try/catch that we can then pass to our inspector
                 try
                 {
@@ -85,22 +97,22 @@ namespace Skyward.Popcorn.Core
                     // Set the response code as appropriate for a caught error
                     context.HttpContext.Response.StatusCode = 500;
                 }
-
-                // Apply our inspector to the expanded content
-                if (_inspector != null)
-                {
-                    resultObject = _inspector(resultObject, _context, exceptionResult);
-                } else if (exceptionResult != null) // Have to rethrow the error if there is no inspector set so as to not return false positives
-                {
-                    throw exceptionResult;
-                }
-
-                context.Result = new JsonResult(resultObject,
-                    new JsonSerializerSettings
-                    {
-                        NullValueHandling = NullValueHandling.Ignore
-                    });
             }
+
+            // Apply our inspector to the expanded content
+            if (_inspector != null)
+            {
+                resultObject = _inspector(resultObject, _context, exceptionResult);
+            } else if (exceptionResult != null) // Have to rethrow the error if there is no inspector set so as to not return false positives
+            {
+                throw exceptionResult;
+            }
+
+            context.Result = new JsonResult(resultObject,
+                new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                });
             base.OnActionExecuted(context);
         }
     }

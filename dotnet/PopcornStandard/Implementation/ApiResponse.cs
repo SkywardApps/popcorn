@@ -5,7 +5,7 @@ using System.Reflection;
 namespace Skyward.Popcorn
 {
     /// <summary>
-    ///     A generic response object, used for creating error responses or for it's success factory method.
+    ///     A generic response object
     /// </summary>
     public class ApiResponse
     {
