@@ -9,6 +9,7 @@ namespace PopcornCoreExample.Models
         public string LastName { get; set; }
 
         public DateTimeOffset Birthday { get; set; }
+        public EmploymentType Employment { get; set; }
         public int VacationDays { get; set; }
 
         public List<Car> Vehicles { get; set; }
