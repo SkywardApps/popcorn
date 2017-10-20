@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace Skyward.Popcorn
 {
@@ -64,5 +66,62 @@ namespace Skyward.Popcorn
             }
             return stack.Pop().Children;
         }
+
+        /// <summary>
+        /// A function to validate and apply the attribute level or mapping level defaults for a projected entity
+        /// </summary>
+        /// <param name="parsedDefaultIncludes"></param>
+        /// <param name="destTypeInfo"></param>
+        /// <returns></returns>
+        public static string CompareAndConstructDefaultIncludes(List<PropertyReference> parsedDefaultIncludes, TypeInfo destTypeInfo)
+        {
+            // Create a variable to allow looping through adding all the defaultIncludes properties that are tagged
+            var parsedDefaultIncludesHolder = new List<PropertyReference> { };
+            parsedDefaultIncludesHolder.AddRange(parsedDefaultIncludes);
+
+            // Loop through each property on an entity to see if anything is declared to IncludeByDefault
+            foreach (PropertyInfo propertyInfo in destTypeInfo.DeclaredProperties)
+            {
+                var customAttributesOriginal = (Array)propertyInfo.GetCustomAttributes();
+                if (customAttributesOriginal.Length == 0)
+                {
+                    // No custom attributes means the next steps can be ignored
+                    continue;
+                }
+                else
+                {
+                    // Circle through the attributes to see if our IncludeByDefault is one of them
+                    foreach (Attribute customAttribute in customAttributesOriginal)
+                    {
+                        var type = customAttribute.GetType();
+
+                        // We don't want to allow a user to set defaults in both the mapping and at the attribute level
+                        if (type == typeof(IncludeByDefault) && parsedDefaultIncludes.Count != 0)
+                        {
+                            throw new MultipleDefaultsException($"Defaults are declared for {destTypeInfo.Name} in the configuration mapping and on the projection attributes.");
+                        }
+                        if (type == typeof(IncludeByDefault))
+                        {
+                            parsedDefaultIncludesHolder.Add(new PropertyReference { PropertyName = propertyInfo.Name });
+                        }
+                    }
+                }
+            }
+
+            // Handle no defaults
+            if (parsedDefaultIncludesHolder.Count == 0)
+            {
+                return "[]";
+            }
+            else
+            {
+                // construct the proper result
+                string result = String.Join(",", parsedDefaultIncludesHolder.Select(m => m.PropertyName));
+                result = result.Insert(0, "[").Insert(result.Length + 1, "]");
+
+                return result;
+            }
+        }
+
     }
 }
