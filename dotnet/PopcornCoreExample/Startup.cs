@@ -55,7 +55,7 @@ namespace PopcornCoreExample
                         // Pass in our 'database' via the context
                         .SetContext(new Dictionary<string, object>
                         {
-                            ["database"] = database
+                            ["database"] = database,
                             ["defaultEmployment"] = EmploymentType.Employed
                         });
                 });
