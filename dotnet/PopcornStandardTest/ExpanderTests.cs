@@ -179,6 +179,18 @@ namespace PopcornStandardTest
             public string ShouldBeEmpty { get; set; }
         }
 
+        public class EntityFromContextBasedFactory
+        {
+            public string MappedString { get; set; }
+            public string ContextString { get; set; }
+        }
+
+        public class EntityFromContextBasedFactoryProjection
+        {
+            public string MappedString { get; set; }
+            public string ContextString { get; set; }
+        }
+
         public class NonMappedType
         {
             public string Name { get; set; }
@@ -204,7 +216,9 @@ namespace PopcornStandardTest
             config.Map<DerivedChildObject, DerivedChildObjectProjection>();
             config.Map<Loop, LoopProjection>();
             config.Map<EntityFromFactory, EntityFromFactoryProjection>();
+            config.Map<EntityFromContextBasedFactory, EntityFromContextBasedFactoryProjection>();
             config.AssignFactory<EntityFromFactoryProjection>(() => new EntityFromFactoryProjection { ShouldBeEmpty = "Generated" });
+            config.AssignFactory<EntityFromContextBasedFactoryProjection>((context) => new EntityFromContextBasedFactoryProjection{ ContextString = context["DefaultString"] as string, MappedString = context["DefaultString"] as string });
         }
 
         // Things to test
@@ -933,6 +947,19 @@ namespace PopcornStandardTest
 
             var entityProjection = result as EntityFromFactoryProjection;
             entityProjection.ShouldBeEmpty.ShouldBe("Generated");
+        }
+
+        [TestMethod]
+        public void CreateWithContextBasedTypeFactory()
+        {
+            var entity = new EntityFromContextBasedFactory() { MappedString = "Some Text" };
+            var context = new Dictionary<string, object> { { "DefaultString", "SpecifiedByContext" } };
+            var result = _expander.Expand(entity, context, PropertyReference.Parse($"[MappedString]"));
+            result.ShouldNotBeNull();
+
+            var entityProjection = result as EntityFromContextBasedFactoryProjection;
+            entityProjection.MappedString.ShouldNotBe("SpecifiedByContext");
+            entityProjection.ContextString.ShouldBe("SpecifiedByContext");
         }
 
         [TestMethod]
