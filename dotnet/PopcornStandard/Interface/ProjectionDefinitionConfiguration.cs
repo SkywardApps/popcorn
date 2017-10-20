@@ -117,7 +117,7 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public ProjectionDefinitionConfiguration<TSourceType, TDestType> AfterExpansion(Action<object, object, ContextType> action)
         {
-            InternalProjectionDefinition._AfterExpansion.Add(action);
+            InternalProjectionDefinition.AfterExpansion.Add(action);
             return this;
         }
 

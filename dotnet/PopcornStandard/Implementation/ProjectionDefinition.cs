@@ -20,7 +20,7 @@ namespace Skyward.Popcorn
         /// <summary>
         /// Any actions to handle source objects after they are expanded
         /// </summary>
-        public List<Action<object, object, ContextType>> _AfterExpansion { get; } = new List<Action<object, object, ContextType>>();
+        public List<Action<object, object, ContextType>> AfterExpansion { get; } = new List<Action<object, object, ContextType>>();
 
         /// <summary>
         /// The list of includes to use if none are explicitly requested

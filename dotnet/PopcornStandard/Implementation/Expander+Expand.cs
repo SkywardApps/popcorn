@@ -106,7 +106,7 @@ namespace Skyward.Popcorn
                     destType = Mappings[sourceType].Destinations.Keys.FirstOrDefault(k => destType.GetTypeInfo().IsAssignableFrom(k));
                     if(destType == null)
                     {
-                        throw new InvalidCastException($"Cannot resolve a mapper from {sourceType} to {destinationTypeHint}");
+                        throw new InvalidCastException($"Cannot find a mapper from {sourceType} to {destinationTypeHint}");
                     }
                 }
             }
@@ -121,7 +121,7 @@ namespace Skyward.Popcorn
                 action(destinationObject, source, context);
 
             // Ok, we gots ourselves a conflict.
-            // 1) we try to match the source type to a mapped type
+            // we try to match the source type to a mapped type
             var projectionConfiguration = Mappings[sourceType].DestinationForType(destType);
 
             // Iterate over only the requested properties
@@ -163,7 +163,7 @@ namespace Skyward.Popcorn
 
             // Allow any actions to run after the mapping
             /// @Todo should this be in reverse order so we have a nested stack style FILO?
-            foreach (var action in projectionConfiguration._AfterExpansion)
+            foreach (var action in projectionConfiguration.AfterExpansion)
                 action(destinationObject, source, context);
 
             return destinationObject;
@@ -261,7 +261,7 @@ namespace Skyward.Popcorn
             // Allow any actions to run after the mapping
             /// @Todo should this be in reverse order so we have a nested stack style FILO?
             if (Mappings.ContainsKey(sourceType))
-                foreach (var action in Mappings[sourceType].DefaultDestination()._AfterExpansion)
+                foreach (var action in Mappings[sourceType].DefaultDestination().AfterExpansion)
                     action(destinationObject, source, context);
 
             return destinationObject;
@@ -313,7 +313,7 @@ namespace Skyward.Popcorn
         }
 
         /// <summary>
-        /// Verify that we have the appropriate include list for a type, takign into account any requested,
+        /// Verify that we have the appropriate include list for a type, taking into account any requested,
         /// or otherwise defaults supplied.  
         /// </summary>
         /// <param name="includes"></param>

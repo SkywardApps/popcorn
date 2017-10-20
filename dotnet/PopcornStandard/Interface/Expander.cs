@@ -70,8 +70,7 @@ namespace Skyward.Popcorn
         /// <summary>
         /// The entry point method for converting a type into its projection and selectively including data.
         /// This will work on either a Mapped Type or a collection of a Mapped Type.
-        /// This version using anonymous objects works well for the Api use case.  We may want a generic typed
-        /// version if we ever think of a reason to use this elsewhere.
+        /// This version allows specification of the includes in string format
         /// </summary>
         public object Expand(object source, ContextType context, string includes, HashSet<int> visited = null, Type destinationTypeHint = null)
         {
@@ -81,8 +80,9 @@ namespace Skyward.Popcorn
         /// <summary>
         /// The entry point method for converting a type into its projection and selectively including data.
         /// This will work on either a Mapped Type or a collection of a Mapped Type.
-        /// This version using anonymous objects works well for the Api use case.  We may want a generic typed
-        /// version if we ever think of a reason to use this elsewhere.
+        /// This version allows specification of the includes as an IEnumerable of PropertyReferences.
+        /// 
+        /// Using anonymous objects works well for the Api use case.  
         /// </summary>
         /// <param name="source"></param>
         /// <param name="context">A context dictionary that will be passed around to all conversion routines.</param>
