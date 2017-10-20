@@ -125,12 +125,12 @@ namespace PopcornStandardTest
             public double? ValueFromTranslator { get; set; }
             public ChildObjectProjection ComplexFromTranslator { get; set; }
 
-            public ChildObjectProjection Child { get; set; }
+            public IncludeByDefaultChildObjectProjection Child { get; set; }
             public List<ChildObjectProjection> Children { get; set; }
             public IEnumerable<ChildObjectProjection> ChildrenInterface { get; set; }
             public HashSet<ChildObjectProjection> ChildrenSet { get; set; }
-            public ChildObjectProjection SubclassInOriginal { get; set; }
-            public DerivedChildObjectProjection SuperclassInOriginal { get; set; }
+            public IncludeByDefaultChildObjectProjection SubclassInOriginal { get; set; }
+            public IncludeByDefaultDerivedChildObjectProjection SuperclassInOriginal { get; set; }
             public string InvalidCastType { get; set; }
 
             public string FromMethod { get; set; }
@@ -145,8 +145,22 @@ namespace PopcornStandardTest
 
         }
 
+        public class IncludeByDefaultChildObjectProjection
+        {
+            [IncludeByDefault]
+            public Guid Id { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+        }
+
         public class DerivedChildObjectProjection : ChildObjectProjection
         {
+            public string ExtendedProperty { get; set; }
+        }
+
+        public class IncludeByDefaultDerivedChildObjectProjection : IncludeByDefaultChildObjectProjection
+        {
+            [IncludeByDefault]
             public string ExtendedProperty { get; set; }
         }
 
@@ -913,6 +927,106 @@ namespace PopcornStandardTest
 
             projection.NonIncluded.ShouldBeNull();
             projection.Child.ShouldBeNull();
+        }
+
+        // Prove that [IncludeByDefault] grabs properties on a base class for a sub-class
+        [TestMethod]
+        public void DefaultIncludesAttributePolymorphism()
+        {
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            config.Map<RootObject, IncludeByDefaultRootObjectProjection>();
+            config.Map<ChildObject, IncludeByDefaultChildObjectProjection>();
+            config.Map<DerivedChildObject, IncludeByDefaultDerivedChildObjectProjection>();
+
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                Child = new DerivedChildObject
+                {
+                    ExtendedProperty = "new extended property",
+                    Name = "subclass",
+                    Id = Guid.NewGuid()
+                }
+            };
+
+            var result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(IncludeByDefaultRootObjectProjection.Child)}]"));
+            result.ShouldNotBeNull();
+
+            IncludeByDefaultRootObjectProjection projection = result as IncludeByDefaultRootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Id.ShouldBe(Guid.Empty);
+
+            IncludeByDefaultDerivedChildObjectProjection childProjection = projection.Child as IncludeByDefaultDerivedChildObjectProjection;
+            childProjection.Name.ShouldBe(null);
+            childProjection.Id.ShouldBe(root.Child.Id);
+            childProjection.ExtendedProperty.ShouldBe("new extended property");
+        }
+
+        // Prove that [IncludeByDefault] grabs properties on a base class for a sub-class, should the base class not actually be mapped
+        [TestMethod]
+        public void DefaultIncludesAttributePolymorphismNoBaseMapping()
+        {
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            config.Map<RootObject, IncludeByDefaultRootObjectProjection>();
+            config.Map<DerivedChildObject, IncludeByDefaultDerivedChildObjectProjection>();
+
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                Child = new DerivedChildObject
+                {
+                    ExtendedProperty = "new extended property",
+                    Name = "subclass",
+                    Id = Guid.NewGuid()
+        }
+            };
+
+            var result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(IncludeByDefaultRootObjectProjection.Child)}]"));
+            result.ShouldNotBeNull();
+
+            IncludeByDefaultRootObjectProjection projection = result as IncludeByDefaultRootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Id.ShouldBe(Guid.Empty);
+
+            IncludeByDefaultDerivedChildObjectProjection childProjection = projection.Child as IncludeByDefaultDerivedChildObjectProjection;
+            childProjection.Name.ShouldBe(null);
+            childProjection.Id.ShouldBe(root.Child.Id);
+            childProjection.ExtendedProperty.ShouldBe("new extended property");
+        }
+
+        // Prove that a DefaultIncludes for a derived class can be declared at map time
+        [TestMethod]
+        public void DefaultIncludesStringSubClass()
+        {
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            config.Map<RootObject, RootObjectProjection>();
+            config.Map<DerivedChildObject, DerivedChildObjectProjection>($"[{nameof(DerivedChildObjectProjection.Id)},{nameof(DerivedChildObjectProjection.ExtendedProperty)}]");
+
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                Child = new DerivedChildObject
+                {
+                    ExtendedProperty = "new extended property",
+                    Name = "subclass",
+                    Id = Guid.NewGuid()
+                }
+            };
+
+            var result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(IncludeByDefaultRootObjectProjection.Child)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Id.ShouldBe(Guid.Empty);
+
+            DerivedChildObjectProjection childProjection = projection.Child as DerivedChildObjectProjection;
+            childProjection.Name.ShouldBe(null);
+            childProjection.Id.ShouldBe(root.Child.Id);
+            childProjection.ExtendedProperty.ShouldBe("new extended property");
         }
 
         [TestMethod]

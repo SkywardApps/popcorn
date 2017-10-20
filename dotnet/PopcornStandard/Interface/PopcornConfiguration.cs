@@ -180,6 +180,47 @@ namespace Skyward.Popcorn
         {
             // Create a variable to allow looping through adding all the defaultIncludes properties that are tagged
             var parsedDefaultIncludesHolder = new List<PropertyReference> { };
+            var baseDefaultIncludesHolder = new List<PropertyReference> { };
+            parsedDefaultIncludesHolder.AddRange(parsedDefaultIncludes);
+
+            // Look to see if there is a base class with default includes
+            // TODO: This does potentially introduce a slight issue in that technically the base class does not actually have to be mapped
+            // and there could be arguments that maybe that is a good thing or a bad thing. 10/20/2017 AB
+            baseDefaultIncludesHolder.AddRange(DeconstructDefaultIncludes(new List<PropertyReference>(), destTypeInfo.BaseType.GetTypeInfo()));
+
+            // Deconstruct the main object in target
+            parsedDefaultIncludesHolder.AddRange(DeconstructDefaultIncludes(parsedDefaultIncludesHolder, destTypeInfo));
+
+            // Combine the base and subclass results as necessary
+            if (baseDefaultIncludesHolder.Count != 0)
+            {
+                parsedDefaultIncludesHolder.AddRange(baseDefaultIncludesHolder);
+            }
+
+            // Handle no defaults
+            if (parsedDefaultIncludesHolder.Count == 0)
+            {
+                return "[]";
+            } else
+            {
+                // construct the proper result
+                string result = String.Join(",", parsedDefaultIncludesHolder.Select(m => m.PropertyName));
+                result = result.Insert(0, "[").Insert(result.Length+1, "]");
+                
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// A function to specifically deconstruct the default includes off of a type info
+        /// </summary>
+        /// <param name="parsedDefaultIncludes"></param>
+        /// <param name="destTypeInfo"></param>
+        /// <returns></returns>
+        public List<PropertyReference> DeconstructDefaultIncludes(List<PropertyReference> parsedDefaultIncludes, TypeInfo destTypeInfo)
+        {
+            // Create a variable to allow looping through adding all the defaultIncludes properties that are tagged
+            var parsedDefaultIncludesHolder = new List<PropertyReference> { };
             parsedDefaultIncludesHolder.AddRange(parsedDefaultIncludes);
 
             // Loop through each property on an entity to see if anything is declared to IncludeByDefault
@@ -211,18 +252,7 @@ namespace Skyward.Popcorn
                 }
             }
 
-            // Handle no defaults
-            if (parsedDefaultIncludesHolder.Count == 0)
-            {
-                return "[]";
-            } else
-            {
-                // construct the proper result
-                string result = String.Join(",", parsedDefaultIncludesHolder.Select(m => m.PropertyName));
-                result = result.Insert(0, "[").Insert(result.Length+1, "]");
-                
-                return result;
-            }
+            return parsedDefaultIncludesHolder;
         }
 
         public PopcornConfiguration BlacklistExpansion<TSourceType>()
