@@ -1,4 +1,5 @@
-﻿using Skyward.Popcorn;
+﻿using PopcornCoreExample.Models;
+using Skyward.Popcorn;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace PopcornCoreExample.Projections
 
         public string Birthday { get; set; }
         public int? VacationDays { get; set; }
+        public EmploymentType? Employment { get; set; }
 
         [SubPropertyIncludeByDefault("[Make,Model,Color]")]
         public List<CarProjection> Vehicles { get; set; }
