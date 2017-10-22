@@ -18,6 +18,7 @@ namespace Skyward.Popcorn.Core
         /// <param name="optionsBuilder"></param>
         /// <param name="defaultIncludes"></param>
         /// <param name="self">todo: describe self parameter on MapEntityFramework</param>
+        /// <param name="config"></param>
         /// <typeparam name="TSourceType"></typeparam>
         /// <typeparam name="TDestType"></typeparam>
         /// <typeparam name="TContext"></typeparam>
@@ -25,12 +26,13 @@ namespace Skyward.Popcorn.Core
         public static PopcornConfiguration MapEntityFramework<TSourceType, TDestType, TContext>(
             this PopcornConfiguration self,
             DbContextOptionsBuilder<TContext> optionsBuilder, 
-            string defaultIncludes = null)
+            string defaultIncludes = null,
+            Action<MappingDefinitionConfiguration<TSourceType, TDestType>> config = null)
             where TContext : DbContext
             where TSourceType : class
             where TDestType : class
         {
-            return self.Map<TSourceType, TDestType>(defaultIncludes, (definition) =>
+            var popcornConfiguration = self.Map<TSourceType, TDestType>(defaultIncludes, (definition) =>
             {
                 definition
                     // Before dealing with this object, create a context to use
@@ -104,6 +106,8 @@ namespace Skyward.Popcorn.Core
                     }
                 }
             });
+
+            return popcornConfiguration.Map(defaultIncludes, config);
         }
 
         /// <summary>
