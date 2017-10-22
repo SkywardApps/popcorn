@@ -162,9 +162,9 @@ http://localhost:50353/api/example/cars?include=[Model,Make,Year,Color,Owner[Ful
 ]
 ```
 ## Factories
-With Factories it's possible to extract the projection class instantiation. You can either use a plain factory or one that takes an context object as input parameter. The big advantage of using a context object is, that the instantiation can be configured to it's needs.
+With Factories it's possible to extract the projection class instantiation. You can either use a plain factory or one that takes an context object as input parameter. The big advantage of using a context object is that the instantiation can be configured to its needs.
 
-In the following example the Employee model consists of a property that describes the employment type (eg. FullTime/PartTime). If this employment type is not explicitly requested, using the include parameter or by requesting the entire model, it depends on it's initial value. With a context-based factory, this value can be set according to the current configuration.
+In the following example the Employee model consists of a property that describes the employment type (eg. FullTime/PartTime). If this employment type is not explicitly requested, using the include parameter or by requesting the entire model, it depends on its initial value. With a context-based factory, this value can be set according to the current configuration.
 
 ```csharp
 public enum EmploymentType
