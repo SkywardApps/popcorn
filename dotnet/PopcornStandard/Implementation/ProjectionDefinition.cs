@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Skyward.Popcorn
 {
     using ContextType = Dictionary<string, object>;
-    internal class ProjectionDefinition
+    public class ProjectionDefinition
     {
 
         /// <summary>
