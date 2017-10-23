@@ -75,32 +75,39 @@ namespace Skyward.Popcorn
             var destTypeInfo = typeof(TDestType).GetTypeInfo();
             var parsedDefaultIncludes = (defaultIncludes == null) ? new List<PropertyReference> { } : (List<PropertyReference>)PropertyReference.Parse(defaultIncludes);
             defaultIncludes = PropertyReference.CompareAndConstructDefaultIncludes(parsedDefaultIncludes, destTypeInfo);
+            var mappingConfiguration = new MappingDefinitionConfiguration<TSourceType, TDestType> { };
 
-            // Create the configuration starting with the 'default' mapping
-            var mappingConfiguration = new MappingDefinitionConfiguration<TSourceType, TDestType>
-            {
-                InternalMappingDefinition = new MappingDefinition
-                {
-                    DefaultDestinationType = destType,
-                }
-            };
-
-            // And assign it
-            mappingConfiguration.InternalProjectionDefinition = new ProjectionDefinition
-            {
-                DefaultIncludes = defaultIncludes,
-                DestinationType = destType,
-            };
-            mappingConfiguration.InternalMappingDefinition.Destinations.Add(destType, mappingConfiguration.InternalProjectionDefinition);
-
-            // We will allow a client to reference the same mapping multiple times to add more translations etc,
-            // but ONLY if the types remain consistent!
+            // Assign the existing mapping to be configured should it already exist
             if (_expander.Mappings.ContainsKey(sourceType))
             {
-                throw new InvalidOperationException($"Expander was default-mapped multiple times for {sourceType}.");
-            }
-            else
+                // We will allow a client to reference the same mapping multiple times to add more translations etc,
+                // but ONLY if the types remain consistent!
+                if (_expander.Mappings[sourceType].DefaultDestinationType != destType)
+                {
+                    throw new InvalidOperationException($"Expander was default-mapped multiple times for {sourceType}.");
+                }
+
+                // Assign the existing mapping information
+                mappingConfiguration.InternalMappingDefinition = _expander.Mappings[sourceType];
+                mappingConfiguration.InternalProjectionDefinition = _expander.Mappings[sourceType].Destinations[destType];
+
+            } else
             {
+                // Create the configuration starting with the 'default' mapping
+                mappingConfiguration.InternalMappingDefinition = new MappingDefinition
+                {
+                    DefaultDestinationType = destType,
+                };
+
+                // And assign it a projecion definition
+                mappingConfiguration.InternalProjectionDefinition = new ProjectionDefinition
+                {
+                    DefaultIncludes = defaultIncludes,
+                    DestinationType = destType,
+                };
+
+                mappingConfiguration.InternalMappingDefinition.Destinations.Add(destType, mappingConfiguration.InternalProjectionDefinition);
+
                 _expander.Mappings.Add(typeof(TSourceType), mappingConfiguration.InternalMappingDefinition);
             }
 
