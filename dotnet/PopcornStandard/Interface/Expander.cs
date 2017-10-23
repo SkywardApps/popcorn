@@ -211,7 +211,7 @@ namespace Skyward.Popcorn
             switch (sortDirection)
             {
                 case SortDirection.Unknown:
-                    throw new ArgumentException("Unknown sort");
+                    throw new ArgumentException("Unknown sortDirection");
                 case SortDirection.Ascending:
                     sortingList = sortingList.OrderBy(i => sortProperty.GetValue(i)).ToList();
                     break;
