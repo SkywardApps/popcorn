@@ -1,8 +1,11 @@
 # Popcorn
+[![Build status](https://ci.appveyor.com/api/projects/status/odjc31j0q0k213qh/branch/master?svg=true)](https://ci.appveyor.com/project/alexbarbato/popcorn/branch/master) 
+[![NuGet](https://img.shields.io/nuget/v/Skyward.Api.Popcorn.DotNetCore.svg)](https://www.nuget.org/packages/Skyward.Api.Popcorn.DotNetCore)
 
 ## Jump straight in
-We have a [.net core middleware](docs/dotnet/DotNetDocumentation.md) that you can drop in to enable Popcorn on Web Apis. 
++ **.NET Core** - We have a [.net core middleware](docs/dotnet/DotNetDocumentation.md) that you can drop in to enable Popcorn on Web Apis. 
 Feel free to grab it on [nuget](https://www.nuget.org/packages/Skyward.Api.Popcorn.DotNetCore).
++ **Other implementations** - See our [Roadmap](docs/Roadmap.md) or issues on GitHub for coming work
 
 ## What is Popcorn?
 Popcorn is a communication protocol on top of a RESTful API that allows requesting clients to 
@@ -12,7 +15,15 @@ collection.
 It allows for a recursive selection of fields, allowing multiple calls to be condensed 
 into one.  
 
-**Yeah so.... what is it?**
+### Features
++ Selective inclusion from a RESTful API
+	+ Configurable [response defaults](docs/dotnet/DotNetTutorialDefaultIncludes.md)
+	+ [Sorting](docs/dotnet/DotNetTutorialSorting.md) of responses
+	+ Selective authorization of response values
+	+ Configurable response inspectors
+	+ [Factory and advanced projection](docs/dotnet/DotNetTutorialAdvancedProjections.md) support 
+
+**Ok, so.... what is it in action?**
 
 Okay, maybe some examples will help!
 
