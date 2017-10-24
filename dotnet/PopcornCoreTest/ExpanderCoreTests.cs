@@ -26,7 +26,7 @@ namespace PopcornCoreTest
             _expander = new Expander();
             var config = new PopcornConfiguration(_expander);
 
-            config.MapEntityFramework<Project, ProjectProjection, TestModelContext>(TestModelContext.ConfigureOptions());
+            config.MapEntityFramework<Project, ProjectProjection, TestModelContext>(TestModelContext.ConfigureOptions(), null, (definition) => { definition.Translate(o => o.Id, () => Guid.NewGuid()); });
             config.MapEntityFramework<PopcornCoreTest.Models.Environment, EnvironmentProjection, TestModelContext>(TestModelContext.ConfigureOptions());
             config.MapEntityFramework<Credential, CredentialProjection, TestModelContext>(TestModelContext.ConfigureOptions());
             config.MapEntityFramework<CredentialDefinition, CredentialDefinitionProjection, TestModelContext>(TestModelContext.ConfigureOptions());
@@ -132,6 +132,28 @@ namespace PopcornCoreTest
             projection.Environments.First().Credentials.First().Values.Count.ShouldBe(1);
             projection.Environments.First().Credentials.First().Values.First().Key.ShouldBe("Key");
             projection.Environments.First().Credentials.First().Values.First().Value.ShouldBeNull();
+        }
+
+        // Testing a simple translation on the entity framework expansion
+        [TestMethod]
+        public void EntityFrameworkMappingConfig()
+        {
+            Guid projectId = ProjectTestUtilities.CreateFullDbHierarchy();
+            Project sourceObject = null;
+
+            using (var db = new TestModelContext())
+            {
+                sourceObject = db.Projects.Find(projectId);
+            }
+
+            var includeProject = $"{nameof(ProjectProjection.Name)},{nameof(ProjectProjection.Id)}";
+            object result = _expander.Expand(sourceObject, includes: PropertyReference.Parse($"[{includeProject}]"));
+            result.ShouldNotBeNull();
+
+            ProjectProjection projection = result as ProjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Name.ShouldBe(sourceObject.Name);
+            projection.Id.ShouldNotBe(sourceObject.Id);
         }
 
         [TestMethod, Ignore]
