@@ -113,6 +113,9 @@ http://localhost:50353/api/example/employees
 Ahhh, that's better. Simple and to the point. Now have no fear, you can still send a request out with ?include=[...] and access
 all of the properties exposed on the projection that you would like, completely overriding the DefaultInclude statement.
 
+*Important FYI: Derived classes will inherit their base class' [IncludeByDefault]'s by default and can be overridden 
+in the usual fashion with a specific ?include in a request.* 
+
 ### Option 2: Including a DefaultIncludes string at "Map" time
 
 "Map" time is not to be confused with nap time because there is nothing short of pure, thrilling excitement happening here, so 
