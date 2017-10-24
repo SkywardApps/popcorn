@@ -24,6 +24,7 @@
     <None Include="..\..\docs\dotnet\DotNetDocumentation.md" Link="DotNetDocumentation.md" />
     <None Include="..\..\docs\dotnet\DotNetTutorialGettingStarted.md" Link="DotNetTutorialGettingStarted.md" />
     <None Include="..\..\docs\dotnet\DotNetTutorialAdvancedProjections.md" Link="DotNetTutorialAdvancedProjections.md" />
+    <None Include="..\..\docs\dotnet\DotNetTutorialBlindExpansion.md" Link="DotNetTutorialBlindExpansion.md" />
     <None Include="..\..\docs\dotnet\DotNetTutorialInspectors.md" Link="DotNetTutorialInspectors.md" />
     <None Include="..\..\docs\dotnet\DotNetTutorialDefaultIncludes.md" Link="DotNetTutorialDefaultIncludes.md" />
     <None Include="..\..\docs\dotnet\DotNetTutorialSorting.md" Link="DotNetTutorialSorting.md" />

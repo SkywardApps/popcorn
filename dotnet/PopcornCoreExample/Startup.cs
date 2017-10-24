@@ -39,6 +39,7 @@ namespace PopcornCoreExample
             {
                 mvcOptions.UsePopcorn((popcornConfig) => {
                     popcornConfig
+                        .EnableBlindExpansion(true)
                         .SetDefaultApiResponseInspector()
                         .Map<Employee, EmployeeProjection>(config: (employeeConfig) => {
                             // For employees we will determine a full name and reformat the date to include only the day portion.
@@ -129,6 +130,28 @@ namespace PopcornCoreExample
             context.Cars.Add(porsche);
             jack.Vehicles.Add(porsche);
             context.Employees.Add(jack);
+
+            var shoeBusiness = new Business
+            {
+                Name = "Shoe Biz",
+                StreetAddress = "1234 Street St",
+                ZipCode = 55555,
+                Purpose = Business.Purposes.Shoes,
+                Employees = new List<Employee>()
+            };
+            shoeBusiness.Employees.Add(jack);
+            shoeBusiness.Employees.Add(liz);
+            context.Businesses.Add(shoeBusiness);
+
+            var carBusiness = new Business
+            {
+                Name = "Car Biz",
+                StreetAddress = "4321 Avenue Ave",
+                ZipCode = 44444,
+                Purpose = Business.Purposes.Vehicles,
+                Employees = new List<Employee>()
+            };
+            context.Businesses.Add(carBusiness);
 
             return context;
         }

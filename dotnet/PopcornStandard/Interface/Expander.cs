@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 
@@ -117,24 +118,28 @@ namespace Skyward.Popcorn
 
             Type sourceType = source.GetType();
 
-            if (visited == null)
-                visited = new HashSet<int>();
-
-            // See if this is a directly expandable type (Mapped Type)
-            if (WillExpandDirect(sourceType))
+            // Do a quick check to make sure the object can be expanded in some form before advancing
+            if (WillExpandType(sourceType))
             {
-                return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
-            }
+                if (visited == null)
+                    visited = new HashSet<int>();
 
-            // Otherwise, see if this is a collection of an expandable type
-            if (WillExpandCollection(sourceType))
-            {
-                return ExpandCollection(source, destinationTypeHint ?? typeof(ArrayList), context, includes, visited);
-            }
+                // See if this is a directly expandable type (Mapped Type)
+                if (WillExpandDirect(sourceType))
+                {
+                    return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
+                }
 
-            if (WillExpandBlind(sourceType))
-            {
-                return ExpandBlindObject(source, context, includes, visited);
+                // Otherwise, see if this is a collection of an expandable type
+                if (WillExpandCollection(sourceType))
+                {
+                    return ExpandCollection(source, destinationTypeHint ?? typeof(ArrayList), context, includes, visited);
+                }
+
+                if (WillExpandBlind(sourceType))
+                {
+                    return ExpandBlindObject(source, context, includes, visited);
+                }
             }
 
             // Otherwise, the caller requested that we expand a type we have no knowledge of.
@@ -184,9 +189,10 @@ namespace Skyward.Popcorn
         {
             if (!(source is IEnumerable))
                 throw new ArgumentException("'source' is not of a type that can be converted to an IEnumerable");
+
             IEnumerable<object> originalList = (source as IEnumerable).Cast<object>();
 
-            // Make sure that there is more than 1 result so we actually hav something to sort
+            // Make sure that there is more than 1 result so we actually have something to sort
             if (originalList.Count() <= 1)
                 return source;
 
@@ -194,7 +200,7 @@ namespace Skyward.Popcorn
             TypeInfo typeInfo = originalList.First().GetType().GetTypeInfo();
             if (typeInfo.DeclaredProperties.FirstOrDefault(values => values.Name.Equals(sortTarget)) == null)
             {
-                // TODO: Consider making an "InvalidSortError"
+                // TODO: Consider making an "invalidSort" error
                 throw new InvalidCastException(sortTarget);
             }
 
