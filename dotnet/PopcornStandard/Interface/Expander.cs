@@ -3,13 +3,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
 namespace Skyward.Popcorn
 {
     using ContextType = System.Collections.Generic.Dictionary<string, object>;
 
     public enum SortDirection { Unknown, Ascending, Descending }
+
+    public interface IExpanderInternalConfiguration
+    {
+        Dictionary<Type, MappingDefinition> Mappings { get; }
+        Dictionary<Type, Func<ContextType, object>> Factories { get; }
+        bool ExpandBlindObjects { get; set; }
+
+    }
 
     /// <summary>
     /// This is the public interface part for the 'Expander' class.
@@ -21,7 +28,7 @@ namespace Skyward.Popcorn
     /// 
     /// This is intended primarily for Api usage so a client can selectively include properties and nested data in their query.
     /// </summary>
-    public partial class Expander
+    public partial class Expander : IExpanderInternalConfiguration
     {
         /// <summary>
         /// This is the core of the expander.  This registers incoming types (the source of the data) and specifies a 
@@ -30,13 +37,20 @@ namespace Skyward.Popcorn
         /// It is possible that in the future we may want to provide multiple destination options, primarily for nested 
         /// entities.  Top-level entities will always need a 'default' outgoing type.
         /// </summary>
-        internal Dictionary<Type, MappingDefinition> Mappings { get; } = new Dictionary<Type, MappingDefinition>();
-        internal Dictionary<Type, Func<ContextType, object>> Factories { get; } = new Dictionary<Type, Func<ContextType, object>>();
+        Dictionary<Type, MappingDefinition> IExpanderInternalConfiguration.Mappings { get; } = new Dictionary<Type, MappingDefinition>();
+        internal Dictionary<Type, MappingDefinition> Mappings => ((IExpanderInternalConfiguration)this).Mappings;
+        Dictionary<Type, Func<ContextType, object>> IExpanderInternalConfiguration.Factories { get; } = new Dictionary<Type, Func<ContextType, object>>();
+        internal Dictionary<Type, Func<ContextType, object>> Factories => ((IExpanderInternalConfiguration)this).Factories;
+        bool IExpanderInternalConfiguration.ExpandBlindObjects { get; set; } = false;
+        internal bool ExpandBlindObjects {
+            get => ((IExpanderInternalConfiguration)this).ExpandBlindObjects;
+            set => ((IExpanderInternalConfiguration)this).ExpandBlindObjects = value;
+        }
+
         internal HashSet<Type> BlacklistExpansion = new HashSet<Type>
         {
             typeof(string),
         };
-        internal bool ExpandBlindObjects { get; set; } = false;
 
         /// <summary>
         /// Query whether or not a particular object is either a Mapped type or a collection of a Mapped type.
@@ -71,8 +85,19 @@ namespace Skyward.Popcorn
         /// <summary>
         /// The entry point method for converting a type into its projection and selectively including data.
         /// This will work on either a Mapped Type or a collection of a Mapped Type.
-        /// This version using anonymous objects works well for the Api use case.  We may want a generic typed
-        /// version if we ever think of a reason to use this elsewhere.
+        /// This version allows specification of the includes in string format
+        /// </summary>
+        public object Expand(object source, ContextType context, string includes, HashSet<int> visited = null, Type destinationTypeHint = null)
+        {
+            return Expand(source, context, PropertyReference.Parse(includes), visited, destinationTypeHint);
+        }
+
+        /// <summary>
+        /// The entry point method for converting a type into its projection and selectively including data.
+        /// This will work on either a Mapped Type or a collection of a Mapped Type.
+        /// This version allows specification of the includes as an IEnumerable of PropertyReferences.
+        /// 
+        /// Using anonymous objects works well for the Api use case.  
         /// </summary>
         /// <param name="source"></param>
         /// <param name="context">A context dictionary that will be passed around to all conversion routines.</param>
@@ -98,7 +123,7 @@ namespace Skyward.Popcorn
             // See if this is a directly expandable type (Mapped Type)
             if (WillExpandDirect(sourceType))
             {
-                return ExpandDirectObject(source, context, includes, visited);
+                return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
             }
 
             // Otherwise, see if this is a collection of an expandable type
@@ -115,6 +140,37 @@ namespace Skyward.Popcorn
             // Otherwise, the caller requested that we expand a type we have no knowledge of.
             throw new UnknownMappingException(sourceType.ToString());
         }
+
+        /// <summary>
+        /// A generic overload that automatically provides the type hint.
+        /// This accepts a string include list of the form "[Prop1,Prop2[SubProp1]]"
+        /// </summary>
+        /// <typeparam name="TDestType"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="includes"></param>
+        /// <param name="context"></param>
+        /// <param name="visited"></param>
+        /// <returns></returns>
+        public TDestType Expand<TDestType>(object source, string includes, ContextType context = null, HashSet<int> visited = null)
+        {
+            return (TDestType)Expand(source, context, PropertyReference.Parse(includes), visited, typeof(TDestType));
+        }
+
+        /// <summary>
+        /// A generic overload that automatically provides the type hint.
+        /// This optionally accepts a list of PropertyReferences
+        /// </summary>
+        /// <typeparam name="TDestType"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="includes"></param>
+        /// <param name="context"></param>
+        /// <param name="visited"></param>
+        /// <returns></returns>
+        public TDestType Expand<TDestType>(object source, IEnumerable<PropertyReference> includes = null, ContextType context = null, HashSet<int> visited = null)
+        {
+            return (TDestType)Expand(source, context, includes, visited, typeof(TDestType));
+        }
+
 
         /// <summary>
         /// The entry point method for sorting an unknown object.
@@ -155,7 +211,7 @@ namespace Skyward.Popcorn
             switch (sortDirection)
             {
                 case SortDirection.Unknown:
-                    throw new ArgumentException("Unknown sort");
+                    throw new ArgumentException("Unknown sortDirection");
                 case SortDirection.Ascending:
                     sortingList = sortingList.OrderBy(i => sortProperty.GetValue(i)).ToList();
                     break;

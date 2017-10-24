@@ -16,7 +16,7 @@ namespace Skyward.Popcorn
         public PopcornConfiguration(Expander expander) { _expander = expander; }
 
         public ContextType Context { get; private set; }
-        public Func<object, object, object> Inspector { get; private set; }
+        public Func<object, object, Exception, object> Inspector { get; private set; }
 
         public bool ApplyToAllEndpoints { get; private set; } = true;
 
@@ -39,11 +39,24 @@ namespace Skyward.Popcorn
         /// </summary>
         /// <param name="inspector"></param>
         /// <returns></returns>
-        public PopcornConfiguration SetInspector(Func<object, object, object> inspector)
+        public PopcornConfiguration SetInspector(Func<object, object, Exception, object> inspector)
         {
             if (Inspector != null)
                 throw new InvalidOperationException("Inspector has already been assigned");
             Inspector = inspector;
+            return this;
+        }
+
+        /// <summary>
+        /// Designate a default response inspector provided by Popcorn that handles error message/success wrapping
+        /// </summary>
+        /// <returns></returns>
+        public PopcornConfiguration SetDefaultApiResponseInspector()
+        {
+            if (Inspector != null)
+                throw new InvalidOperationException("Inspector has already been assigned");
+            Inspector = new Func<object, object, Exception, object>
+                ((data, context, resultException) => resultException == null ? new ApiResponse { Success = true, Data = data} :  new ApiResponse { Success = false, ErrorCode = resultException.GetType().ToString(), ErrorMessage = resultException.Message, ErrorDetails = resultException.ToString()} );
             return this;
         }
 
@@ -75,40 +88,38 @@ namespace Skyward.Popcorn
             // Validate and construct the actual default includes from both attributes and those passed in at the time of the mapping
             var destTypeInfo = typeof(TDestType).GetTypeInfo();
             var parsedDefaultIncludes = (defaultIncludes == null) ? new List<PropertyReference> { } : (List<PropertyReference>)PropertyReference.Parse(defaultIncludes);
-            defaultIncludes = CompareAndConstructDefaultIncludes(parsedDefaultIncludes, destTypeInfo);
+            defaultIncludes = PropertyReference.CompareAndConstructDefaultIncludes(parsedDefaultIncludes, destTypeInfo);
 
-            var definition = new MappingDefinitionConfiguration<TSourceType, TDestType>
+            // Create the configuration starting with the 'default' mapping
+            var mappingConfiguration = new MappingDefinitionConfiguration<TSourceType, TDestType>
             {
-                InternalDefinition = new MappingDefinition
+                InternalMappingDefinition = new MappingDefinition
                 {
-                    DestinationType = destType,
-                    DefaultIncludes = defaultIncludes
+                    DefaultDestinationType = destType,
                 }
             };
+
+            // And assign it
+            mappingConfiguration.InternalProjectionDefinition = new ProjectionDefinition
+            {
+                DefaultIncludes = defaultIncludes,
+                DestinationType = destType,
+            };
+            mappingConfiguration.InternalMappingDefinition.Destinations.Add(destType, mappingConfiguration.InternalProjectionDefinition);
 
             // We will allow a client to reference the same mapping multiple times to add more translations etc,
             // but ONLY if the types remain consistent!
             if (_expander.Mappings.ContainsKey(sourceType))
             {
-                if (_expander.Mappings[sourceType].DestinationType != destType)
-                    throw new InvalidOperationException(
-                        $"Expander was mapped multiple times but types do not match."
-                        + " {sourceType} was previously mapped to {this.Mappings[sourceType].DestinationType} and attempted to remap to {destType}."
-                        + "  Only one destination type can be specified.");
-                if (defaultIncludes != null)
-                    _expander.Mappings[sourceType].DefaultIncludes = defaultIncludes;
-                definition = new MappingDefinitionConfiguration<TSourceType, TDestType>
-                {
-                    InternalDefinition = _expander.Mappings[sourceType]
-                };
+                throw new InvalidOperationException($"Expander was default-mapped multiple times for {sourceType}.");
             }
             else
             {
-                _expander.Mappings.Add(typeof(TSourceType), definition.InternalDefinition);
+                _expander.Mappings.Add(typeof(TSourceType), mappingConfiguration.InternalMappingDefinition);
             }
 
             if (config != null)
-                config(definition);
+                config(mappingConfiguration);
 
             return this;
         }
@@ -127,7 +138,7 @@ namespace Skyward.Popcorn
             if (!_expander.Mappings.ContainsKey(sourceType))
                 throw new InvalidOperationException($"Can only authorize a type that has a mapping previously specified: {sourceType}");
 
-            _expander.Mappings[sourceType]._Authorizers.Add((s,c,v) => authorizer(s,c,(TSourceType)v));
+            _expander.Mappings[sourceType].Authorizers.Add((s,c,v) => authorizer(s,c,(TSourceType)v));
 
             return this;
         }
@@ -168,61 +179,6 @@ namespace Skyward.Popcorn
                 _expander.Factories.Remove(typeof(TSourceType));
             }
             return this;
-        }
-
-        /// <summary>
-        /// A function to validate and apply the attribute level or mapping level defaults for a projected entity
-        /// </summary>
-        /// <param name="parsedDefaultIncludes"></param>
-        /// <param name="destTypeInfo"></param>
-        /// <returns></returns>
-        public string CompareAndConstructDefaultIncludes(List<PropertyReference> parsedDefaultIncludes, TypeInfo destTypeInfo)
-        {
-            // Create a variable to allow looping through adding all the defaultIncludes properties that are tagged
-            var parsedDefaultIncludesHolder = new List<PropertyReference> { };
-            parsedDefaultIncludesHolder.AddRange(parsedDefaultIncludes);
-
-            // Loop through each property on an entity to see if anything is declared to IncludeByDefault
-            foreach (PropertyInfo propertyInfo in destTypeInfo.DeclaredProperties)
-            {
-                var customAttributesOriginal = (Array)propertyInfo.GetCustomAttributes();
-                if (customAttributesOriginal.Length == 0)
-                {
-                    // No custom attributes means the next steps can be ignored
-                    continue;
-                }
-                else
-                {
-                    // Circle through the attributes to see if our IncludeByDefault is one of them
-                    foreach (Attribute customAttribute in customAttributesOriginal)
-                    {
-                        var type = customAttribute.GetType();
-
-                        // We don't want to allow a user to set defaults in both the mapping and at the attribute level
-                        if (type == typeof(IncludeByDefault) && parsedDefaultIncludes.Count != 0)
-                        {
-                            throw new MultipleDefaultsException($"Defaults are declared for {destTypeInfo.Name} in the configuration mapping and on the projection attributes.");
-                        }
-                        if (type == typeof(IncludeByDefault))
-                        {
-                            parsedDefaultIncludesHolder.Add(new PropertyReference { PropertyName = propertyInfo.Name });
-                        }
-                    }
-                }
-            }
-
-            // Handle no defaults
-            if (parsedDefaultIncludesHolder.Count == 0)
-            {
-                return "[]";
-            } else
-            {
-                // construct the proper result
-                string result = String.Join(",", parsedDefaultIncludesHolder.Select(m => m.PropertyName));
-                result = result.Insert(0, "[").Insert(result.Length+1, "]");
-                
-                return result;
-            }
         }
 
         public PopcornConfiguration BlacklistExpansion<TSourceType>()

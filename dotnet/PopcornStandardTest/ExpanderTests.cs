@@ -125,12 +125,12 @@ namespace PopcornStandardTest
             public double? ValueFromTranslator { get; set; }
             public ChildObjectProjection ComplexFromTranslator { get; set; }
 
-            public ChildObjectProjection Child { get; set; }
+            public IncludeByDefaultChildObjectProjection Child { get; set; }
             public List<ChildObjectProjection> Children { get; set; }
             public IEnumerable<ChildObjectProjection> ChildrenInterface { get; set; }
             public HashSet<ChildObjectProjection> ChildrenSet { get; set; }
-            public ChildObjectProjection SubclassInOriginal { get; set; }
-            public DerivedChildObjectProjection SuperclassInOriginal { get; set; }
+            public IncludeByDefaultChildObjectProjection SubclassInOriginal { get; set; }
+            public IncludeByDefaultDerivedChildObjectProjection SuperclassInOriginal { get; set; }
             public string InvalidCastType { get; set; }
 
             public string FromMethod { get; set; }
@@ -145,8 +145,22 @@ namespace PopcornStandardTest
 
         }
 
+        public class IncludeByDefaultChildObjectProjection
+        {
+            [IncludeByDefault]
+            public Guid Id { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+        }
+
         public class DerivedChildObjectProjection : ChildObjectProjection
         {
+            public string ExtendedProperty { get; set; }
+        }
+
+        public class IncludeByDefaultDerivedChildObjectProjection : IncludeByDefaultChildObjectProjection
+        {
+            [IncludeByDefault]
             public string ExtendedProperty { get; set; }
         }
 
@@ -179,6 +193,18 @@ namespace PopcornStandardTest
             public string ShouldBeEmpty { get; set; }
         }
 
+        public class EntityFromContextBasedFactory
+        {
+            public string MappedString { get; set; }
+            public string ContextString { get; set; }
+        }
+
+        public class EntityFromContextBasedFactoryProjection
+        {
+            public string MappedString { get; set; }
+            public string ContextString { get; set; }
+        }
+
         public class NonMappedType
         {
             public string Name { get; set; }
@@ -204,7 +230,9 @@ namespace PopcornStandardTest
             config.Map<DerivedChildObject, DerivedChildObjectProjection>();
             config.Map<Loop, LoopProjection>();
             config.Map<EntityFromFactory, EntityFromFactoryProjection>();
+            config.Map<EntityFromContextBasedFactory, EntityFromContextBasedFactoryProjection>();
             config.AssignFactory<EntityFromFactoryProjection>(() => new EntityFromFactoryProjection { ShouldBeEmpty = "Generated" });
+            config.AssignFactory<EntityFromContextBasedFactoryProjection>((context) => new EntityFromContextBasedFactoryProjection{ ContextString = context["DefaultString"] as string, MappedString = context["DefaultString"] as string });
         }
 
         // Things to test
@@ -398,7 +426,7 @@ namespace PopcornStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.SuperclassInOriginal)}]")); }).Message.ShouldBe(nameof(RootObjectProjection.SuperclassInOriginal));
+            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.SuperclassInOriginal)}]")); });
             result.ShouldBeNull();
         }
 
@@ -546,6 +574,47 @@ namespace PopcornStandardTest
             projection.ChildrenInterface.Count().ShouldBe(2);
             projection.ChildrenInterface.Any(c => c.Name == "Item1").ShouldBeTrue();
             projection.ChildrenInterface.Any(c => c.Name == "Item2").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => c.Description != null).ShouldBeFalse();
+        }
+
+        /// <summary>
+        /// Make sure that we handle polymorphic lists (list<BaseClass> containing DerivedClass)
+        /// </summary>
+        [TestMethod]
+        public void ListOfChildrenInterfaceDerivedClass()
+        {
+            var root = new RootObject
+            {
+                ChildrenInterface = new List<ChildObject>
+                {
+                    new DerivedChildObject
+                    {
+                        Name = "Item1",
+                        Description = "Description1",
+                        ExtendedProperty = "ExtendedProperty1"
+                    },
+                    new DerivedChildObject
+                    {
+                        Name = "Item2",
+                        Description = "Description2",
+                        ExtendedProperty = "ExtendedProperty2"
+                    }
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.ChildrenInterface)}[{nameof(ChildObject.Name)},{nameof(DerivedChildObject.ExtendedProperty)}]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+
+            projection.ChildrenInterface.ShouldNotBeNull();
+            projection.ChildrenInterface.Count().ShouldBe(2);
+            projection.ChildrenInterface.All(c => c as DerivedChildObjectProjection != null).ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => c.Name == "Item1").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => c.Name == "Item2").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => (c as DerivedChildObjectProjection).ExtendedProperty == "ExtendedProperty1").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => (c as DerivedChildObjectProjection).ExtendedProperty == "ExtendedProperty2").ShouldBeTrue();
             projection.ChildrenInterface.Any(c => c.Description != null).ShouldBeFalse();
         }
 
@@ -915,6 +984,106 @@ namespace PopcornStandardTest
             projection.Child.ShouldBeNull();
         }
 
+        // Prove that [IncludeByDefault] grabs properties on a base class for a sub-class
+        [TestMethod]
+        public void DefaultIncludesAttributePolymorphism()
+        {
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            config.Map<RootObject, IncludeByDefaultRootObjectProjection>();
+            config.Map<ChildObject, IncludeByDefaultChildObjectProjection>();
+            config.Map<DerivedChildObject, IncludeByDefaultDerivedChildObjectProjection>();
+
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                Child = new DerivedChildObject
+                {
+                    ExtendedProperty = "new extended property",
+                    Name = "subclass",
+                    Id = Guid.NewGuid()
+                }
+            };
+
+            var result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(IncludeByDefaultRootObjectProjection.Child)}]"));
+            result.ShouldNotBeNull();
+
+            IncludeByDefaultRootObjectProjection projection = result as IncludeByDefaultRootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Id.ShouldBe(Guid.Empty);
+
+            IncludeByDefaultDerivedChildObjectProjection childProjection = projection.Child as IncludeByDefaultDerivedChildObjectProjection;
+            childProjection.Name.ShouldBe(null);
+            childProjection.Id.ShouldBe(root.Child.Id);
+            childProjection.ExtendedProperty.ShouldBe("new extended property");
+        }
+
+        // Prove that [IncludeByDefault] grabs properties on a base class for a sub-class, should the base class not actually be mapped
+        [TestMethod]
+        public void DefaultIncludesAttributePolymorphismNoBaseMapping()
+        {
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            config.Map<RootObject, IncludeByDefaultRootObjectProjection>();
+            config.Map<DerivedChildObject, IncludeByDefaultDerivedChildObjectProjection>();
+
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                Child = new DerivedChildObject
+                {
+                    ExtendedProperty = "new extended property",
+                    Name = "subclass",
+                    Id = Guid.NewGuid()
+        }
+            };
+
+            var result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(IncludeByDefaultRootObjectProjection.Child)}]"));
+            result.ShouldNotBeNull();
+
+            IncludeByDefaultRootObjectProjection projection = result as IncludeByDefaultRootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Id.ShouldBe(Guid.Empty);
+
+            IncludeByDefaultDerivedChildObjectProjection childProjection = projection.Child as IncludeByDefaultDerivedChildObjectProjection;
+            childProjection.Name.ShouldBe(null);
+            childProjection.Id.ShouldBe(root.Child.Id);
+            childProjection.ExtendedProperty.ShouldBe("new extended property");
+        }
+
+        // Prove that a DefaultIncludes for a derived class can be declared at map time
+        [TestMethod]
+        public void DefaultIncludesStringSubClass()
+        {
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            config.Map<RootObject, RootObjectProjection>();
+            config.Map<DerivedChildObject, DerivedChildObjectProjection>($"[{nameof(DerivedChildObjectProjection.Id)},{nameof(DerivedChildObjectProjection.ExtendedProperty)}]");
+
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                Child = new DerivedChildObject
+                {
+                    ExtendedProperty = "new extended property",
+                    Name = "subclass",
+                    Id = Guid.NewGuid()
+                }
+            };
+
+            var result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(IncludeByDefaultRootObjectProjection.Child)}]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.Id.ShouldBe(Guid.Empty);
+
+            DerivedChildObjectProjection childProjection = projection.Child as DerivedChildObjectProjection;
+            childProjection.Name.ShouldBe(null);
+            childProjection.Id.ShouldBe(root.Child.Id);
+            childProjection.ExtendedProperty.ShouldBe("new extended property");
+        }
+
         [TestMethod]
         public void MapAndDefaultIncludesAttribute()
         {
@@ -933,6 +1102,19 @@ namespace PopcornStandardTest
 
             var entityProjection = result as EntityFromFactoryProjection;
             entityProjection.ShouldBeEmpty.ShouldBe("Generated");
+        }
+
+        [TestMethod]
+        public void CreateWithContextBasedTypeFactory()
+        {
+            var entity = new EntityFromContextBasedFactory() { MappedString = "Some Text" };
+            var context = new Dictionary<string, object> { { "DefaultString", "SpecifiedByContext" } };
+            var result = _expander.Expand(entity, context, PropertyReference.Parse($"[MappedString]"));
+            result.ShouldNotBeNull();
+
+            var entityProjection = result as EntityFromContextBasedFactoryProjection;
+            entityProjection.MappedString.ShouldNotBe("SpecifiedByContext");
+            entityProjection.ContextString.ShouldBe("SpecifiedByContext");
         }
 
         [TestMethod]

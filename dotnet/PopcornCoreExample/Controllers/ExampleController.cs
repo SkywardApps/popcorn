@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using PopcornCoreExample.Models;
+using System;
 
 namespace PopcornCoreExample.Controllers
 {
@@ -17,6 +18,15 @@ namespace PopcornCoreExample.Controllers
         public string Status()
         {
             return "OK";
+        }
+
+        [HttpGet, Route("error")]
+        public string Error()
+        {
+            HttpContext.Response.StatusCode = 301;
+            throw new ArgumentException("This is a test exception");
+
+            return "Error thrown";
         }
 
         [HttpGet, Route("employees")]
