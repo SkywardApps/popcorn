@@ -42,7 +42,7 @@ public string User { get; set; }
 ```
 
 Then, we assigned a "User" value to the mock entries we have in our CreateExampleDatabase function in Startup.cs.
-You'll see all users are set to 'Alice' currently in the example project, but just change the values to as shown below to 
+You'll see all users are set to 'Alice' currently in the example project, but just change the values as shown below to 
 see the effects of the Authorize function.
 ```csharp
 var context = new ExampleContext();
