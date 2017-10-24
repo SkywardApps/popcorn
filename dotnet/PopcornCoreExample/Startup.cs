@@ -38,7 +38,7 @@ namespace PopcornCoreExample
             {
                 mvcOptions.UsePopcorn((popcornConfig) => {
                     popcornConfig
-                        .SetInspector((data, context) => new Wire.Response { Data = data, Success = true })
+                        .SetDefaultApiResponseInspector()
                         .Map<Employee, EmployeeProjection>(config: (employeeConfig) => {
                             // For employees we will determine a full name and reformat the date to include only the day portion.
                             employeeConfig
@@ -51,15 +51,25 @@ namespace PopcornCoreExample
                                 // The car parameter is the source object; the context parameter is the dictionary we configure below.
                                 (context["database"] as ExampleContext).Employees.FirstOrDefault(e => e.Vehicles.Contains(car)));
                         })
+                        .AssignFactory<EmployeeProjection>((context) => EmployeeFactory(context))
                         // Pass in our 'database' via the context
                         .SetContext(new Dictionary<string, object>
                         {
-                            ["database"] = database
+                            ["database"] = database,
+                            ["defaultEmployment"] = EmploymentType.Employed
                         });
                 });
             });
         }
         
+        private EmployeeProjection EmployeeFactory(Dictionary<string, object> context)
+        {
+            return new EmployeeProjection
+            {
+                Employment = context["defaultEmployment"] as EmploymentType?
+            };
+        }
+
         private ExampleContext CreateExampleDatabase()
         {
             var context = new ExampleContext();
@@ -67,6 +77,7 @@ namespace PopcornCoreExample
             {
                 FirstName = "Liz",
                 LastName = "Lemon",
+                Employment = EmploymentType.FullTime,
                 Birthday = DateTimeOffset.Parse("1981-05-01"),
                 VacationDays = 0,
                 Vehicles = new List<Car>()
@@ -86,6 +97,7 @@ namespace PopcornCoreExample
             {
                 FirstName = "Jack",
                 LastName = "Donaghy",
+                Employment = EmploymentType.PartTime,
                 Birthday = DateTimeOffset.Parse("1957-07-12"),
                 VacationDays = 300,
                 Vehicles = new List<Car>()

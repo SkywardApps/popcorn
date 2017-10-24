@@ -78,29 +78,61 @@ namespace Skyward.Popcorn
         /// <param name="includes"></param>
         /// <param name="visited">todo: describe visited parameter on ExpandDirectObject</param>
         /// <returns></returns>
-        protected object ExpandDirectObject(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
+        protected object ExpandDirectObject(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited, Type destinationTypeHint)
         {
             visited = UniqueVisit(source, visited);
 
             Type sourceType = source.GetType();
-            includes = ValidateIncludes(includes, sourceType);
+
+            // Figure out our destination type -- either one was passed in, we get the default, or try blind expansion.
+            // The more complicated scenario is when we do get a type hint, but really we want to project to a derived version
+            Type destType = destinationTypeHint;
+             
+            if(Mappings.ContainsKey(sourceType))
+            {
+                // If we do have a mapping but no type hint was provided, use the default target type
+                if (destType == null)
+                {
+                    destType = Mappings[sourceType].DefaultDestinationType;
+                }
+                // If we have a type hint but it doesn't exist as an explicit destination type, then
+                // we may need to create a derived class that can be assigned to that type instead.
+                // This occurs if for example you use interfaces as your destination properties, or 
+                // polymorphism.  
+                else if(!Mappings[sourceType].Destinations.ContainsKey(destType))
+                {
+                    // Try to find a valid destination type that is something we can actually assign to the 
+                    // requested type hint.
+                    destType = Mappings[sourceType].Destinations.Keys.FirstOrDefault(k => destType.GetTypeInfo().IsAssignableFrom(k));
+                    if(destType == null)
+                    {
+                        throw new InvalidCastException($"Cannot find a mapper from {sourceType} to {destinationTypeHint}");
+                    }
+                }
+            }
+            
+            includes = ValidateIncludes(includes, sourceType, destType);
 
             // Attempt to create a projection object we'll map the data into
-            object destinationObject = CreateObjectInContext(context, sourceType);
+            object destinationObject = CreateObjectInContext(context, sourceType, destType);
 
             // Allow any actions to run ahead of mapping
-            foreach (var action in Mappings[sourceType]._BeforeExpansion)
+            foreach (var action in Mappings[sourceType].BeforeExpansion)
                 action(destinationObject, source, context);
+
+            // Ok, we gots ourselves a conflict.
+            // we try to match the source type to a mapped type
+            var projectionConfiguration = Mappings[sourceType].DestinationForType(destType);
 
             // Iterate over only the requested properties
             foreach (var propertyReference in includes)
             {
                 string propertyName = propertyReference.PropertyName;
-                var translators = Mappings[sourceType].Translators;
+                var translators = projectionConfiguration.Translators;
                 var preparers = Mappings[sourceType].PrepareProperties;
 
                 // if this property doesn't even exist on the destination object, cry about it
-                var destinationProperty = Mappings[sourceType].DestinationType.GetTypeInfo().GetProperty(propertyName);
+                var destinationProperty = projectionConfiguration.DestinationType.GetTypeInfo().GetProperty(propertyName);
                 if (destinationProperty == null)
                     throw new ArgumentOutOfRangeException(propertyName);
 
@@ -111,15 +143,15 @@ namespace Skyward.Popcorn
                 }
 
                 // Transform the input value as needed
-                var valueToAssign = GetSourceValue(source, context, propertyReference.PropertyName, Mappings[sourceType].Translators);
+                var valueToAssign = GetSourceValue(source, context, propertyReference.PropertyName, translators);
 
 
                 /// If authorization indicates this should not in fact be authorized, skip it
-                if(!AuthorizeValue(source, context, valueToAssign))
+                if (!AuthorizeValue(source, context, valueToAssign))
                 {
                     continue;
                 }
-
+                
                 
                 // Attempt to assign the property - this will expand the item if needed
                 if (!SetValueToProperty(valueToAssign, destinationProperty, destinationObject, context, propertyReference, visited))
@@ -131,7 +163,7 @@ namespace Skyward.Popcorn
 
             // Allow any actions to run after the mapping
             /// @Todo should this be in reverse order so we have a nested stack style FILO?
-            foreach (var action in Mappings[sourceType]._AfterExpansion)
+            foreach (var action in projectionConfiguration.AfterExpansion)
                 action(destinationObject, source, context);
 
             return destinationObject;
@@ -156,7 +188,7 @@ namespace Skyward.Popcorn
 
             if (Mappings.ContainsKey(assignType))
             {
-                foreach (var authorization in Mappings[assignType]._Authorizers)
+                foreach (var authorization in Mappings[assignType].Authorizers)
                     if (!authorization(source, context, valueToAssign))
                         return false;
             }
@@ -177,7 +209,7 @@ namespace Skyward.Popcorn
             visited = UniqueVisit(source, visited);
 
             Type sourceType = source.GetType();
-            includes = ValidateIncludes(includes, sourceType);
+            includes = ValidateIncludes(includes, sourceType, null);
 
             // Attempt to create a projection object we'll map the data into
             var destinationObject = new Dictionary<string, object>();
@@ -187,7 +219,7 @@ namespace Skyward.Popcorn
             // Allow any actions to run ahead of mapping
             if (Mappings.ContainsKey(sourceType))
             {
-                foreach (var action in Mappings[sourceType]._BeforeExpansion)
+                foreach (var action in Mappings[sourceType].BeforeExpansion)
                     action(destinationObject, source, context);
 
                 mappingDefinition = Mappings[source.GetType()];
@@ -210,8 +242,8 @@ namespace Skyward.Popcorn
                 }
 
                 // Transform the input value as needed
-                object valueToAssign = GetSourceValue(source, context, propertyName, mappingDefinition?.Translators);
-                
+                object valueToAssign = GetSourceValue(source, context, propertyName, mappingDefinition?.DefaultDestination()?.Translators);
+
                 /// If authorization indicates this should not in fact be authorized, skip it
                 if (!AuthorizeValue(source, context, valueToAssign))
                 {
@@ -229,12 +261,21 @@ namespace Skyward.Popcorn
             // Allow any actions to run after the mapping
             /// @Todo should this be in reverse order so we have a nested stack style FILO?
             if (Mappings.ContainsKey(sourceType))
-                foreach (var action in Mappings[sourceType]._AfterExpansion)
+                foreach (var action in Mappings[sourceType].DefaultDestination().AfterExpansion)
                     action(destinationObject, source, context);
 
             return destinationObject;
         }
 
+        /// <summary>
+        /// Retrieve a value to be assigned to a property on the projection.
+        /// This may mean invoking a translator, retrieving a property, or executing a method.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="context"></param>
+        /// <param name="propertyName"></param>
+        /// <param name="translators"></param>
+        /// <returns></returns>
         private static object GetSourceValue(object source, ContextType context, string propertyName, Dictionary<string, Func<object, ContextType, object>> translators = null)
         {
             object valueToAssign = null;
@@ -271,12 +312,20 @@ namespace Skyward.Popcorn
             return valueToAssign;
         }
 
-        private IEnumerable<PropertyReference> ValidateIncludes(IEnumerable<PropertyReference> includes, Type sourceType)
+        /// <summary>
+        /// Verify that we have the appropriate include list for a type, taking into account any requested,
+        /// or otherwise defaults supplied.  
+        /// </summary>
+        /// <param name="includes"></param>
+        /// <param name="sourceType"></param>
+        /// <param name="destType"></param>
+        /// <returns></returns>
+        private IEnumerable<PropertyReference> ValidateIncludes(IEnumerable<PropertyReference> includes, Type sourceType, Type destType)
         {
             if (includes.Any())
                 return includes;
 
-            if (!Mappings.ContainsKey(sourceType))
+            if (destType == null)
             {
                 // in the case of a blind object, default to source properties.  This is a bit dangerous!
                 includes = sourceType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -286,19 +335,25 @@ namespace Skyward.Popcorn
             // if this doesn't have any includes specified, use the default
             if (!includes.Any())
             {
-                includes = PropertyReference.Parse(Mappings[sourceType].DefaultIncludes);
+                includes = PropertyReference.Parse(Mappings[sourceType].DestinationForType(destType).DefaultIncludes);
             }
 
             // if this STILL doesn't have any includes, that means include everything
             if (!includes.Any())
             {
-                includes = Mappings[sourceType].DestinationType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                includes = destType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
                     .Select(p => new PropertyReference() { PropertyName = p.Name });
             }
 
             return includes;
         }
 
+        /// <summary>
+        /// Track each object we visit to make sure we don't end up in an infinite loop
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="visited"></param>
+        /// <returns></returns>
         private static HashSet<int> UniqueVisit(object source, HashSet<int> visited)
         {
             var key = RuntimeHelpers.GetHashCode(source);
@@ -311,13 +366,20 @@ namespace Skyward.Popcorn
             return visited;
         }
 
-        private object CreateObjectInContext(ContextType context, Type sourceType)
+        /// <summary>
+        /// Create an object, using any factories provided.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="sourceType"></param>
+        /// <param name="destType"></param>
+        /// <returns></returns>
+        private object CreateObjectInContext(ContextType context, Type sourceType, Type destType)
         {
             object destinationObject;
-            if (Factories.ContainsKey(Mappings[sourceType].DestinationType))
-                destinationObject = Factories[Mappings[sourceType].DestinationType](context);
+            if (Factories.ContainsKey(destType))
+                destinationObject = Factories[destType](context);
             else
-                destinationObject = Mappings[sourceType].DestinationType.CreateDefaultObject();
+                destinationObject = destType.CreateDefaultObject();
             return destinationObject;
         }
 
@@ -340,7 +402,20 @@ namespace Skyward.Popcorn
 
             // Verify that the generic parameter is something we would expand
             var genericType = interfaceType.GenericTypeArguments[0];
-            var expandedType = this.Mappings.ContainsKey(genericType) ? this.Mappings[genericType].DestinationType : typeof(Dictionary<string, object>);
+
+            // try to figure out the destination object type
+            var destInterfaceType = destinationType.GetTypeInfo().GetInterfaces()
+                    .FirstOrDefault(t => t.IsConstructedGenericType
+                    && t.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+
+
+            Type expandedType;
+            if (destInterfaceType != null)
+                expandedType = destInterfaceType.GenericTypeArguments[0];
+            else if (this.Mappings.ContainsKey(genericType))
+                expandedType = this.Mappings[genericType].DefaultDestinationType;
+            else 
+                expandedType = typeof(Dictionary<string, object>);
 
             // Ok, now we need to try and instantiate the destination type (if it is concrete) or take a guess 
             // at a concrete type if it is an interface
@@ -410,6 +485,12 @@ namespace Skyward.Popcorn
             return false;
         }
 
+        /// <summary>
+        /// Create a list of property references based on the request or defaults as declared by a property attribute.
+        /// </summary>
+        /// <param name="destinationProperty"></param>
+        /// <param name="propertyReference"></param>
+        /// <returns></returns>
         private static IEnumerable<PropertyReference> CreatePropertyReferenceList(PropertyInfo destinationProperty, PropertyReference propertyReference)
         {
             // If the requestor didn't define any fields to include, check if the property has any default fields
