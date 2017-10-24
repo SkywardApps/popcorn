@@ -32,6 +32,7 @@ namespace PopcornCoreExample
         {
             var database = CreateExampleDatabase();
             services.AddSingleton<ExampleContext>(database);
+            var userContext = new UserContext();
 
             // Add framework services.
             services.AddMvc((mvcOptions) =>
@@ -56,7 +57,11 @@ namespace PopcornCoreExample
                         .SetContext(new Dictionary<string, object>
                         {
                             ["database"] = database,
-                            ["defaultEmployment"] = EmploymentType.Employed
+                            ["defaultEmployment"] = EmploymentType.Employed,
+                            ["activeUser"] = userContext.user
+                        })
+                        .Authorize<Car>((source, context, value) => {
+                            return value.User == context["activeUser"];
                         });
                 });
             });
@@ -87,7 +92,8 @@ namespace PopcornCoreExample
                 Make = "Pontiac",
                 Model = "Firebird",
                 Year = 1981,
-                Color = Car.Colors.Blue
+                Color = Car.Colors.Blue,
+                User = "Alice"
             };
             context.Cars.Add(firebird);
             liz.Vehicles.Add(firebird);
@@ -107,7 +113,8 @@ namespace PopcornCoreExample
                 Make = "Ferrari N.V.",
                 Model = "250 GTO",
                 Year = 1962,
-                Color = Car.Colors.Red
+                Color = Car.Colors.Red,
+                User = "Alice"
             };
             context.Cars.Add(ferrari);
             jack.Vehicles.Add(ferrari);
@@ -116,7 +123,8 @@ namespace PopcornCoreExample
                 Make = "Porsche",
                 Model = "Cayman",
                 Year = 2005,
-                Color = Car.Colors.Yellow
+                Color = Car.Colors.Yellow,
+                User = "Alice"
             };
             context.Cars.Add(porsche);
             jack.Vehicles.Add(porsche);
