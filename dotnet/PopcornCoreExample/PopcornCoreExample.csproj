@@ -27,6 +27,7 @@
     <None Include="..\..\docs\dotnet\DotNetTutorialInspectors.md" Link="DotNetTutorialInspectors.md" />
     <None Include="..\..\docs\dotnet\DotNetTutorialDefaultIncludes.md" Link="DotNetTutorialDefaultIncludes.md" />
     <None Include="..\..\docs\dotnet\DotNetTutorialSorting.md" Link="DotNetTutorialSorting.md" />
+    <None Include="..\..\docs\dotnet\DotNetTutorialAuthorizers.md" Link="DotNetTutorialAuthorizers.md" />
   </ItemGroup>
 
   <ItemGroup>
