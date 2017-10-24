@@ -9,7 +9,7 @@ namespace Skyward.Popcorn
     /// This is the definition of how to map one type to another using the expander.  You can, but probably
     /// shouldn't create this directly.  Instead, use PopcornConfiguration.
     /// </summary>
-    internal class MappingDefinition
+    public class MappingDefinition
     {
 
         /// <summary>

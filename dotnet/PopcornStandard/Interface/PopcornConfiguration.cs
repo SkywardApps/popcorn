@@ -15,7 +15,7 @@ namespace Skyward.Popcorn
         public PopcornConfiguration(Expander expander) { _expander = expander; }
 
         public ContextType Context { get; private set; }
-        public Func<object, object, object> Inspector { get; private set; }
+        public Func<object, object, Exception, object> Inspector { get; private set; }
 
         public bool ApplyToAllEndpoints { get; private set; } = true;
 
@@ -38,11 +38,24 @@ namespace Skyward.Popcorn
         /// </summary>
         /// <param name="inspector"></param>
         /// <returns></returns>
-        public PopcornConfiguration SetInspector(Func<object, object, object> inspector)
+        public PopcornConfiguration SetInspector(Func<object, object, Exception, object> inspector)
         {
             if (Inspector != null)
                 throw new InvalidOperationException("Inspector has already been assigned");
             Inspector = inspector;
+            return this;
+        }
+
+        /// <summary>
+        /// Designate a default response inspector provided by Popcorn that handles error message/success wrapping
+        /// </summary>
+        /// <returns></returns>
+        public PopcornConfiguration SetDefaultApiResponseInspector()
+        {
+            if (Inspector != null)
+                throw new InvalidOperationException("Inspector has already been assigned");
+            Inspector = new Func<object, object, Exception, object>
+                ((data, context, resultException) => resultException == null ? new ApiResponse { Success = true, Data = data} :  new ApiResponse { Success = false, ErrorCode = resultException.GetType().ToString(), ErrorMessage = resultException.Message, ErrorDetails = resultException.ToString()} );
             return this;
         }
 

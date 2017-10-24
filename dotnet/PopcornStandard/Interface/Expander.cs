@@ -10,6 +10,14 @@ namespace Skyward.Popcorn
 
     public enum SortDirection { Unknown, Ascending, Descending }
 
+    public interface IExpanderInternalConfiguration
+    {
+        Dictionary<Type, MappingDefinition> Mappings { get; }
+        Dictionary<Type, Func<ContextType, object>> Factories { get; }
+        bool ExpandBlindObjects { get; set; }
+
+    }
+
     /// <summary>
     /// This is the public interface part for the 'Expander' class.
     /// The expander will allow you to project from one type to another, dynamically selecting which properties to include and
@@ -20,7 +28,7 @@ namespace Skyward.Popcorn
     /// 
     /// This is intended primarily for Api usage so a client can selectively include properties and nested data in their query.
     /// </summary>
-    public partial class Expander
+    public partial class Expander : IExpanderInternalConfiguration
     {
         /// <summary>
         /// This is the core of the expander.  This registers incoming types (the source of the data) and specifies a 
@@ -29,13 +37,20 @@ namespace Skyward.Popcorn
         /// It is possible that in the future we may want to provide multiple destination options, primarily for nested 
         /// entities.  Top-level entities will always need a 'default' outgoing type.
         /// </summary>
-        internal Dictionary<Type, MappingDefinition> Mappings { get; } = new Dictionary<Type, MappingDefinition>();
-        internal Dictionary<Type, Func<ContextType, object>> Factories { get; } = new Dictionary<Type, Func<ContextType, object>>();
+        Dictionary<Type, MappingDefinition> IExpanderInternalConfiguration.Mappings { get; } = new Dictionary<Type, MappingDefinition>();
+        internal Dictionary<Type, MappingDefinition> Mappings => ((IExpanderInternalConfiguration)this).Mappings;
+        Dictionary<Type, Func<ContextType, object>> IExpanderInternalConfiguration.Factories { get; } = new Dictionary<Type, Func<ContextType, object>>();
+        internal Dictionary<Type, Func<ContextType, object>> Factories => ((IExpanderInternalConfiguration)this).Factories;
+        bool IExpanderInternalConfiguration.ExpandBlindObjects { get; set; } = false;
+        internal bool ExpandBlindObjects {
+            get => ((IExpanderInternalConfiguration)this).ExpandBlindObjects;
+            set => ((IExpanderInternalConfiguration)this).ExpandBlindObjects = value;
+        }
+
         internal HashSet<Type> BlacklistExpansion = new HashSet<Type>
         {
             typeof(string),
         };
-        internal bool ExpandBlindObjects { get; set; } = false;
 
         /// <summary>
         /// Query whether or not a particular object is either a Mapped type or a collection of a Mapped type.
@@ -196,7 +211,7 @@ namespace Skyward.Popcorn
             switch (sortDirection)
             {
                 case SortDirection.Unknown:
-                    throw new ArgumentException("Unknown sort");
+                    throw new ArgumentException("Unknown sortDirection");
                 case SortDirection.Ascending:
                     sortingList = sortingList.OrderBy(i => sortProperty.GetValue(i)).ToList();
                     break;
