@@ -21,7 +21,8 @@ into one.
 	+ [Sorting](docs/dotnet/DotNetTutorialSorting.md) of responses
 	+ Selective authorization of response values
 	+ Configurable response inspectors
-	+ [Factory and advanced projection](docs/dotnet/DotNetTutorialAdvancedProjections.md) support 
+	+ [Factory and advanced projection](docs/dotnet/DotNetTutorialAdvancedProjections.md) support
+	+ Set relevant [contexts](docs/dotnet/DotNetTutorialContexts.md) for your API
 
 **Ok, so.... what is it in action?**
 
