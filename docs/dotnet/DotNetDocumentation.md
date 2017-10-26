@@ -8,6 +8,8 @@ Tutorials:
 + [Default Includes](DotNetTutorialDefaultIncludes.md)
 + [Sorting](DotNetTutorialSorting.md)
 + Lazy Loading
++ [Authorizers](DotNetTutorialAuthorizers.md)
++ [Inspectors](DotNetTutorialInspectors.md)
 
 Implementation Details:
 + OutputFormatter

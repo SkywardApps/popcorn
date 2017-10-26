@@ -15,11 +15,14 @@
 + ### [DotNet](dotnet/DotNetDocumentation.md)
   + #### [Getting Started](dotnet/DotNetTutorialGettingStarted.md)
   + #### [Advanced Projections](dotnet/DotNetTutorialAdvancedProjections.md)
+    + #### [Factories](dotnet/DotNetTutorialAdvancedProjections.md#factories)
   + #### [Default Includes](dotnet/DotNetTutorialDefaultIncludes.md)
   + #### [Sorting](dotnet/DotNetTutorialSorting.md)
     + ##### ["Sort" parameter](dotnet/DotNetTutorialSorting.md#sort)
     + ##### ["Sort Direction" parameter](dotnet/DotNetTutorialSorting.md#sortDirection)
   + #### Lazy Loading
+  + #### [Authorizers](dotnet/DotNetTutorialAuthorizers.md)
+  + #### [Inspectors](dotnet/DotNetTutorialInspectors.md)
     
 + ### [Roadmap](Roadmap.md)
 
