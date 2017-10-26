@@ -15,27 +15,24 @@ build:
  stage: build
  image: onsitedashboard:build
  script: 
-  - cd dotnet/PopcornStandard
-  - dotnet restore
-  - dotnet build 
-  - cd ../PopcornCore
+  - cd dotnet/PopcornNetStandard
   - dotnet restore
   - dotnet build 
  tags:
   - x86
 
-# Running the standard library tests
+# Running the example test integration tests
 popcorn_test:
  stage: test
  image: onsitedashboard:build
  script: 
-  - cd dotnet/PopcornStandardTest
+  - cd dotnet/PopcornNetCoreExampleIntegrationTest
   - dotnet restore
   - dotnet test
  tags:
   - x86
 
-# Running the dotnet core tests
+# Running the standard library tests
 popcorncore_test:
  stage: test
  image: onsitedashboard:build
@@ -82,15 +79,11 @@ nuget:
   - beta
   - production
  script:
-  - cd dotnet/PopcornStandard
-  - dotnet restore
-  - dotnet build -c Release
-  - cd ../PopcornCore
+  - cd dotnet/PopcornNetStandard
   - dotnet restore
   - dotnet build -c Release
   - cd ../Build/Release
   - ls
   - dotnet nuget push Skyward.Api.Popcorn.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
-  - dotnet nuget push Skyward.Api.Popcorn.DotNetCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
  tags:
   - x86
