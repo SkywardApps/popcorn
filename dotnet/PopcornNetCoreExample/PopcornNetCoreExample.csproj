@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PopcornStandard\PopcornNetStandard.csproj" />
+    <ProjectReference Include="..\PopcornNetStandard\PopcornNetStandard.csproj" />
   </ItemGroup>
 
 </Project>

@@ -21,8 +21,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\PopcornCoreExample\PopcornNetCoreExample.csproj" />
-    <ProjectReference Include="..\PopcornStandard\PopcornNetStandard.csproj" />
+    <ProjectReference Include="..\PopcornNetCoreExample\PopcornNetCoreExample.csproj" />
+    <ProjectReference Include="..\PopcornNetStandard\PopcornNetStandard.csproj" />
   </ItemGroup>
 
 </Project>

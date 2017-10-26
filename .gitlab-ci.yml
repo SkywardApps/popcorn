@@ -22,7 +22,7 @@ build:
   - x86
 
 # Running the example test integration tests
-popcorn_test:
+popcornstandard_integrationtest:
  stage: test
  image: onsitedashboard:build
  script: 
@@ -33,7 +33,7 @@ popcorn_test:
   - x86
 
 # Running the standard library tests
-popcorncore_test:
+popcornstandard_unittest:
  stage: test
  image: onsitedashboard:build
  script: 
