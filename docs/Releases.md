@@ -1,4 +1,7 @@
 # [Popcorn](../README.md) > Releases and Release Notes
+
+[Table Of Contents](TableOfContents.md)
+
 ---
 ### Minor Release: 1.3.0
 + **Feature Additions:**  

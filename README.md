@@ -2,6 +2,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/odjc31j0q0k213qh/branch/master?svg=true)](https://ci.appveyor.com/project/alexbarbato/popcorn/branch/master) 
 [![NuGet](https://img.shields.io/nuget/v/Skyward.Api.Popcorn.DotNetCore.svg)](https://www.nuget.org/packages/Skyward.Api.Popcorn.DotNetCore)
 
+[Table Of Contents](docs/TableOfContents.md)
 ## Jump straight in
 + **.NET Core** - We have a [.net core middleware](docs/dotnet/DotNetDocumentation.md) that you can drop in to enable Popcorn on Web Apis. 
 Feel free to grab it on [nuget](https://www.nuget.org/packages/Skyward.Api.Popcorn.DotNetCore).

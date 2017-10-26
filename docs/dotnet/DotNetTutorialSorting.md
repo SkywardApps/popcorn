@@ -1,3 +1,4 @@
+[Table Of Contents](../TableOfContents.md)
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Sorting
 
 As we are a few releases in, we are going to assume you've read [Getting Started](DotNetTutorialGettingStarted.md) and our other tutorials to familiarize
@@ -7,7 +8,7 @@ you'd also like the results to be sorted server side so you can just plug and pl
 This tutorial will walk you through the two new additions to our query parameters that we've added, "sort" and its related partner "sortDirection", and how they 
 can be leveraged with your API's.
 
-### "sort" Parameter
+### "sort" Parameter<p name="sort"></p>
 
 First let's see an example of a typical response object to the following request from our Cars endpoint we've referenced before
 ```javascript
@@ -103,7 +104,7 @@ and we'd love to work with you on that.
 + An "include" is not required to sort a response.
 + For that matter, neither is a "sortDirection" as it will default to ascending.
 
-### "sortDirection" Parameter
+### "sortDirection" Parameter<a name="sortDirection"></a>
 
 "sortDirection" is a far more simple query parameter as it just accepts two values, "Ascending" and "Descending" (case sensitive) 
 and specifies the way the specified sort target is to be sorted.
