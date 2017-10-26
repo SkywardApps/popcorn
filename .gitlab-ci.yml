@@ -40,7 +40,7 @@ popcorncore_test:
  stage: test
  image: onsitedashboard:build
  script: 
-  - cd dotnet/PopcornCoreTest
+  - cd dotnet/PopcornNetStandardTest
   - dotnet restore
   - dotnet test
  tags:

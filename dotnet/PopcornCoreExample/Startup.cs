@@ -8,8 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PopcornCoreExample.Models;
-using Skyward.Popcorn.Core;
 using PopcornCoreExample.Projections;
+using Skyward.Popcorn;
 
 namespace PopcornCoreExample
 {
