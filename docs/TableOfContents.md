@@ -13,12 +13,12 @@
   + #### [Moving Forward](dotnet/DotNetDocumentation.md#movingForward)
     
 + ### [DotNet](dotnet/DotNetDocumentation.md)
-  + #### [Getting Started](DotNet/DotNetTutorialGettingStarted.md)
-  + #### [Advanced Projections](DotNet/DotNetTutorialAdvancedProjections.md)
-  + #### [Default Includes](DotNet/DotNetTutorialDefaultIncludes.md)
-  + #### [Sorting](DotNet/DotNetTutorialSorting.md)
-    + ##### ["Sort" parameter](DotNet/DotNetTutorialSorting.md#sort)
-    + ##### ["Sort Direction" parameter](DotNet/DotNetTutorialSorting.md#sortDirection)
+  + #### [Getting Started](dotnet/DotNetTutorialGettingStarted.md)
+  + #### [Advanced Projections](dotnet/DotNetTutorialAdvancedProjections.md)
+  + #### [Default Includes](dotnet/DotNetTutorialDefaultIncludes.md)
+  + #### [Sorting](dotnet/DotNetTutorialSorting.md)
+    + ##### ["Sort" parameter](dotnet/DotNetTutorialSorting.md#sort)
+    + ##### ["Sort Direction" parameter](dotnet/DotNetTutorialSorting.md#sortDirection)
   + #### Lazy Loading
     
 + ### [Roadmap](Roadmap.md)
