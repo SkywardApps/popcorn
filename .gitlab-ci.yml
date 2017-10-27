@@ -13,7 +13,7 @@ stages:
 # Deploy our project to the internal site for testing
 build:
  stage: build
- image: onsitedashboard:build
+ image: popcorn:latest
  script: 
   - cd dotnet/PopcornNetStandard
   - dotnet restore
@@ -24,7 +24,7 @@ build:
 # Running the example test integration tests
 popcornstandard_integrationtest:
  stage: test
- image: onsitedashboard:build
+ image: popcorn:latest
  script: 
   - cd dotnet/PopcornNetCoreExampleIntegrationTest
   - dotnet restore
@@ -35,7 +35,7 @@ popcornstandard_integrationtest:
 # Running the standard library tests
 popcornstandard_unittest:
  stage: test
- image: onsitedashboard:build
+ image: popcorn:latest
  script: 
   - cd dotnet/PopcornNetStandardTest
   - dotnet restore
@@ -46,7 +46,7 @@ popcornstandard_unittest:
 # Updating documentation on confluence markdowns within the project
 documentation:
  stage: uploadresults
- image: onsitedashboard:build
+ image: popcorn:latest
  only: 
   - master
  before_script:
@@ -70,7 +70,7 @@ documentation:
 # Create an instance of this server.
 nuget:
  stage: deployment
- image: onsitedashboard:build
+ image: popcorn:latest
  when: manual
  allow_failure: true
  only:
