@@ -31,6 +31,6 @@ It has grown a bit since then with some other features we found valuable along t
  calls are a couple of my favorites — and we hope others find it as quick and easy as we did.  We’re still actively developing it, and
  already getting some great community feedback and pull requests.  
 
-Head on over to our [documentation site]() to learn more, or visit the github repo to get involved! (Provide link)
+Head on over to our [documentation site]({{ "/" | absolute_url }}) to learn more, or visit the [github repo](https://github.com/SkywardApps/popcorn) to get involved!
 
 
