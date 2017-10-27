@@ -1,5 +1,20 @@
 # [Popcorn](../README.md) > Releases and Release Notes
 ---
+## Major Release: 2.0.0
++ **Feature Additions:**
+	+ Condensed our entire .NET offering into one .NET Standard project
+	+ Enhanced the map ability so a single source type can be mapped to multiple destination types
+	+ Added a default response inspector implementation
+	+ Authorizers added as a configuration option to restrict access to certain objects as specified
++ **Bug Fixes:**
+	+ Enabled the handling of polymorphism  in DefaultIncludes
+	+ MapEntityFramework method allows for custom configurations without additional setup
++ **Maintenance**
+	+ Documentation added: [Authorizers](dotnet/DotNetTutorialAuthorizers.md), [Factories](dotnet/DotNetTutorialAdvancedProjections.md) in Advanced Projections tutorial, 
+	Response [Inspectors](dotnet/DotNetTutorialInspectors.md)
+	+ Test additions and added CI to GitHub project
+
+---
 ### Minor Release: 1.3.0
 + **Feature Additions:**  
     + Query parameter "sort" added to allow the sorting of responses based on a simple comparable property
