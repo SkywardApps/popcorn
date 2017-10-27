@@ -289,3 +289,4 @@ __pycache__/
 log-markdownup-*.txt
 _site/
 Gemfile*
+.jekyll-metadata
