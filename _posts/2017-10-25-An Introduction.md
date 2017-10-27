@@ -1,7 +1,7 @@
 Thanks for checking out Popcorn! 
 
 Like many open source libraries, Popcorn started as a solution to a problem that came up in a few of our projects around the same time.
- Our team needed to be able to stitch together objects that were being returned by a .Net Core ReSTful API. At times, we had to retrieve
+ Our team needed to be able to stitch together objects that were being returned by a .NET Core ReSTful API. At times, we had to retrieve
  a collection of a thousand items; then, for *each* item, make an identical request to the API to get a piece of dependent data.
 
 That makes for a ton of network traffic, and it wasn’t very efficient.  We could have changed the endpoint for a specific usage, or added
@@ -9,8 +9,8 @@ That makes for a ton of network traffic, and it wasn’t very efficient.  We cou
  a public API... well, that way lies madness.
 
 A few quick googles later, we found a couple of things:
-There are indeed solutions for this problem; JSON API and GraphQL are two well established players in this space.
- The existing solutions all require specific schemas and would require us to start over from scratch with our client api implementations, 
+There are indeed solutions for this problem; JSON API and GraphQL are two well-established players in this space.
+ The existing solutions all require specific schemas and would require us to start over from scratch with our client API implementations, 
  and at least partially rewrite our server code.
 
 Well, starting over didn’t sound great, and we didn’t love the idea of handing over our schema design entirely anyway.  Instead, we created
