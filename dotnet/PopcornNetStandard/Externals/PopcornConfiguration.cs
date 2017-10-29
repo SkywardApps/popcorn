@@ -205,5 +205,21 @@ namespace Skyward.Popcorn
             _expander.ExpandBlindObjects = v;
             return this;
         }
+
+        public void ScanAssemblyForMapping(Assembly assembly)
+        {
+            MethodInfo method = typeof(PopcornConfiguration).GetMethod("Map");
+
+            foreach (Type type in assembly.GetTypes())
+            {
+                var attr = type.GetTypeInfo().GetCustomAttribute<ExpandFromAttribute>();
+                if (attr == null)
+                    continue;
+
+                MethodInfo generic = method.MakeGenericMethod(attr.SourceType, type);
+                object[] parameters = { attr.Includes, null};
+                generic.Invoke(this, parameters);
+            }
+        }
     }
 }
