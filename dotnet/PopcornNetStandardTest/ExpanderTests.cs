@@ -42,6 +42,40 @@ namespace PopcornNetStandardTest
             public ChildObject ComplexFromMethod() { return new ChildObject { Id = Guid.NewGuid(), Name = "ComplexFromMethod ChildObject", Description = "This proves that an object returned from a method will also be projected." }; }
         }
 
+        [InternalOnly]
+        public class InternalObjectTrue : RootObject
+        {
+
+        }
+
+        [InternalOnly(false)]
+        public class InternalObjectFalse : RootObject
+        {
+
+        }
+
+        public class InternalObjectValues : RootObject
+        {
+            [InternalOnly]
+            public object InternalPropertyTrue { get; set; }
+
+            [InternalOnly(false)]
+            public object InternalPropertyFalse { get; set; }
+
+            [InternalOnly]
+            public object InternalMethodTrue() { return new object(); }
+
+            [InternalOnly(false)]
+            public object InternalMethodFalse() { return new object(); }
+        }
+
+        public class InternalObjectValuesProjection
+        {
+            public object InternalPropertyTrue { get; set; }
+            public object InternalPropertyFalse { get; set; }
+            public object InternalMethodTrue { get; set; }
+            public object InternalMethodFalse { get; set; }
+        }
 
         /// <summary>
         /// A sub-entity used to test collections
@@ -231,8 +265,38 @@ namespace PopcornNetStandardTest
             config.Map<Loop, LoopProjection>();
             config.Map<EntityFromFactory, EntityFromFactoryProjection>();
             config.Map<EntityFromContextBasedFactory, EntityFromContextBasedFactoryProjection>();
+            config.Map<InternalObjectValues, InternalObjectValuesProjection>();
             config.AssignFactory<EntityFromFactoryProjection>(() => new EntityFromFactoryProjection { ShouldBeEmpty = "Generated" });
             config.AssignFactory<EntityFromContextBasedFactoryProjection>((context) => new EntityFromContextBasedFactoryProjection{ ContextString = context["DefaultString"] as string, MappedString = context["DefaultString"] as string });
+        }
+
+        [TestMethod]
+        public void InternalOnlyClassFalse()
+        {
+            InternalObjectFalse root = new InternalObjectFalse();
+
+            var result = _expander.Expand(root, null);
+            result.ShouldBeNull();
+        }
+
+        [TestMethod]
+        public void InternalOnlyClassTrue()
+        {
+            InternalObjectTrue root = new InternalObjectTrue();
+
+            Should.Throw<InternalOnlyViolationException>( () => _expander.Expand(root, null));
+        }
+
+        [TestMethod]
+        public void InternalOnlyValues()
+        {
+            InternalObjectValues root = new InternalObjectValues();
+            Should.Throw<InternalOnlyViolationException>(() => _expander.Expand(root, null, "[InternalMethodTrue]"));
+            Should.Throw<InternalOnlyViolationException>(() => _expander.Expand(root, null, "[InternalPropertyTrue]"));
+            var result = (InternalObjectValuesProjection)_expander.Expand(root, null, "[InternalMethodFalse]");
+            result.InternalMethodFalse.ShouldBeNull();
+            result = (InternalObjectValuesProjection)_expander.Expand(root, null, "[InternalPropertyFalse]");
+            result.InternalPropertyFalse.ShouldBeNull();
         }
 
         // Things to test
