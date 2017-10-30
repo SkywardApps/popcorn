@@ -127,7 +127,7 @@ namespace Skyward.Popcorn
             {
 
                 if (customAttr.ThrowExcepton)
-                    throw new InternalOnlyViolationException();
+                    throw new InternalOnlyViolationException(string.Format("Expand: {0} class is marked [InternalOnly]", sourceType.Name));
 
                 return null;
             }

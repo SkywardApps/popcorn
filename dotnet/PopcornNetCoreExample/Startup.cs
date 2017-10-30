@@ -40,6 +40,9 @@ namespace PopcornCoreExample
                 mvcOptions.UsePopcorn((popcornConfig) => {
                     popcornConfig
                         .SetDefaultApiResponseInspector()
+                        .Map<InternalClass, InternalClassProjection>()
+                        .Map<InternalFieldsClass, InternalFieldsClassProjection>(defaultIncludes: "[Field1,Field2,Method1]")
+                        .Map<InternalFieldClassException, InternalFieldsClassProjection>(defaultIncludes: "[Field1]")
                         .Map<Employee, EmployeeProjection>(config: (employeeConfig) => {
                             // For employees we will determine a full name and reformat the date to include only the day portion.
                             employeeConfig

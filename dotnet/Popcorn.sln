@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2002
+VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}"
 EndProject
@@ -31,6 +31,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tutorials", "Tutorials", "{
 		..\docs\dotnet\DotNetTutorialDefaultIncludes.md = ..\docs\dotnet\DotNetTutorialDefaultIncludes.md
 		..\docs\dotnet\DotNetTutorialGettingStarted.md = ..\docs\dotnet\DotNetTutorialGettingStarted.md
 		..\docs\dotnet\DotNetTutorialInspectors.md = ..\docs\dotnet\DotNetTutorialInspectors.md
+		..\docs\dotnet\DotNetTutorialInternalOnly.md = ..\docs\dotnet\DotNetTutorialInternalOnly.md
 		..\docs\dotnet\DotNetTutorialSorting.md = ..\docs\dotnet\DotNetTutorialSorting.md
 	EndProjectSection
 EndProject
