@@ -15,7 +15,7 @@
 + ### [DotNet](dotnet/DotNetDocumentation.md)
   + #### [Getting Started](dotnet/DotNetTutorialGettingStarted.md)
   + #### [Advanced Projections](dotnet/DotNetTutorialAdvancedProjections.md)
-    + #### [Factories](dotnet/DotNetTutorialAdvancedProjections.md#factories)
+    + ##### [Factories](dotnet/DotNetTutorialAdvancedProjections.md#factories)
   + #### [Default Includes](dotnet/DotNetTutorialDefaultIncludes.md)
   + #### [Sorting](dotnet/DotNetTutorialSorting.md)
     + ##### ["Sort" parameter](dotnet/DotNetTutorialSorting.md#sort)
