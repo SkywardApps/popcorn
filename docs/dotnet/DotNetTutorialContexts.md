@@ -1,6 +1,6 @@
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Setting Contexts
 
-Popcorn is not all knowing of all things in your application on its own. Actually, it's aware of virtually nothing without being specifically told and thus 
+Popcorn does not know about every thing in your application on its own. Actually, it's aware of virtually nothing without being specifically told and thus 
 we use .NET MVC options with the Popcorn Configuration as an abstraction layer 
 between whatever it is you're doing on your back end and your API.
 

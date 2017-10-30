@@ -20,8 +20,8 @@ into one.
 + Selective inclusion from a RESTful API
 	+ Configurable [response defaults](docs/dotnet/DotNetTutorialDefaultIncludes.md)
 	+ [Sorting](docs/dotnet/DotNetTutorialSorting.md) of responses
-	+ Selective authorization of response values
-	+ Configurable response inspectors
+	+ Selective [authorization](docs/dotnet/DotNetTutorialAuthorizers.md) and [permissioning](docs/dotnet/DotNetTutorialInternalOnly.md) of response values
+	+ Configurable [response inspectors](docs/dotnet/DotNetTutorialInspectors.md)
 	+ [Factory and advanced projection](docs/dotnet/DotNetTutorialAdvancedProjections.md) support
 	+ Set relevant [contexts](docs/dotnet/DotNetTutorialContexts.md) for your API
 
