@@ -1,6 +1,5 @@
-# [Popcorn](../../README.md) > [Documentation](../Documentation.md) > DotNet
-
 [Table Of Contents](../../docs/TableOfContents.md)
+# [Popcorn](../../README.md) > [Documentation](../Documentation.md) > DotNet
 
 Tutorials:
 + [Getting Started](DotNetTutorialGettingStarted.md)

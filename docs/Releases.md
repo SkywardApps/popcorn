@@ -1,8 +1,7 @@
-# [Popcorn](../README.md) > Releases and Release Notes
-
 [Table Of Contents](TableOfContents.md)
 
----
+# [Popcorn](../README.md) > Releases and Release Notes
+
 ## Major Release: 2.0.0
 + **Feature Additions:**
 	+ Condensed our entire .NET offering into one .NET Standard project

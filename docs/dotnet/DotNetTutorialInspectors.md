@@ -1,3 +1,4 @@
+[Table Of Contents](../../docs/TableOfContents.md)
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Inspectors
 
 We feel that it is important for developers to have the opportunity to inspect their Popcorn response objects in a consistent fashion so that 
