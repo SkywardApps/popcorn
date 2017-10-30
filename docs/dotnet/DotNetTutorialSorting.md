@@ -1,5 +1,6 @@
-[Table Of Contents](../TableOfContents.md)
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Sorting
+
+[Table Of Contents](../TableOfContents.md)
 
 As we are a few releases in, we are going to assume you've read [Getting Started](DotNetTutorialGettingStarted.md) and our other tutorials to familiarize
 yourself with Popcorn. Now lets say not only do you want to have your response objects from your API's return only the specific properties you desire, but

@@ -1,5 +1,6 @@
-[Table Of Contents](../../docs/TableOfContents.md)
 # [Popcorn](../../README.md) > [Quick Start](../QuickStart.md) > DotNet
+
+[Table Of Contents](../../docs/TableOfContents.md)
 
 There are two methods to get the code into your solution:
 1. Check out the project from [GitHub](https://github.com/SkywardApps/popcorn).  Add the PopcornStandard and (probably) PopcornCore projects to your solution, and add references to them as needed.

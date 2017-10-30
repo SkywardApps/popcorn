@@ -1,5 +1,6 @@
-[Table Of Contents](../TableOfContents.md)
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Advanced Projections
+
+[Table Of Contents](../TableOfContents.md)
 
 By now you've learned how to 'project' a data entity into another type, allowing you to filter out any properties that your api consumer didn't want.
 If that sentence didn't make sense, you should probably go back and complete [Getting Started](DotNetTutorialGettingStarted.md) first.

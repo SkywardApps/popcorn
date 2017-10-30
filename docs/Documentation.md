@@ -1,5 +1,6 @@
-[Table Of Contents](TableOfContents.md)
 # [Popcorn](../README.md) > Documentation
+
+[Table Of Contents](TableOfContents.md)
 
 This document contains protocol level documentation -- that is, the contract defined with the API consumer, regardless of platform-specific implementation.
 

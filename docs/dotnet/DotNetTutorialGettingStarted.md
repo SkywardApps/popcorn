@@ -1,5 +1,6 @@
-[Table Of Contents](../../docs/TableOfContents.md)
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Getting Started
+
+[Table Of Contents](../../docs/TableOfContents.md)
 
 Ok, so you want to jump in with both feet and get Popcorn set up and running.
 This tutorial will walk through a simple Asp.Net Core application demonstrating the basic functionality.
