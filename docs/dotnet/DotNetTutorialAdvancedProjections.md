@@ -1,5 +1,7 @@
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Advanced Projections
 
+[Table Of Contents](../TableOfContents.md)
+
 By now you've learned how to 'project' a data entity into another type, allowing you to filter out any properties that your api consumer didn't want.
 If that sentence didn't make sense, you should probably go back and complete [Getting Started](DotNetTutorialGettingStarted.md) first.
 We'll still be here when you get back.
@@ -161,7 +163,7 @@ http://localhost:50353/api/example/cars?include=[Model,Make,Year,Color,Owner[Ful
     }
 ]
 ```
-## Factories
+## Factories<a name="factories"/>
 With Factories it's possible to extract the projection class instantiation. You can either use a plain factory or one that takes an context object as input parameter. The big advantage of using a context object is that the instantiation can be configured to its needs.
 
 In the following example the Employee model consists of a property that describes the employment type (eg. FullTime/PartTime). If this employment type is not explicitly requested, using the include parameter or by requesting the entire model, it depends on its initial value. With a context-based factory, this value can be set according to the current configuration.

@@ -1,5 +1,7 @@
 # [Popcorn](../README.md) > Maintainers
 
+[Table Of Contents](TableOfContents.md)
+
 The initial concept, design, and implementation of Popcorn was provided by [Skyward App Company](https://skywardappcompany.com). 
 Currently the Skyward organizational team acts as maintainers of this project.  
 

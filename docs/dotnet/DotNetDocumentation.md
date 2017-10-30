@@ -1,5 +1,7 @@
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > DotNet
 
+[Table Of Contents](../../docs/TableOfContents.md)
+
 Tutorials:
 + [Getting Started](DotNetTutorialGettingStarted.md)
 + [Advanced Projections](DotNetTutorialAdvancedProjections.md)
@@ -7,6 +9,8 @@ Tutorials:
 + [Sorting](DotNetTutorialSorting.md)
 + [Internal Only Attrribute](DotNetTutorialInternalOnly.md)
 + Lazy Loading
++ [Authorizers](DotNetTutorialAuthorizers.md)
++ [Inspectors](DotNetTutorialInspectors.md)
 
 Implementation Details:
 + OutputFormatter
