@@ -1,5 +1,7 @@
 # [Popcorn](../README.md) > Roadmap
 
+[Table Of Contents](TableOfContents.md)
+
 A high level overview of features we would like to develop, in relative priority order.
 
 1. Automatic schema generation
