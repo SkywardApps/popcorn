@@ -46,22 +46,5 @@ namespace PopcornCoreExample.Controllers
         {
             return _context.Cars;
         }
-
-        [HttpGet, Route("internalc")]
-        public InternalClass InternalClass()
-        {
-            return _context.InternalClass;
-        }
-
-        [HttpGet, Route("internalf")]
-        public InternalFieldsClass InternalFields()
-        {
-            return _context.InternalFieldsClass;
-        }
-        [HttpGet, Route("internalferror")]
-        public InternalFieldClassException InternalFieldsException()
-        {
-            return _context.InternalFieldClassException;
-        }
     }
 }
