@@ -23,7 +23,8 @@
   + #### Lazy Loading
   + #### [Authorizers](dotnet/DotNetTutorialAuthorizers.md)
   + #### [Inspectors](dotnet/DotNetTutorialInspectors.md)
-    
+  + #### [Advanced Projections](dotnet/DotNetTutorialAdvancedProjections.md)
+  
 + ### [Roadmap](Roadmap.md)
 
 + ### [Releases and Release Notes](Releases.md)
