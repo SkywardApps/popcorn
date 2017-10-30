@@ -292,7 +292,7 @@ namespace Skyward.Popcorn
             names[0] = matchingProperty?.Name + " property";
             names[1] = matchingMethod?.Name + " method";
 
-            for(int i=0; i<attributes.Length; i++)
+            for(int i = 0; i < attributes.Length; i++)
             {
                 var internalOnlyAttr = attributes[i];
 
