@@ -1,0 +1,350 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PopcornStandard</name>
+    </assembly>
+    <members>
+        <member name="T:Skyward.Popcorn.Expander">
+            <summary>
+            The expansions algorithms
+            </summary>
+            <summary>
+            This is the public interface part for the 'Expander' class.
+            The expander will allow you to project from one type to another, dynamically selecting which properties to include and
+            which properties to descend into and retrieve (the expansion part).
+            
+            Types will be mapped implicitly where possible, or you may provide a 'Translator' that handles providing data for a 
+            particular property.
+            
+            This is intended primarily for Api usage so a client can selectively include properties and nested data in their query.
+            </summary>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.WillExpandDirect(System.Type)">
+            <summary>
+            Query if this is a mapped type
+            </summary>
+            <param name="sourceType"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.WillExpandCollection(System.Type)">
+            <summary>
+            Query if this is a collection of a mapped type
+            </summary>
+            <param name="sourceType"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.ExpandDirectObject(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
+            <summary>
+            Expand a mapped type
+            </summary>
+            <param name="source"></param>
+            <param name="context"></param>
+            <param name="includes"></param>
+            <param name="visited">todo: describe visited parameter on ExpandDirectObject</param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.ExpandBlindObject(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
+            <summary>
+            Take a complex object, and transfer properties requested into a dictionary
+            </summary>
+            <param name="source"></param>
+            <param name="context"></param>
+            <param name="includes"></param>
+            <param name="visited"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.ExpandCollection(System.Object,System.Type,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
+            <summary>
+            Map a collection of mapped types
+            </summary>
+            <param name="originalValue"></param>
+            <param name="destinationType"></param>
+            <param name="context"></param>
+            <param name="includes"></param>
+            <param name="visited">todo: describe visited parameter on ExpandCollection</param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.SetValueToProperty(System.Object,System.Reflection.PropertyInfo,System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},Skyward.Popcorn.PropertyReference,System.Collections.Generic.HashSet{System.Int32})">
+            <summary>
+            Given a value, attempt to set it to a property on a destination object.  This may involve changing the object,
+            such as converting an int to a double, or an int to an int?, or expanding an object into its projection
+            </summary>
+            <param name="originalValue"></param>
+            <param name="destinationProperty"></param>
+            <param name="destinationObject"></param>
+            <param name="context"></param>
+            <param name="propertyReference"></param>
+            <param name="visited">todo: describe visited parameter on SetValueToProperty</param>
+            <returns></returns>
+        </member>
+        <member name="P:Skyward.Popcorn.Expander.Mappings">
+            <summary>
+            This is the core of the expander.  This registers incoming types (the source of the data) and specifies a 
+            single outgoing type that it will be converted to.
+            
+            It is possible that in the future we may want to provide multiple destination options, primarily for nested 
+            entities.  Top-level entities will always need a 'default' outgoing type.
+            </summary>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.WillExpand(System.Object)">
+            <summary>
+            Query whether or not a particular object is either a Mapped type or a collection of a Mapped type.
+            </summary>
+            <param name="source"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.WillExpandType(System.Type)">
+            <summary>
+            Query whether or not a particular type is either a Mapped type or a collection of a Mapped type.
+            </summary>
+            <param name="sourceType"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.Expand(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32},System.Type)">
+            <summary>
+            The entry point method for converting a type into its projection an selectively including data.
+            This will work on either a Mapped Type or a collection of a Mapped Type.
+            This version using anonymous objects works well for the Api use case.  We may want a generic typed
+            version if we ever think of a reason to use this elsewhere.
+            </summary>
+            <param name="source"></param>
+            <param name="context">A context dictionary that will be passed around to all conversion routines.</param>
+            <param name="includes"></param>
+            <param name="visited"></param>
+            <param name="destinationTypeHint">todo: describe destinationTypeHint parameter on Expand</param>
+            <returns></returns>
+        </member>
+        <member name="T:Skyward.Popcorn.MappingDefinition">
+            <summary>
+            This is the definition of how to map one type to another using the expander.  You can, but probably
+            shouldn't create this directly.  There is a generic version that has a fluent api.
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.MappingDefinition.DestinationType">
+            <summary>
+            The type to map to
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.MappingDefinition.Translators">
+            <summary>
+            Any functions to handle specific properties on the destination type
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.MappingDefinition.PrepareProperties">
+            <summary>
+            Any actions to handle specific properties on the source type
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.MappingDefinition._BeforeExpansion">
+            <summary>
+            Any actions to handle source objects before they are expanded
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.MappingDefinition._AfterExpansion">
+            <summary>
+            Any actions to handle source objects after they are expanded
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.MappingDefinition.DefaultIncludes">
+            <summary>
+            The list of includes to use if none are explicitly requested
+            </summary>
+        </member>
+        <member name="T:Skyward.Popcorn.PropertyInfoExtensions">
+            <summary>
+            Provides utility extensions for the PropertyInfo type.
+            </summary>
+        </member>
+        <member name="M:Skyward.Popcorn.PropertyInfoExtensions.TrySetValueHandleConvert(System.Reflection.PropertyInfo,System.Object,System.Object)">
+            <summary>
+            Set a value to a property on an object.  This will handle: converting types (eg int -> double) and nullable properties (int -> int?)
+            </summary>
+            <param name="propertyInfo"></param>
+            <param name="inputObject"></param>
+            <param name="propertyVal"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Skyward.Popcorn.TypeExtensions">
+            <summary>
+            Provides extensions to 'Type' for the expander to use
+            </summary>
+        </member>
+        <member name="M:Skyward.Popcorn.TypeExtensions.IsNullableType(System.Type)">
+            <summary>
+            Is this type a Nullable instance?
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.TypeExtensions.CreateDefaultObject(System.Type)">
+            <summary>
+            Do our best to construct an object of the given type.
+            This will look for public constructors:
+                That take an source type and Context Type
+                That take a Context Type
+                That take an source type Type
+                That take no parameters
+            </summary>
+            <param name="destinationType"></param>
+            <param name="source"></param>
+            <param name="context"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Skyward.Popcorn.MappingDefinitionConfiguration`2">
+            <summary>
+            This is the definition of how to map one type to another, specified by the generic parameters.  This provides
+            a fluent api to customize the mapping.
+            </summary>
+            <typeparam name="TSourceType"></typeparam>
+            <typeparam name="TDestType"></typeparam>
+        </member>
+        <member name="M:Skyward.Popcorn.MappingDefinitionConfiguration`2.Translate``1(System.Linq.Expressions.Expression{System.Func{`1,``0}},System.Func{`0,System.Collections.Generic.Dictionary{System.String,System.Object},``0})">
+            <summary>
+            Add a translation for a specific property on the destination type.
+            Provide a function-equivalent that takes the source object and the context and returns data of the property type.
+            </summary>
+            <typeparam name="TProperty"></typeparam>
+            <param name="memberExpression"></param>
+            <param name="func"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.MappingDefinitionConfiguration`2.Translate``1(System.Linq.Expressions.Expression{System.Func{`1,``0}},System.Func{System.Collections.Generic.Dictionary{System.String,System.Object},``0})">
+            <summary>
+            Add a translation for a specific property on the destination type.
+            Provide a function-equivalent that takes the context and returns data of the property type.
+            </summary>
+            <typeparam name="TProperty"></typeparam>
+            <param name="memberExpression"></param>
+            <param name="func"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.MappingDefinitionConfiguration`2.Translate``1(System.Linq.Expressions.Expression{System.Func{`1,``0}},System.Func{`0,``0})">
+            <summary>
+            Add a translation for a specific property on the destination type.
+            Provide a function-equivalent that takes the source object and returns data of the property type.
+            </summary>
+            <typeparam name="TProperty"></typeparam>
+            <param name="memberExpression"></param>
+            <param name="func"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.MappingDefinitionConfiguration`2.Translate``1(System.Linq.Expressions.Expression{System.Func{`1,``0}},System.Func{``0})">
+            <summary>
+            Add a translation for a specific property on the destination type.
+            Provide a function-equivalent that returns data of the property type.
+            </summary>
+            <typeparam name="TProperty"></typeparam>
+            <param name="memberExpression"></param>
+            <param name="func"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.MappingDefinitionConfiguration`2.TranslateByName(System.String,System.Func{System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object})">
+            <summary>
+            Add a translation for a specific property by name on the destination type.
+            Provide a function-equivalent that returns data of the property type or an assignable equivalent. 
+            </summary>
+            <param name="propName"></param>
+            <param name="func"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.MappingDefinitionConfiguration`2.PrepareProperty``1(System.Linq.Expressions.Expression{System.Func{`1,``0}},System.Action{`1,System.Reflection.PropertyInfo,`0,System.Collections.Generic.Dictionary{System.String,System.Object}})">
+            <summary>
+            Add a function-equivalent that is given the opportunity to 'prepare' a property on the source object before it is mapped to the destination.
+            </summary>
+            <typeparam name="TProperty"></typeparam>
+            <param name="memberExpression"></param>
+            <param name="action"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.MappingDefinitionConfiguration`2.PrepareProperty(System.String,System.Action{System.Object,System.Reflection.PropertyInfo,System.Object,System.Collections.Generic.Dictionary{System.String,System.Object}})">
+            <summary>
+            Add a function-equivalent that is given the opportunity to 'prepare' a property on the source object before it is mapped to the destination.
+            </summary>
+            <param name="propName"></param>
+            <param name="action"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.MappingDefinitionConfiguration`2.BeforeExpansion(System.Action{System.Object,System.Object,System.Collections.Generic.Dictionary{System.String,System.Object}})">
+            <summary>
+            Add a function-equivalent that is given the opportunity to inspect / change the source object and context before it is mapped
+            </summary>
+            <param name="action"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.MappingDefinitionConfiguration`2.AfterExpansion(System.Action{System.Object,System.Object,System.Collections.Generic.Dictionary{System.String,System.Object}})">
+            <summary>
+            Add a function-equivalent that is given the opportunity to inspect / change the source object and context after it is mapped
+            </summary>
+            <param name="action"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Skyward.Popcorn.PopcornConfiguration">
+            <summary>
+            A fluent-api style configuration object for the ApiExpander
+            </summary>
+        </member>
+        <member name="M:Skyward.Popcorn.PopcornConfiguration.SetContext(System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>
+            Designate the context for this target
+            </summary>
+            <param name="context"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.PopcornConfiguration.SetInspector(System.Func{System.Object,System.Object,System.Object})">
+            <summary>
+            Designate an inspector to run on expanded objects
+            </summary>
+            <param name="inspector"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.PopcornConfiguration.Map``2(System.String,System.Action{Skyward.Popcorn.MappingDefinitionConfiguration{``0,``1}})">
+            <summary>
+            Add a mapping of a data type to a projection type
+            </summary>
+            <typeparam name="TSourceType"></typeparam>
+            <typeparam name="TDestType"></typeparam>
+            <param name="defaultIncludes"></param>
+            <param name="config"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.PopcornConfiguration.AssignFactory``1(System.Func{``0})">
+            <summary>
+            Assign a factory function to create a specific type
+            </summary>
+            <typeparam name="TSourceType"></typeparam>
+            <param name="factory"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.PopcornConfiguration.AssignFactory``1(System.Func{System.Collections.Generic.Dictionary{System.String,System.Object},``0})">
+            <summary>
+            Assign a factory function to create a specific type from a context object
+            </summary>
+            <typeparam name="TSourceType"></typeparam>
+            <param name="factory"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Skyward.Popcorn.PropertyReference">
+            <summary>
+            This describes a property to be referenced (by name) and an optional (recursive) list of properties to be referenced on the 
+            property's value if it is a complex type.
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.PropertyReference.PropertyName">
+            <summary>
+            The name of the property
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.PropertyReference.Children">
+            <summary>
+            Any properties to reference on this property's value
+            </summary>
+        </member>
+        <member name="M:Skyward.Popcorn.PropertyReference.Parse(System.String)">
+            <summary>
+            Helper method to take a string in the format "[name[subname1, subname2, ...],...]" and create a PropertyReference tree out of it.
+            </summary>
+            <param name="includes"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>
