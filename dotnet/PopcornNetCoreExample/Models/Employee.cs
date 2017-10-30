@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Skyward.Popcorn;
+using System;
 using System.Collections.Generic;
 
 namespace PopcornCoreExample.Models
@@ -7,6 +8,9 @@ namespace PopcornCoreExample.Models
     {
         public string FirstName { get; set; }
         public string LastName { get; set; }
+
+        [InternalOnly(true)]
+        public int SocialSecurityNumber { get; set; }
 
         public DateTimeOffset Birthday { get; set; }
         public EmploymentType Employment { get; set; }

@@ -15,6 +15,8 @@ namespace PopcornCoreExample.Projections
         public string LastName { get; set; }
         public string FullName { get; set; }
 
+        public int SocialSecurityNumber { get; set; }
+
         public string Birthday { get; set; }
         public int? VacationDays { get; set; }
         public EmploymentType? Employment { get; set; }

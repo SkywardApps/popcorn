@@ -287,12 +287,21 @@ namespace Skyward.Popcorn
             InternalOnlyAttribute[] attributes = new InternalOnlyAttribute[2];
             attributes[0] = matchingProperty?.GetCustomAttribute<InternalOnlyAttribute>();
             attributes[1] = matchingMethod?.GetCustomAttribute<InternalOnlyAttribute>();
-            foreach(var internalOnlyAttr in attributes)
+
+            string[] names = new string[2];
+            names[0] = matchingProperty?.Name + " property";
+            names[1] = matchingMethod?.Name + " method";
+
+            for(int i = 0; i < attributes.Length; i++)
             {
+                var internalOnlyAttr = attributes[i];
+
                 if (internalOnlyAttr == null)
                     continue;
+
                 if (internalOnlyAttr.ThrowExcepton)
-                    throw new InternalOnlyViolationException();
+                    throw new InternalOnlyViolationException(
+                        string.Format("Expand: {0} inside {1} class is marked [InternalOnly]", names[i], sourceType.Name));
 
                 return null;
             }

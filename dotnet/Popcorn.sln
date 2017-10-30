@@ -31,6 +31,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tutorials", "Tutorials", "{
 		..\docs\dotnet\DotNetTutorialDefaultIncludes.md = ..\docs\dotnet\DotNetTutorialDefaultIncludes.md
 		..\docs\dotnet\DotNetTutorialGettingStarted.md = ..\docs\dotnet\DotNetTutorialGettingStarted.md
 		..\docs\dotnet\DotNetTutorialInspectors.md = ..\docs\dotnet\DotNetTutorialInspectors.md
+		..\docs\dotnet\DotNetTutorialInternalOnly.md = ..\docs\dotnet\DotNetTutorialInternalOnly.md
 		..\docs\dotnet\DotNetTutorialSorting.md = ..\docs\dotnet\DotNetTutorialSorting.md
 	EndProjectSection
 EndProject
