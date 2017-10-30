@@ -31,6 +31,6 @@
 
 + ### [Contributing](Contributing.md)
 
-+ ### [License](../LICENSE)
-
++ ### <a href="https://github.com/SkywardApps/popcorn/blob/master/LICENSE">License</a>
+  
 + ### [Meet the Maintainers](Maintainers.md)
