@@ -283,6 +283,20 @@ namespace Skyward.Popcorn
             var matchingProperty = sourceType.GetTypeInfo().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
             var matchingMethod = sourceType.GetTypeInfo().GetMethod(propertyName, BindingFlags.Instance | BindingFlags.Public);
 
+            // Check if the value is marked as InternalOnly
+            InternalOnlyAttribute[] attributes = new InternalOnlyAttribute[2];
+            attributes[0] = matchingProperty?.GetCustomAttribute<InternalOnlyAttribute>();
+            attributes[1] = matchingMethod?.GetCustomAttribute<InternalOnlyAttribute>();
+            foreach(var internalOnlyAttr in attributes)
+            {
+                if (internalOnlyAttr == null)
+                    continue;
+                if (internalOnlyAttr.ThrowExcepton)
+                    throw new InternalOnlyViolationException();
+
+                return null;
+            }
+
             // if there's a custom entry for this, it gets first crack
             if (translators != null && translators.ContainsKey(propertyName))
             {
@@ -308,6 +322,8 @@ namespace Skyward.Popcorn
                 // Couldn't map it, but it was explicitly requested, so throw an error
                 throw new InvalidCastException(propertyName);
             }
+
+
 
             return valueToAssign;
         }
@@ -459,6 +475,7 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         private bool SetValueToProperty(object originalValue, PropertyInfo destinationProperty, object destinationObject, ContextType context, PropertyReference propertyReference, HashSet<int> visited)
         {
+
             // If it is null then just do a direct assignment
             if (originalValue == null)
             {

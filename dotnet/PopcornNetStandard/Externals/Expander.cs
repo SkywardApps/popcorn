@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using static System.Reflection.TypeExtensions;
 
 namespace Skyward.Popcorn
 {
@@ -119,6 +120,17 @@ namespace Skyward.Popcorn
 
             if (visited == null)
                 visited = new HashSet<int>();
+
+            // Check if the source class is marked as InternalOnly
+            var customAttr = sourceType.GetTypeInfo().GetCustomAttribute<InternalOnlyAttribute>();
+            if (customAttr != null)
+            {
+
+                if (customAttr.ThrowExcepton)
+                    throw new InternalOnlyViolationException();
+
+                return null;
+            }
 
             // See if this is a directly expandable type (Mapped Type)
             if (WillExpandDirect(sourceType))
