@@ -11,6 +11,7 @@ Tutorials:
 + Lazy Loading
 + [Authorizers](DotNetTutorialAuthorizers.md)
 + [Inspectors](DotNetTutorialInspectors.md)
++ [Contexts](DotNetTutorialContexts)
 
 Implementation Details:
 + OutputFormatter
