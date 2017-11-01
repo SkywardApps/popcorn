@@ -40,17 +40,25 @@ namespace PopcornCoreExample
                 mvcOptions.UsePopcorn((popcornConfig) => {
                     popcornConfig
                         .SetDefaultApiResponseInspector()
-                        .Map<Employee, EmployeeProjection>(config: (employeeConfig) => {
+                        .Map<Employee, EmployeeProjection>(config: (employeeConfig) =>
+                        {
                             // For employees we will determine a full name and reformat the date to include only the day portion.
                             employeeConfig
                                 .Translate(ep => ep.FullName, (e) => e.FirstName + " " + e.LastName)
                                 .Translate(ep => ep.Birthday, (e) => e.Birthday.ToString("MM/dd/yyyy"));
                         })
-                        .Map<Car, CarProjection>(defaultIncludes: "[Model,Make,Year]", config: (carConfig) => {
+                        .Map<Car, CarProjection>(defaultIncludes: "[Model,Make,Year]", config: (carConfig) =>
+                        {
                             // For cars we will query to find out the Employee who owns the car.
-                            carConfig.Translate(cp => cp.Owner, (car, context) =>
-                                // The car parameter is the source object; the context parameter is the dictionary we configure below.
-                                (context["database"] as ExampleContext).Employees.FirstOrDefault(e => e.Vehicles.Contains(car)));
+                            carConfig
+                                .Translate(cp => cp.Owner, (car, context) =>
+                                    // The car parameter is the source object; the context parameter is the dictionary we configure below.
+                                    (context["database"] as ExampleContext).Employees.FirstOrDefault(e => e.Vehicles.Contains(car)));
+                        })
+                        .Map<Employee, EmployeeProjection>(config: (employeeConfig) =>
+                        {
+                        employeeConfig
+                            .Translate(ep => ep.InsuredVehicles, (e) => e.GetInsuredCars());                                    
                         })
                         .AssignFactory<EmployeeProjection>((context) => EmployeeFactory(context))
                         // Pass in our 'database' via the context
@@ -93,7 +101,8 @@ namespace PopcornCoreExample
                 Model = "Firebird",
                 Year = 1981,
                 Color = Car.Colors.Blue,
-                User = "Alice"
+                User = "Alice",
+                Insured = true
             };
             context.Cars.Add(firebird);
             liz.Vehicles.Add(firebird);
@@ -114,7 +123,8 @@ namespace PopcornCoreExample
                 Model = "250 GTO",
                 Year = 1962,
                 Color = Car.Colors.Red,
-                User = "Alice"
+                User = "Alice",
+                Insured = false
             };
             context.Cars.Add(ferrari);
             jack.Vehicles.Add(ferrari);
@@ -124,7 +134,8 @@ namespace PopcornCoreExample
                 Model = "Cayman",
                 Year = 2005,
                 Color = Car.Colors.Yellow,
-                User = "Alice"
+                User = "Alice",
+                Insured = true
             };
             context.Cars.Add(porsche);
             jack.Vehicles.Add(porsche);

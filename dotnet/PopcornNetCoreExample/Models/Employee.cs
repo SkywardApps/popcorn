@@ -1,6 +1,7 @@
 ﻿using Skyward.Popcorn;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PopcornCoreExample.Models
 {
@@ -17,5 +18,9 @@ namespace PopcornCoreExample.Models
         public int VacationDays { get; set; }
 
         public List<Car> Vehicles { get; set; }
+
+        public List<Car> GetInsuredCars() {
+            return Vehicles.Where(c => c.Insured == true).ToList();
+        }
     }
 }

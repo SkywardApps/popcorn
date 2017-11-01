@@ -23,5 +23,7 @@ namespace PopcornCoreExample.Projections
 
         [SubPropertyIncludeByDefault("[Make,Model,Color]")]
         public List<CarProjection> Vehicles { get; set; }
+
+        public List<CarProjection> InsuredVehicles { get; set; }
     }
 }
