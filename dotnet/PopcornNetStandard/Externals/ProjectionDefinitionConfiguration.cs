@@ -54,7 +54,7 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public ProjectionDefinitionConfiguration<TSourceType, TDestType> Translate<TProperty>(
             Expression<Func<TDestType, TProperty>> memberExpression,
-            Func<ContextType, TProperty> func)
+            Func<ContextType, object> func)
         {
             var member = (memberExpression.Body as MemberExpression);
             string propertyName = member.Member.Name;
@@ -71,7 +71,7 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public ProjectionDefinitionConfiguration<TSourceType, TDestType> Translate<TProperty>(
             Expression<Func<TDestType, TProperty>> memberExpression,
-            Func<TSourceType, TProperty> func)
+            Func<TSourceType, object> func)
         {
             var member = (memberExpression.Body as MemberExpression);
             string propertyName = member.Member.Name;
@@ -88,7 +88,7 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public ProjectionDefinitionConfiguration<TSourceType, TDestType> Translate<TProperty>(
             Expression<Func<TDestType, TProperty>> memberExpression,
-            Func<TProperty> func)
+            Func<object> func)
         {
             var member = (memberExpression.Body as MemberExpression);
             string propertyName = member.Member.Name;
