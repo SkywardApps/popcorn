@@ -1,0 +1,69 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+header {
+	z-index: 100;
+	float:left;
+	position:relative;
+}
+
+footer {
+	z-index: 0;
+}
+
+div.wrapper {
+	width: 100%;
+	max-width: 1270px;
+}
+
+section.right_col {
+	width: 250px;
+}
+
+section {
+	padding-bottom:0px;
+}
+
+section {
+	float:left;
+}
+
+$topRed: #AF0011;
+$bottomRed: #820011;
+$topBlue: #1100AF;
+$bottomBlue: #110082;
+
+$buttonTop: $topBlue;
+$buttonBottom: $bottomBlue;
+
+@media screen and (max-width:960px)
+{
+	header {
+		padding-right:50px;
+		width: calc(100% - 54px) !important;
+	}
+	header ul {
+		position: static;
+	}
+	footer {
+		float:left;
+	}
+}
+
+@media screen and (max-width:720px)
+{
+	header {
+		padding-right:20px;
+		width: 100% !important;
+	}
+}
+
+@media screen and (min-width:1264px)
+{
+	section.right_col {
+		float: right;
+		padding-left: 25px;
+	}	
+}
