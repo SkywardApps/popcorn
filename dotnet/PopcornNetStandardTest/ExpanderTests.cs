@@ -445,7 +445,7 @@ namespace PopcornNetStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.InvalidCastType)}]")); }).Message.ShouldBe(nameof(RootObjectProjection.InvalidCastType));
+            Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.InvalidCastType)}]")); }).Message.ShouldBe(nameof(RootObjectProjection.InvalidCastType));
             result.ShouldBeNull();
         }
 
@@ -490,7 +490,7 @@ namespace PopcornNetStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.SuperclassInOriginal)}]")); });
+            Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.SuperclassInOriginal)}]")); });
             result.ShouldBeNull();
         }
 
@@ -944,7 +944,7 @@ namespace PopcornNetStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<ArgumentOutOfRangeException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); });
+            Should.Throw<ArgumentOutOfRangeException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); });
         }
 
         // non-projected list of children
@@ -969,7 +969,7 @@ namespace PopcornNetStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<ArgumentOutOfRangeException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); });
+            Should.Throw<ArgumentOutOfRangeException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); });
         }
 
         // Database navigation property
@@ -1335,9 +1335,7 @@ namespace PopcornNetStandardTest
                     },
                 }
             };
-            List<NonMappedType> list = new List<NonMappedType>();
-            list.Add(entity);
-            list.Add(entity2);
+            List<NonMappedType> list = new List<NonMappedType> { entity, entity2 };
 
             var result = _expander.Expand(list, null, PropertyReference.Parse($"[Name,Children[Title]]"));
             result.ShouldNotBeNull();

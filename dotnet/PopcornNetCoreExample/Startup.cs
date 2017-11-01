@@ -62,7 +62,7 @@ namespace PopcornCoreExample
                             ["activeUser"] = userContext.user
                         })
                         .Authorize<Car>((source, context, value) => {
-                            return value.User == context["activeUser"];
+                            return value.User == (string)context["activeUser"];
                         });
                 });
             });

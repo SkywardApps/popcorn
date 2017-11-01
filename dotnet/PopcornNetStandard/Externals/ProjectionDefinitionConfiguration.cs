@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Skyward.Popcorn
 {
-    using ContextType = System.Collections.Generic.Dictionary<string, object>;
+    using ContextType = Dictionary<string, object>;
 
     /// <summary>
     /// This is the definition of how to map one type to another, specified by the generic parameters.  This provides

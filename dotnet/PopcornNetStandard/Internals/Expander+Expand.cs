@@ -62,12 +62,12 @@ namespace Skyward.Popcorn
             if (!this.ExpandBlindObjects)
                 return false;
 
-                return (!WillExpandDirect(sourceType) // False if will expand direct or collection
-                && !WillExpandCollection(sourceType) 
-                && sourceType.GetTypeInfo().IsClass // False if a simple type
-                && (!(sourceType.GetTypeInfo().GetInterfaces() // False if the object doesn't have an IEnumerable interface
-                    .Any(t => t.IsConstructedGenericType
-                        && t.GetGenericTypeDefinition() == typeof(IEnumerable<>)))) );
+            return (!WillExpandDirect(sourceType) // False if will expand direct or collection
+            && !WillExpandCollection(sourceType) 
+            && sourceType.GetTypeInfo().IsClass // False if a simple type
+            && (!(sourceType.GetTypeInfo().GetInterfaces() // False if the object doesn't have an IEnumerable interface
+                .Any(t => t.IsConstructedGenericType
+                    && t.GetGenericTypeDefinition() == typeof(IEnumerable<>)))) );
         }
 
         /// <summary>
