@@ -1099,7 +1099,7 @@ namespace PopcornNetStandardTest
                     ExtendedProperty = "new extended property",
                     Name = "subclass",
                     Id = Guid.NewGuid()
-        }
+                }
             };
 
             var result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(IncludeByDefaultRootObjectProjection.Child)}]"));
