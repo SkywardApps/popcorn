@@ -11,7 +11,7 @@ namespace PopcornCoreExample.Models
         public string LastName { get; set; }
 
         [InternalOnly(true)]
-        public int SocialSecurityNumber { get; set; }
+        public long SocialSecurityNumber { get; set; }
 
         public DateTimeOffset Birthday { get; set; }
         public EmploymentType Employment { get; set; }
