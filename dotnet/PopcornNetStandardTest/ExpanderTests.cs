@@ -259,7 +259,7 @@ namespace PopcornNetStandardTest
                     definition.Translate(o => o.ValueFromTranslator, () => 5.2);
                     definition.Translate(o => o.ComplexFromTranslator, () => new ChildObjectProjection { Id = new Guid(), Name = "Complex trans name", Description = "Complex trans description" });
                 });
-
+            config.Map<Dictionary<string, object>, RootObjectProjection>();
             config.Map<ChildObject, ChildObjectProjection>();
             config.Map<DerivedChildObject, DerivedChildObjectProjection>();
             config.Map<Loop, LoopProjection>();
@@ -327,6 +327,20 @@ namespace PopcornNetStandardTest
             projection.Upconvert.ShouldBeNull();
             projection.ValueFromTranslator.ShouldBeNull();
             projection.Downconvert.ShouldBeNull();
+        }
+
+        [TestMethod]
+        public void ExpandDictionary()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var entity = new Dictionary<string, object>
+            {
+                { "Id", Guid.NewGuid() },
+                { "StringValue", "String Value!" },
+            };
+
+            object result = _expander.Expand(entity, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Id)},{nameof(RootObjectProjection.StringValue)}]"));
+            result.ShouldNotBeNull();
         }
 
         // assign a null
