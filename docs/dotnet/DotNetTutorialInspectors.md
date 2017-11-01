@@ -13,7 +13,7 @@ This tutorial will walk you through the two ways of setting an inspector and bri
 ## "SetDefaultApiResponseInspector" and its usage
 
 ### Example
-First let's start with an example of our responses vary from the usage of an inspector versus not using one.
+First let's start with an example of how our responses vary with the usage of an inspector versus not using one.
 
 Here is a standard response from popcorn with no inspector set, targeting our GET cars endpoint we've talked about before:
 ```javascript
@@ -51,7 +51,7 @@ http://localhost:49699/api/example/cars?include=[Fishy]
 
 Now you won't actually see "cricket" as your response, but you will see a 500 status code and be stuck guessing what it is that went wrong.
 
-Enter the power of the inspector! We don't want to have to handle every single error possiblity in it's own unique API response, rather
+Enter the power of the inspector! We don't want to have to handle every single error possiblity in its own unique API response, rather
 we want to have one central response wrapper that handles all of the heavy lifting for us so our consumers get consistent responses, every time.
 
 Ok, doing this all over again. Here are both requests from above using our default inspector:

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace Skyward.Popcorn
@@ -113,7 +112,7 @@ namespace Skyward.Popcorn
                     DefaultDestinationType = destType,
                 };
 
-                // And assign it a projecion definition
+                // And assign it a projection definition
                 mappingConfiguration.InternalProjectionDefinition = new ProjectionDefinition
                 {
                     DefaultIncludes = defaultIncludes,
