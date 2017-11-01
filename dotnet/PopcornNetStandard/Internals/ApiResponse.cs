@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-
-namespace Skyward.Popcorn
+﻿namespace Skyward.Popcorn
 {
     /// <summary>
     ///     A generic response object

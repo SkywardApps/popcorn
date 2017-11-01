@@ -24,6 +24,7 @@ into one.
 	+ Configurable [response inspectors](docs/dotnet/DotNetTutorialInspectors.md)
 	+ [Factory and advanced projection](docs/dotnet/DotNetTutorialAdvancedProjections.md) support
 	+ Set relevant [contexts](docs/dotnet/DotNetTutorialContexts.md) for your API
+	+ [Blind expansion](docs/dotnet/DotNetTutorialAdvancedBlindExpansion.md) of response objects
 
 **Ok, so.... what is it in action?**
 

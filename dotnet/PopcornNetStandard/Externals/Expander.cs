@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using static System.Reflection.TypeExtensions;
 
 namespace Skyward.Popcorn
 {
@@ -118,35 +117,38 @@ namespace Skyward.Popcorn
 
             Type sourceType = source.GetType();
 
-            if (visited == null)
-                visited = new HashSet<int>();
-
             // Check if the source class is marked as InternalOnly
             var customAttr = sourceType.GetTypeInfo().GetCustomAttribute<InternalOnlyAttribute>();
             if (customAttr != null)
             {
-
-                if (customAttr.ThrowExcepton)
+                if (customAttr.ThrowException)
                     throw new InternalOnlyViolationException(string.Format("Expand: {0} class is marked [InternalOnly]", sourceType.Name));
 
                 return null;
             }
 
-            // See if this is a directly expandable type (Mapped Type)
-            if (WillExpandDirect(sourceType))
+            // Do a quick check to make sure the object can be expanded in some form before advancing
+            if (WillExpandType(sourceType))
             {
-                return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
-            }
+                if (visited == null)
+                    visited = new HashSet<int>();
 
-            // Otherwise, see if this is a collection of an expandable type
-            if (WillExpandCollection(sourceType))
-            {
-                return ExpandCollection(source, destinationTypeHint ?? typeof(ArrayList), context, includes, visited);
-            }
+                // See if this is a directly expandable type (Mapped Type)
+                if (WillExpandDirect(sourceType))
+                {
+                    return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
+                }
 
-            if (WillExpandBlind(sourceType))
-            {
-                return ExpandBlindObject(source, context, includes, visited);
+                // Otherwise, see if this is a collection of an expandable type
+                if (WillExpandCollection(sourceType))
+                {
+                    return ExpandCollection(source, destinationTypeHint ?? typeof(ArrayList), context, includes, visited);
+                }
+
+                if (WillExpandBlind(sourceType))
+                {
+                    return ExpandBlindObject(source, context, includes, visited);
+                }
             }
 
             // Otherwise, the caller requested that we expand a type we have no knowledge of.
@@ -196,9 +198,10 @@ namespace Skyward.Popcorn
         {
             if (!(source is IEnumerable))
                 throw new ArgumentException("'source' is not of a type that can be converted to an IEnumerable");
+
             IEnumerable<object> originalList = (source as IEnumerable).Cast<object>();
 
-            // Make sure that there is more than 1 result so we actually hav something to sort
+            // Make sure that there is more than 1 result so we actually have something to sort
             if (originalList.Count() <= 1)
                 return source;
 
@@ -206,7 +209,7 @@ namespace Skyward.Popcorn
             TypeInfo typeInfo = originalList.First().GetType().GetTypeInfo();
             if (typeInfo.DeclaredProperties.FirstOrDefault(values => values.Name.Equals(sortTarget)) == null)
             {
-                // TODO: Consider making an "InvalidSortError"
+                // TODO: Consider making an "invalidSort" error
                 throw new InvalidCastException(sortTarget);
             }
 

@@ -101,7 +101,7 @@ namespace PopcornNetStandardTest
         }
 
         /// <summary>
-        /// Sanity test that default behviour still works with alternative maps
+        /// Sanity test that default behavior still works with alternative maps
         /// </summary>
         [TestMethod]
         public void MapDefault()

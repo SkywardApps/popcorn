@@ -445,7 +445,7 @@ namespace PopcornNetStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.InvalidCastType)}]")); }).Message.ShouldBe(nameof(RootObjectProjection.InvalidCastType));
+            Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.InvalidCastType)}]")); }).Message.ShouldBe(nameof(RootObjectProjection.InvalidCastType));
             result.ShouldBeNull();
         }
 
@@ -490,7 +490,7 @@ namespace PopcornNetStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.SuperclassInOriginal)}]")); });
+            Should.Throw<InvalidCastException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.SuperclassInOriginal)}]")); });
             result.ShouldBeNull();
         }
 
@@ -944,7 +944,7 @@ namespace PopcornNetStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<ArgumentOutOfRangeException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); });
+            Should.Throw<ArgumentOutOfRangeException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); });
         }
 
         // non-projected list of children
@@ -969,7 +969,7 @@ namespace PopcornNetStandardTest
             };
 
             object result = null;
-            Shouldly.Should.Throw<ArgumentOutOfRangeException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); });
+            Should.Throw<ArgumentOutOfRangeException>(() => { result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObject.ChildExcludedFromProjection)}]")); });
         }
 
         // Database navigation property
@@ -1099,7 +1099,7 @@ namespace PopcornNetStandardTest
                     ExtendedProperty = "new extended property",
                     Name = "subclass",
                     Id = Guid.NewGuid()
-        }
+                }
             };
 
             var result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(IncludeByDefaultRootObjectProjection.Child)}]"));
@@ -1181,6 +1181,35 @@ namespace PopcornNetStandardTest
             entityProjection.ContextString.ShouldBe("SpecifiedByContext");
         }
 
+        // Blind expansion should not happen if the blind expansion is not enabled
+        [TestMethod]
+        public void BlindExpansionDisabled()
+        {
+            var entity = new NonMappedType
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+
+            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[Name,Children[Title]]")));
+        }
+
+        // Generic blind expansion of an object should succeed
         [TestMethod]
         public void BlindExpansion()
         {
@@ -1223,7 +1252,95 @@ namespace PopcornNetStandardTest
             children.Count.ShouldBe(3);
             children.Count(c => c.ContainsKey("Name")).ShouldBe(0);
             children.Count(c => c.ContainsKey("Title") && (string)c["Title"] == "Test").ShouldBe(3);
-            new PopcornConfiguration(_expander).EnableBlindExpansion(false);
+        }
+
+        // Blind expanding a string should fail
+        [TestMethod]
+        public void BlindExpansionString()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            string entity = "Test";
+            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
+        }
+
+        // Blind expanding an int should fail
+        [TestMethod]
+        public void BlindExpansionInt()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            int entity = 12;
+            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
+        }
+
+        // Blind expanding a list should fail
+        [TestMethod]
+        public void BlindExpansionList()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            List<string> entity = new List<string> { "test1", "test2" };
+            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
+        }
+
+        // Blind expanding a dictionary should fail
+        [TestMethod]
+        public void BlindExpansionDictionary()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            Dictionary<string, string> entity = new Dictionary<string, string>() { { "test", "test" }, { "test2", "test2" } };
+            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
+        }
+
+        // prove that sorting blindly expanded objects is not supported
+        [TestMethod]
+        public void BlindExpansionSorting()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var entity = new NonMappedType
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+            var entity2 = new NonMappedType
+            {
+                Name = "Other guy",
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+            List<NonMappedType> list = new List<NonMappedType> { entity, entity2 };
+
+            var result = _expander.Expand(list, null, PropertyReference.Parse($"[Name,Children[Title]]"));
+            result.ShouldNotBeNull();
+
+            Assert.ThrowsException<InvalidCastException>(() => _expander.Sort(result, "Name", Skyward.Popcorn.SortDirection.Ascending));
         }
 
         // Successfully sort a list ascending
