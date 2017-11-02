@@ -16,8 +16,6 @@ namespace Skyward.Popcorn
     public class MappingDefinitionConfiguration<TSourceType, TDestType> 
         : ProjectionDefinitionConfiguration<TSourceType, TDestType>
     {
-
-
         /// <summary>
         /// Add a function-equivalent that is given the opportunity to 'prepare' a property on the source object before it is mapped to the destination.
         /// </summary>

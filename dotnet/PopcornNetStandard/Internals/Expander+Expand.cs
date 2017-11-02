@@ -328,11 +328,10 @@ namespace Skyward.Popcorn
             }
             else
             {
+                
                 // Couldn't map it, but it was explicitly requested, so throw an error
                 throw new InvalidCastException(propertyName);
             }
-
-
 
             return valueToAssign;
         }
