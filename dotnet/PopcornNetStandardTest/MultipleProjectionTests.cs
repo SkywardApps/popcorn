@@ -4,6 +4,7 @@ using Skyward.Popcorn;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace PopcornNetStandardTest
 {
@@ -76,6 +77,22 @@ namespace PopcornNetStandardTest
             public List<UserWithEmailProjection> Users2 { get; set; }
         }
 
+        class ExpandFromClass
+        {
+            public string Field1 { get; set; }
+            public int Field2 { get; set; }
+        }
+
+        [ExpandFrom(typeof(ExpandFromClass), "[Field1,Field2]")]
+        class ExpandFromClassProjection
+        {
+            public string Field1 { get; set; }
+            public int Field2 { get; set; }
+        }
+
+
+
+
         #endregion
         #endregion
 
@@ -101,7 +118,7 @@ namespace PopcornNetStandardTest
         }
 
         /// <summary>
-        /// Sanity test that default behviour still works with alternative maps
+        /// Sanity test that default behavior still works with alternative maps
         /// </summary>
         [TestMethod]
         public void MapDefault()
@@ -209,6 +226,20 @@ namespace PopcornNetStandardTest
             collectionProjected.Users2.ShouldNotBeNull();
             collectionProjected.Users2.Count.ShouldBe(2);
             collectionProjected.Users2.All(u => u.Email == TestEmail).ShouldBeTrue();
+        }
+
+        [TestMethod]
+        public void ExpandFromTest()
+        {
+            var expander = new Expander();
+            var config = new PopcornConfiguration(expander);
+            config.ScanAssemblyForMapping(this.GetType().GetTypeInfo().Assembly);
+
+            ExpandFromClass testObject = new ExpandFromClass { Field1 = "field1", Field2 = 2 };
+            var result = (ExpandFromClassProjection)expander.Expand(testObject, null);
+            Assert.AreEqual(testObject.Field1, result.Field1);
+            Assert.AreEqual(testObject.Field2, result.Field2);
+
         }
     }
 }

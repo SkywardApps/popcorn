@@ -14,7 +14,7 @@ namespace Skyward.Popcorn
             this.throwException = throwException;
         }
 
-        public bool ThrowExcepton { get { return throwException; } }
+        public bool ThrowException { get { return throwException; } }
 
     }
 

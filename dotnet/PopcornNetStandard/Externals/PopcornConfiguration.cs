@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace Skyward.Popcorn
@@ -113,7 +112,7 @@ namespace Skyward.Popcorn
                     DefaultDestinationType = destType,
                 };
 
-                // And assign it a projecion definition
+                // And assign it a projection definition
                 mappingConfiguration.InternalProjectionDefinition = new ProjectionDefinition
                 {
                     DefaultIncludes = defaultIncludes,
@@ -204,6 +203,26 @@ namespace Skyward.Popcorn
         {
             _expander.ExpandBlindObjects = v;
             return this;
+        }
+
+        /// <summary>
+        /// Maps all the types marked with ExpandFrom inside the given assembly
+        /// </summary>
+        /// <param name="assembly">The aseembly to seearch in</param>
+        public void ScanAssemblyForMapping(Assembly assembly)
+        {
+            MethodInfo method = typeof(PopcornConfiguration).GetMethod("Map");
+
+            foreach (Type type in assembly.GetTypes())
+            {
+                var attr = type.GetTypeInfo().GetCustomAttribute<ExpandFromAttribute>();
+                if (attr == null)
+                    continue;
+
+                MethodInfo generic = method.MakeGenericMethod(attr.SourceType, type);
+                object[] parameters = { attr.Includes, null};
+                generic.Invoke(this, parameters);
+            }
         }
     }
 }

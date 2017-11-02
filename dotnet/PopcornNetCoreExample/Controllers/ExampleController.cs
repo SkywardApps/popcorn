@@ -14,6 +14,12 @@ namespace PopcornCoreExample.Controllers
             _context = context;
         }
 
+        [HttpGet, Route("null")]
+        public List<Employee> Null()
+        {
+            return null;
+        }
+
         [HttpGet, Route("status")]
         public string Status()
         {
@@ -35,16 +41,16 @@ namespace PopcornCoreExample.Controllers
             return _context.Employees;
         }
 
-        [HttpGet, Route("null")]
-        public List<Employee> Null()
-        {
-            return null;
-        }
-
         [HttpGet, Route("cars")]
         public List<Car> Cars()
         {
             return _context.Cars;
+        }
+
+        [HttpGet, Route("businesses")]
+        public List<Business> Businesses()
+        {
+            return _context.Businesses;
         }
     }
 }

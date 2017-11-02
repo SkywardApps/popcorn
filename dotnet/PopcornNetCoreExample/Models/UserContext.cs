@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace PopcornCoreExample.Models
+﻿namespace PopcornCoreExample.Models
 {
     public class UserContext
     {

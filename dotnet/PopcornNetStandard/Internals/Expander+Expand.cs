@@ -61,13 +61,13 @@ namespace Skyward.Popcorn
         {
             if (!this.ExpandBlindObjects)
                 return false;
-            return (!WillExpandDirect(sourceType)
-                && !WillExpandCollection(sourceType)
-                && sourceType.GetTypeInfo().IsClass
-                && sourceType != typeof(string) ); // Do we really have to blacklist classes here? 
-            // We'll also need to exclude basically anything that is already trivially serializable 
-            // Dictionaries and Lists should be excluded (at least for now...)
-            // So how do we know where the list of items we should serialize ends, and what we should ignore starts?
+
+            return (!WillExpandDirect(sourceType) // False if will expand direct or collection
+            && !WillExpandCollection(sourceType) 
+            && sourceType.GetTypeInfo().IsClass // False if a simple type
+            && (!(sourceType.GetTypeInfo().GetInterfaces() // False if the object doesn't have an IEnumerable interface
+                .Any(t => t.IsConstructedGenericType
+                    && t.GetGenericTypeDefinition() == typeof(IEnumerable<>)))) );
         }
 
         /// <summary>
@@ -299,7 +299,7 @@ namespace Skyward.Popcorn
                 if (internalOnlyAttr == null)
                     continue;
 
-                if (internalOnlyAttr.ThrowExcepton)
+                if (internalOnlyAttr.ThrowException)
                     throw new InternalOnlyViolationException(
                         string.Format("Expand: {0} inside {1} class is marked [InternalOnly]", names[i], sourceType.Name));
 
