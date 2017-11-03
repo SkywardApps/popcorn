@@ -1,11 +1,11 @@
-﻿using PopcornCoreExample.Models;
+﻿using PopcornNetCoreExample.Models;
 using Skyward.Popcorn;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PopcornCoreExample.Projections
+namespace PopcornNetCoreExample.Projections
 {
     public class EmployeeProjection
     {

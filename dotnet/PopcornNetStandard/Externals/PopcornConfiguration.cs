@@ -208,8 +208,8 @@ namespace Skyward.Popcorn
         /// <summary>
         /// Maps all the types marked with ExpandFrom inside the given assembly
         /// </summary>
-        /// <param name="assembly">The aseembly to seearch in</param>
-        public void ScanAssemblyForMapping(Assembly assembly)
+        /// <param name="assembly">The assembly to search in</param>
+        public PopcornConfiguration ScanAssemblyForMapping(Assembly assembly)
         {
             MethodInfo method = typeof(PopcornConfiguration).GetMethod("Map");
 
@@ -223,6 +223,8 @@ namespace Skyward.Popcorn
                 object[] parameters = { attr.Includes, null};
                 generic.Invoke(this, parameters);
             }
+
+            return this;
         }
     }
 }

@@ -1,10 +1,7 @@
-﻿using Skyward.Popcorn;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using PopcornNetCoreExample.Models;
+using Skyward.Popcorn;
 
-namespace PopcornCoreExample.Projections
+namespace PopcornNetCoreExample.Projections
 {
     public class CarProjection
     {
@@ -18,5 +15,7 @@ namespace PopcornCoreExample.Projections
         public bool Insured { get; set; }
 
         public string User { get; set; }
+
+        public Business Manufacturer { get; set; }
     }
 }

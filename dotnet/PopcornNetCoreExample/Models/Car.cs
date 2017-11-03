@@ -1,4 +1,4 @@
-﻿namespace PopcornCoreExample.Models
+﻿namespace PopcornNetCoreExample.Models
 {
     public class Car
     {
@@ -19,5 +19,7 @@
         public Colors Color { get; set; }
 
         public string User { get; set; }
+
+        public Business Manufacturer { get; set; }
     }
 }

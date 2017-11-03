@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 
-namespace PopcornCoreExample.Wire
+namespace PopcornNetCoreExample.Wire
 {
     public class Response
     {
