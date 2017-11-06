@@ -91,8 +91,6 @@ namespace PopcornNetStandardTest
         }
 
 
-
-
         #endregion
         #endregion
 
@@ -229,7 +227,7 @@ namespace PopcornNetStandardTest
         }
 
         [TestMethod]
-        public void ExpandFromTest()
+        public void ExpandFromProof()
         {
             var expander = new Expander();
             var config = new PopcornConfiguration(expander);

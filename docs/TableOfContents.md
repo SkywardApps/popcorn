@@ -18,6 +18,7 @@
     + ##### [Factories](dotnet/DotNetTutorialAdvancedProjections.md#factories)
   + #### [Contexts](dotnet/DotNetTutorialContexts.md)
   + #### [Default Includes](dotnet/DotNetTutorialDefaultIncludes.md)
+  + #### [Expand From](dotnet/DotNetTutorialExpandFrom.md)
   + #### [Sorting](dotnet/DotNetTutorialSorting.md)
     + ##### ["Sort" parameter](dotnet/DotNetTutorialSorting.md#sort)
     + ##### ["Sort Direction" parameter](dotnet/DotNetTutorialSorting.md#sortDirection)

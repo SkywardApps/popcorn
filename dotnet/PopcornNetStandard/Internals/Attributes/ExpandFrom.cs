@@ -13,10 +13,10 @@ namespace Skyward.Popcorn
         Type source;
         string includes;
 
-        public ExpandFromAttribute(Type source, string includes)
+        public ExpandFromAttribute(Type source, string defaultIncludes = null)
         {
             this.source = source;
-            this.includes = includes;
+            this.includes = defaultIncludes;
         }
 
         public Type SourceType { get { return source; } }

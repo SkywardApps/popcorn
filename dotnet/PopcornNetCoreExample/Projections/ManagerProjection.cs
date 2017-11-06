@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 
 namespace PopcornNetCoreExample.Projections
 {
-    [ExpandFrom(typeof(Manager), "[FirstName, LastName, Subordinates]")]
+    [ExpandFrom(typeof(Manager))]
     public class ManagerProjection : EmployeeProjection
     {
+        [IncludeByDefault]
         public List<EmployeeProjection> Subordinates { get; set; }
     }
 }
