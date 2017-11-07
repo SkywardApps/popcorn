@@ -51,10 +51,10 @@ http://localhost:49699/api/example/cars?include=[Fishy]
 
 Now you won't actually see "cricket" as your response, but you will see a 500 status code and be stuck guessing what it is that went wrong.
 
-Enter the power of the inspector! We don't want to have to handle every single error possiblity in its own unique API response, rather
-we want to have one central response wrapper that handles all of the heavy lifting for us so our consumers get consistent responses, every time.
+Enter the power of the inspector! We don't want to have to handle every single error possiblity in its own unique API response - rather
+we want to have one central response wrapper that handles all of the heavy lifting for us, so that our consumers get consistent responses, every time.
 
-Ok, doing this all over again. Here are both requests from above using our default inspector:
+Here are both requests from above using our default inspector:
 
 ```javascript
 http://localhost:49699/api/example/cars
@@ -92,11 +92,11 @@ http://localhost:49699/api/example/cars?include=[Fishy]
 }
 ```
 
-So, so, so much better. We now have a consistent response wrapper that can be consumed with ease by other services and/or our own front end.
+We now have a consistent response wrapper that can be consumed with ease by other services and/or our own front end.
 
 ### Putting it into action
 
-You can view the full documentation around the ApiResponse object [here](PopcornStandard/Implementation/ApiResponse.cs) so we won't dive too much into that here.
+You can view the full documentation around the ApiResponse object [here](PopcornStandard/Implementation/ApiResponse.cs) so we won't dive too much into that now.
 
 To set the default inspector we just refer back to our Startup.cs file and add the SetDefaultApiResponseInspector method to our UsePopcorn call as seen below.
 ```csharp
@@ -106,12 +106,12 @@ mvcOptions.UsePopcorn((popcornConfig) => {
 		....
 ```
 
-Done! That was easy. You've now implemented a standard inspector to wrap all of your API responses with ease. You have to love implementations that take one line.
+Done! That was easy. You've now implemented a standard inspector to wrap all of your API responses with ease.
 
 
 ## Set your own custom inspector
 
-Now we get that our default inspector may not meet the needs of your organization so we also offer the option to define your own inspector.
+Our default inspector may not meet the all of the needs of your organization, so we also offer the option to define your own inspector.
 
 Back to Startup.cs!
 ```csharp
@@ -125,8 +125,8 @@ mvcOptions.UsePopcorn((popcornConfig) => {
 		....
 ```
 
-You'll see that our inspector requires two objects (the data and context) as well as an exception to be passed into the consuming fucntion. 
-How you choose to wrap Responses and use them within the inspector is your choice!
+You'll see that our inspector requires two objects (the data and context) as well as an exception to be passed into the consuming function. 
+How you choose to wrap Responses and use them within the inspector is your choice.
 
 We give you a very simple example here where we've added a Response object that we set with the appropriate results we would like returned.
 

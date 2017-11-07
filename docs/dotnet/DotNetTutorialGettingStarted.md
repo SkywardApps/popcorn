@@ -39,13 +39,13 @@ namespace PopcornCoreExample.Controllers
 }
 ```
 
-Lets take a breather after all that intense work, and make sure our basic app is up and running.
-Let me introduce you to [Postman](https://www.getpostman.com/) which we'll use to test our controller.
+Now, let's make sure our basic app is up and running.
+We will be using [Postman](https://www.getpostman.com/) to test our controller.
 Fire it up, start your Web Api project, and execute a 'GET' request against your new endpoint '/api/example/status'
 ![Project Type](QS.03.PostmanStatus.png)
 
 
-Great, it's responding!  Now we can start to introduce some Popcorn!
+Now we can start to introduce some Popcorn!
 
 To get started, create a 'Models' subfolder in your project, and add two classes: Employee and Car.
 
@@ -173,7 +173,7 @@ public class ExampleController : Controller
     ...
 ```
 
-While we're here, lets add an endpoint that a user can query for data with.
+While we're here, lets add an endpoint that a user can use to query for data.
 ```csharp
 [HttpGet, Route("employees")]
 public List<Employee> Employees()
@@ -182,13 +182,13 @@ public List<Employee> Employees()
 }
 ```
 
-Before we introduce Popcorn for real, lets check that this all works, and demonstrate why we even *need* Popcorn in the first place.
-Our old friend Postman will help us out.  Issue a 'GET' to '/api/example/employees'
+Before we introduce Popcorn in depth, lets check that this all works, and demonstrate why we even *need* Popcorn in the first place.
+Postman will help us here.  Issue a 'GET' to '/api/example/employees'
 ![Raw Api Response](QS.04.PostmanRawApi.png)
 
 We have all our data here! Great! Our entire heirarchy has been returned to us.
-But... what if we didn't actually *care* about the vehicles? That could be a ton of information that we don't even need, sucking up our data plan.
-That wouldn't make us a responsible internet citizen.  So let's add Popcorn and see how it saves us time, money, and brings about world peace.
+But... what if we didn't actually *care* about the vehicles? That could be a ton of information that we don't need, using extra data and time.
+So let's add Popcorn and see how it makes us more efficient.
 
 If you haven't already, now would be a great time to visit the [Quick Start Guide](DotNetQuickStart.md) and make sure you've got Popcorn linked into 
 your project correctly.
@@ -196,7 +196,7 @@ your project correctly.
 To utilize Popcorn we need to do three things (in the future, only one, so come back when v2 is released!).  
 Add two 'projections', which are the data types that format our outgoing data.  A projection is simply a class that reflects what an entity
 should look like before being sent to a client.  Check out this answer on [stack overflow](https://stackoverflow.com/a/3461116/169813) for a better description.
-You may be more familiar with the name [DTO, Data Transfer Object](https://en.wikipedia.org/wiki/Data_transfer_object), I simply prefer pronounceable names
+You may be more familiar with the name [DTO, Data Transfer Object](https://en.wikipedia.org/wiki/Data_transfer_object), we simply prefer pronounceable names
 over acronyms.
 
 Create a 'Projections' folder in our solution, then add:
@@ -230,7 +230,7 @@ So if you have a property called 'SuperSecretEncryptionKeyNeverShare', you can e
 
 For advanced setup, as you'll see in later tutorials, projections give you a lot of control.
 
-Finally, we need to activate Popcorn on our pipeline and let it know about the projections.  Back in good ole' Startup.cs:
+Finally, we need to activate Popcorn on our pipeline and let it know about the projections.  Back in Startup.cs:
 ```csharp
 // This method gets called by the runtime. Use this method to add services to the container.
 public void ConfigureServices(IServiceCollection services)
@@ -250,11 +250,11 @@ public void ConfigureServices(IServiceCollection services)
 }
 ```
 
-We let the mvc pipeline know we want to use Popcorn, then configure Popcorn with two mappings, Employee -> EmployeeProjection and Car -> CarProjection.
-Again, in the roadmap we have features to auto-detect simple mappings like these or obviate the need for a projection at all.
+We let the MVC pipeline know we want to use Popcorn, then configure Popcorn with two mappings, Employee -> EmployeeProjection and Car -> CarProjection.
+Again, in the future we will have features to auto-detect simple mappings like these or obviate the need for a projection at all.
 
 
-Ok next is... well actually, that's it! To demonstrate, first call the same endpoint '/api/example/employees' and verify it looks the same:
+To demonstrate, first call the same endpoint '/api/example/employees' and verify it looks the same:
 ```javascript
 [
     {
@@ -294,8 +294,8 @@ Ok next is... well actually, that's it! To demonstrate, first call the same endp
 ]
 ```
 
-A couple of things to point out: The casing has changed due to our internal popcorn settings (FirstName instead of firstName).  
-Also, our Colors enumeration has gone from a numeric format (1,5) to textual (Red, Yellow).  Personally I think that's awesome, but it can all be configured to your tastes.
+A few of things to point out: The casing has changed due to our internal popcorn settings (FirstName instead of firstName).  
+Also, our Colors enumeration has gone from a numeric format (1,5) to textual (Red, Yellow), but this can all be configured to your tastes.
 
 To start seeing the real power of Popcorn, lets make a couple of advanced calls.  Maybe we only want our Employee's names? 
 Make a GET request to '/api/example/employees?include=[FirstName,LastName]':
@@ -311,7 +311,7 @@ Make a GET request to '/api/example/employees?include=[FirstName,LastName]':
     }
 ]
 ```
-Wow! Now we only transfer the data we really need!  
+Now we only transfer the data we really need!  
 
 The include syntax can be referenced into sub-entities too.
 Try a GET request to '/api/example/employees?include=[FirstName,LastName,Vehicles[Make]]':

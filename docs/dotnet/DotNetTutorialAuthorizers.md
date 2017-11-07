@@ -18,8 +18,6 @@ against the rules set for a source object type, while returning a boolean that s
 Makes sense, right?
 
 ## Example
-As always, let's spend more time showing and less time telling.
-
 Let's take the example we already have created of Cars and imagine two things changed in our example program:
 1. We implemented a user system.
 2. Not all cars should be visible to all users as they have private information to each user.

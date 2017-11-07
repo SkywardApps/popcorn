@@ -3,11 +3,11 @@
 [Table Of Contents](../TableOfContents.md)
 
 By now you've learned how to 'project' a data entity into another type, allowing you to filter out any properties that your api consumer didn't want.
-If that sentence didn't make sense, you should probably go back and complete [Getting Started](DotNetTutorialGettingStarted.md) first.
-We'll still be here when you get back.
+If that process is unclear, we recommend that you complete [Getting Started](DotNetTutorialGettingStarted.md) first.
+
 
 Next we'll explore some of the other options that using a projection exposes.  We will start out with something simple; attaching a new property.  
-We'll have to add it to the class EmployeeProjection:
+We'll add it to the class EmployeeProjection:
 
 ```csharp
 public string FullName { get; set; }
@@ -17,7 +17,7 @@ Our 'FullName' with be FirstName and LastName concatenated together with a space
 A translation is a custom unit of code you can add to convert the source object into a property on the destination projection.  It can translate an
 existing property on the source, aggreate or combine multiple properties, or create data that doesn't exist at all on the source object.
 
-But as every English teacher I've ever had has drilled into my head, "Show don't tell", so go ahead and throw a translation into the configuration object:
+Let's put a translation into the configuration object to demonstrate:
 
 ```csharp
 mvcOptions.UsePopcorn((popcornConfig) => {
@@ -29,7 +29,7 @@ mvcOptions.UsePopcorn((popcornConfig) => {
 });
 ```
 
-Send that Employee Api endpoint out on a test drive, and you should get something like:
+New use the Employee API endpoint, and you should get something like:
 
 ```javascript
 http://localhost:50353/api/example/employees?include=[FirstName,LastName,FullName,Birthday]
@@ -44,21 +44,19 @@ http://localhost:50353/api/example/employees?include=[FirstName,LastName,FullNam
 
 ```
 
-Suddenly the client no longer has to figure out the employee's full name on their own! That'll save them nanoseconds of effort!
+Suddenly the client no longer has to figure out the employee's full name on their own! 
 
-Ok, I have a confession -- the above example is probably better represented as a calculated property on the projection itself:
+The above example is probably better represented as a calculated property on the projection itself:
 
 ```csharp
 public string FullName { get { return this.FirstName + " " + this.LastName; }
 ```
 
-Which would have resulted in exactly the same output, but is a bit easier to maintain. But it sure did provide a demonstration of adding a translation!
-Don't worry, there are a couple of actually pertinent situations that a translator is directly useful.
+Which would have resulted in exactly the same output, but is a bit easier to maintain. 
 
 ### Situation 1: Altering incoming data
 
-Our 'Birthday' output format is a standard ISO datetime, which includes a time -- which doesn't really make sense to track for a birthday (unless we have the 
-most obsessive HR department ever). We can update the generated output to display *only* the day/month/year part by changing the projection's property to a
+Our 'Birthday' output format is a standard ISO datetime, which includes a time.  Time doesn't really make sense to track for a birthday, so we'll update the generated output to display *only* the day/month/year part by changing the projection's property to a
 string type, and adding a translation to convert:
 
 ```csharp
@@ -77,7 +75,7 @@ mvcOptions.UsePopcorn((popcornConfig) => {
 });
 ```
 
-Spin up that same endpoint and witness the magestic transformation our data has undergone:
+Spin up that same endpoint and witness the transformation our data has undergone:
 
 ```javascript
 http://localhost:50353/api/example/employees?include=[FirstName,LastName,FullName,Birthday]
@@ -98,9 +96,7 @@ information, Popcorn has a concept of a 'context' -- that is, a Dictionary<strin
 Your translations can use this entry point to access whatever they want outside of the source object.
 
 We can demonstrate this by adding an 'Owner' property to the CarProjection.  This owner will reference the Employee whose 'vehicles' list contains this
-car.  The car entity itself has no knowledge of this, so we'll have to iterate over each employee to figure the relationship out.  (This is not a recommended
-solution as the performance here for any non-trivial number of entities will be like walking through a wet marsh in clown shoes, but again, demonstration
-of a concept at work here).
+car.  The car entity itself has no knowledge of this, so we'll have to iterate over each employee to figure the relationship out.
 
 ```csharp
 public EmployeeProjection Owner { get; set; }
@@ -164,7 +160,7 @@ http://localhost:50353/api/example/cars?include=[Model,Make,Year,Color,Owner[Ful
 ]
 ```
 ## Factories<a name="factories"/>
-With Factories it's possible to extract the projection class instantiation. You can either use a plain factory or one that takes an context object as input parameter. The big advantage of using a context object is that the instantiation can be configured to its needs.
+With Factories it's possible to extract the projection class instantiation. You can either use a plain factory or one that takes a context object as an input parameter. The big advantage of using a context object is that the instantiation can be configured to its needs.
 
 In the following example the Employee model consists of a property that describes the employment type (eg. FullTime/PartTime). If this employment type is not explicitly requested, using the include parameter or by requesting the entire model, it depends on its initial value. With a context-based factory, this value can be set according to the current configuration.
 

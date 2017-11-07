@@ -19,9 +19,9 @@ throwException is a bool parameter and the default value is true.
 
 ### Example usage:
 Let's say  we store employee Social Security Numbers in our database. Under no circumstance do we want their socials to 
-be transmitted through our project using popcorn. Enter the power of [InternalOnly]!
+be transmitted through our project using Popcorn. Enter the power of [InternalOnly]!
 
-As we've done in times past we add the SocialSecurityNumber property to our Employee class and its projection.
+First, we add the SocialSecurityNumber property to our Employee class and its projection.
 (Admittedly you could just not add the Social to the projection, but technically that is still a little vulnerable to 
 blind mapping and the like)
 ```csharp
@@ -38,7 +38,7 @@ public class Employee
 
 Note that the SocialSecurityNumber property is marked as [InternalOnly] and set to throw an exception should it be called.
 **A key difference to remember here is the source object is marked with the [InternalOnly] attibute and not its projection 
-- to make sure that the SocialSecurityNumber attribute isn't refrenced accidentally in another place**
+- to make sure that the SocialSecurityNumber attribute isn't referenced accidentally in another place**
 
 Let's try making a request now and see what comes back when we specifically try to include SocialSecurityNumbers.
 ```json

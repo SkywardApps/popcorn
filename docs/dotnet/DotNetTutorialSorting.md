@@ -2,12 +2,14 @@
 
 [Table Of Contents](../TableOfContents.md)
 
-As we are a few releases in, we are going to assume you've read [Getting Started](DotNetTutorialGettingStarted.md) and our other tutorials to familiarize
-yourself with Popcorn. Now lets say not only do you want to have your response objects from your API's return only the specific properties you desire, but
-you'd also like the results to be sorted server side so you can just plug and play with your front end. We now have an answer.
+This is a more advanced tutorial - we recommend you read [Getting Started](DotNetTutorialGettingStarted.md) and our other tutorials first to familiarize
+yourself with Popcorn. 
+
+Let's say not only do you want to have your response objects from your APIs return only the specific properties you desire, but
+you'd also like the results to be sorted server side so you can just plug and play with your front end. Popcorn has the answer.
 
 This tutorial will walk you through the two new additions to our query parameters that we've added, "sort" and its related partner "sortDirection", and how they 
-can be leveraged with your API's.
+can be leveraged with your APIs.
 
 <a name="sort"/>
 
@@ -51,9 +53,9 @@ http://localhost:50353/api/example/cars?include=[Make, Model, Color, Owner[First
 }
 ```
 
-This is all fine and good as a response as it only includes the information we want, but let's take it a step further and assume this list
-is 500 results long. We ultimately want to be able to present this list of Cars to a user in a browser and it may benefit us to push the sorting
-to our server and minimize the code and load on the front end (admittedly, this example may not necessitate that, but you get the point).
+This is a good response as it only includes the information we want, but let's take it a step further and assume this list
+is 500 results long. We ultimately want to be able to present this list of Cars to a user in a browser, and it may benefit us to push the sorting
+to our server and minimize the code and load on the front end.
 
 Now show me the sorting!
 Introducing our newest query parameter "sort" in action
@@ -97,8 +99,8 @@ http://localhost:49695/api/example/cars?include=[Make, Model, Color, Owner[First
 You now see that the results are sorted in an ascending order by their Model property, easy as that!
 
 #### Requirements and constraints
-We didn't aim to hit all use cases here so if there is something you'd like to see or use, please submit a PR or write us up an issue 
-and we'd love to work with you on that.
+We didn't aim to hit all use cases here so if there is something you'd like to see or use, please submit a PR or write an issue 
+and we'd love to work with you!
 
 + The "sort" parameter passed in may only be one parameter and it is case sensitive.
 + The parameter being targeted for "sort" may only be one on the primary response object.
@@ -153,7 +155,7 @@ http://localhost:49695/api/example/cars?include=[Make, Model, Color, Owner[First
 }
 ```
 
-It may go without saying, but if no "sort" is provided, then we don't apply a "sortDirection" by default because.. well.. you get it.
+It may go without saying, but if no "sort" is provided, then we don't apply a "sortDirection" by default.
 
 Easy as that! Please don't hesitate to submit a PR or issue with requests for added functionality or updates that will help you in using 
 the sort functionality (or Popcorn in general).
