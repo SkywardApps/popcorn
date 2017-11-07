@@ -1,6 +1,6 @@
 ## Getting started with our example project
 Popcorn comes with an example project that can be a helpful starting point for anyone new to Popcorn. 
-The main purpose of this project is to act as a testbed for integrating Popcorn in to your application, 
+The main purpose of this project is to act as a testbed for integrating Popcorn, 
 and to demonstrate the features of Popcorn. Once you are up and running with the project, 
 you will be able to begin sending queries and receiving JSON objects back as a result.
 
