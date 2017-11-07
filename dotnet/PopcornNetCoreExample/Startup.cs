@@ -91,6 +91,7 @@ namespace PopcornCoreExample
             {
                 FirstName = "Liz",
                 LastName = "Lemon",
+                SocialSecurityNumber = 5556667777,
                 Employment = EmploymentType.FullTime,
                 Birthday = DateTimeOffset.Parse("1981-05-01"),
                 VacationDays = 0,
@@ -113,6 +114,7 @@ namespace PopcornCoreExample
             {
                 FirstName = "Jack",
                 LastName = "Donaghy",
+                SocialSecurityNumber = 7776665555,
                 Employment = EmploymentType.PartTime,
                 Birthday = DateTimeOffset.Parse("1957-07-12"),
                 VacationDays = 300,
