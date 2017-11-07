@@ -29,6 +29,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tutorials", "Tutorials", "{
 		..\docs\dotnet\DotNetQuickStart.md = ..\docs\dotnet\DotNetQuickStart.md
 		..\docs\dotnet\DotNetTutorialAdvancedProjections.md = ..\docs\dotnet\DotNetTutorialAdvancedProjections.md
 		..\docs\dotnet\DotNetTutorialAuthorizers.md = ..\docs\dotnet\DotNetTutorialAuthorizers.md
+		..\docs\dotnet\DotNetTutorialBlindExpansion.md = ..\docs\dotnet\DotNetTutorialBlindExpansion.md
 		..\docs\dotnet\DotNetTutorialContexts.md = ..\docs\dotnet\DotNetTutorialContexts.md
 		..\docs\dotnet\DotNetTutorialDefaultIncludes.md = ..\docs\dotnet\DotNetTutorialDefaultIncludes.md
 		..\docs\dotnet\DotNetTutorialGettingStarted.md = ..\docs\dotnet\DotNetTutorialGettingStarted.md
