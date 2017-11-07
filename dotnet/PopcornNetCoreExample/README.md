@@ -22,9 +22,7 @@ you will be able to begin sending queries and receiving JSON objects back as a r
 To build the example project, simply load the Popcorn solution and build the entire solution.
 <a name="popcorn=dependencies"></a>
 ### Popcorn dependencies
-    + [NuGet 1.6](https://docs.microsoft.com/en-us/nuget/guides/install-nuget#nuget-package-manager-in-visual-studio)
-    + [.Net Core v2](https://www.microsoft.com/net/learn/get-started/windows)
-    + [.Net Framework 4.6.01038](https://www.microsoft.com/en-us/download/details.aspx?id=48130)
+    + [.Net Core 1.1](https://www.microsoft.com/net/download/windows)
 <a name="visual-studio"></a>
 ### Visual Studio
 We recommend using [Visual Studio 2017](https://www.visualstudio.com/downloads/). Open the Popcorn solution and build all.
