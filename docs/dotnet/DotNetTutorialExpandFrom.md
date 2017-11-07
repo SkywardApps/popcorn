@@ -4,18 +4,16 @@
 
 The power of Popcorn comes in its ability to expand objects dynamically based on the specified object's properties.
 
-There are currently 3 ways that a developer can declare an object to be "Mapped" so as to have it able to be expanded 
+There are currently 3 ways that an object can be "Mapped" so it will be expanded by Popcorn. 
 by Popcorn.
  1. [Blind expansion](DotNetTutorialBlindExpansion.md) - The most limiting option, but the quickest to configure
  2. [Mapping on the Popcorn configuration](DotNetQuickStart.md) - The most permissive and customizable option, but the slowest to configure
- 3. ExpandFrom declaration on a projection - Arguably the best combination of quick setup with sturdy type declarations
-
- Let's get right to explaining the ExpandFrom attribute
+ 3. ExpandFrom declaration on a projection - Arguably the best combination of quick setup with type sturdiness
 
  ## Overview
  
  The ExpandFrom attribute is declared on an object's projection to tell Popcorn specifically where to look when attempting to 
- expand an object.
+ expand the passed base object.
  The ExpandFrom object takes two properties:
   1. The type of the class to expand from
   2. Properties to include by default
