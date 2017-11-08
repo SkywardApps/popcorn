@@ -8,13 +8,13 @@ using PopcornNetStandardTest.Models;
 namespace PopcornNetStandardTest.Migrations
 {
     [DbContext(typeof(TestModelContext))]
-    [Migration("20170814002753_Initial")]
-    partial class Initial
+    [Migration("20171108214955_20171108.InitialMigration")]
+    partial class _20171108InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.2");
+                .HasAnnotation("ProductVersion", "1.1.3");
 
             modelBuilder.Entity("PopcornNetStandardTest.Models.Credential", b =>
                 {

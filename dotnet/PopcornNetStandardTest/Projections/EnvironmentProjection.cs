@@ -10,6 +10,7 @@ namespace PopcornNetStandardTest.Projections
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string BaseUrl { get; set; }
+        public List<String> CredentialDefinitionNames { get; set; }
         public List<CredentialProjection> Credentials { get; set; }
         public bool EmailOnError { get; set; }
         public string AdditionalNotifications { get; set; }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace PopcornNetStandardTest.Models
@@ -22,5 +23,9 @@ namespace PopcornNetStandardTest.Models
         public Project Project { get; set; }
         public virtual List<Credential> Credentials { get; set; }
 
+        public List<string> CredentialDefinitionNames()
+        {
+            return this.Credentials.Select(c => c.Definition.Name).ToList();
+        }
     }
 }

@@ -3,16 +3,21 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace Skyward.Popcorn
 {
+    using ContextType = System.Collections.Generic.Dictionary<string, object>;
+
     public static class EntityFrameworkCore
     {
         private const string DbCountKey = "DbCount";
         private const string DbKey = "Db";
 
+        public static object InternalMappingDefinition { get; private set; }
 
-        /// <summary>
+
+        /// <summary>d
         /// Helper function creating a mapping from a source type to a destination type.  Will attempt to auto-load navigation properties as needed.
         /// </summary>
         /// <param name="optionsBuilder"></param>
@@ -108,6 +113,26 @@ namespace Skyward.Popcorn
             });
 
             return popcornConfiguration.Map(defaultIncludes, config);
+        }
+
+        public static MappingDefinitionConfiguration<TSourceType, TDestType> PreparePropertyDbContext<TSourceType, TDestType>(
+           this MappingDefinitionConfiguration<TSourceType, TDestType> self, 
+           String propertyName,
+           Action<TDestType, PropertyInfo, TSourceType, ContextType, DbContext> action)
+           where TSourceType : class
+           where TDestType : class
+        {
+            self.PrepareProperty(propertyName, (destObject, destProp, sourceObject, context) => {
+                if (context.ContainsKey(DbKey))
+                {
+                    action((TDestType)destObject, destProp, (TSourceType)sourceObject, context, context[DbKey] as DbContext);
+                }
+                else
+                {
+                    action((TDestType)destObject, destProp, (TSourceType)sourceObject, context, null);
+                }
+            });
+            return self;
         }
 
         /// <summary>

@@ -6,9 +6,11 @@ using Shouldly;
 using PopcornNetStandardTest.Projections;
 using PopcornNetStandardTest.Utilities;
 using Skyward.Popcorn;
+using Microsoft.EntityFrameworkCore;
 
 namespace PopcornNetStandardTest
 {
+    using ContextType = System.Collections.Generic.Dictionary<string, object>;
 
     [TestClass]
     public class ExpanderEntityFrameworkTests
@@ -21,13 +23,25 @@ namespace PopcornNetStandardTest
             _expander = new Expander();
             var config = new PopcornConfiguration(_expander);
 
+            config.Map<Models.Environment, EnvironmentProjection>(
+                config: (configuration) =>
+                {
+                    configuration.PreparePropertyDbContext<Models.Environment, EnvironmentProjection>("CredentialDefinitionNames",
+                        (destType, propertyInfo, sourceType, contextType, dbContext) =>
+                        {
+                            dbContext.Entry(sourceType).Collection("Credentials").Load();
+                            sourceType.Credentials.ForEach(c => dbContext.Entry(c).Reference("Definition").Load());
+                        }
+                    );
+                });
+
             config.MapEntityFramework<Project, ProjectProjection, TestModelContext>(TestModelContext.ConfigureOptions(), null, (definition) => { definition.Translate(o => o.Id, () => Guid.NewGuid()); });
-            config.MapEntityFramework<PopcornNetStandardTest.Models.Environment, EnvironmentProjection, TestModelContext>(TestModelContext.ConfigureOptions());
+            config.MapEntityFramework<Models.Environment, EnvironmentProjection, TestModelContext>(TestModelContext.ConfigureOptions());
             config.MapEntityFramework<Credential, CredentialProjection, TestModelContext>(TestModelContext.ConfigureOptions());
             config.MapEntityFramework<CredentialDefinition, CredentialDefinitionProjection, TestModelContext>(TestModelContext.ConfigureOptions());
             config.MapEntityFramework<CredentialType, CredentialTypeProjection, TestModelContext>(TestModelContext.ConfigureOptions());
             config.MapEntityFramework<CredentialKeyValue, CredentialKeyValueProjection, TestModelContext>(TestModelContext.ConfigureOptions());
-
+            
             using (var db = new TestModelContext())
             {
                 db.Database.EnsureDeleted();
@@ -147,8 +161,26 @@ namespace PopcornNetStandardTest
 
             ProjectProjection projection = result as ProjectProjection;
             projection.ShouldNotBeNull();
+            projection.ShouldNotBeNull();
+
+            // Verify the properties in this object were projected correctly
             projection.Name.ShouldBe(sourceObject.Name);
-            projection.Id.ShouldNotBe(sourceObject.Id);
+            projection.Description.ShouldBeNull();
+        }
+
+        [TestMethod]
+        public void EntityFrameworkMappingPlainFunctions()
+        {
+            Guid projectId = ProjectTestUtilities.CreateFullDbHierarchy();
+            Models.Environment sourceObject = null;
+
+            using (var db = new TestModelContext())
+            {
+                sourceObject = db.Environments.First();
+            }
+
+            object result = _expander.Expand(sourceObject, includes: PropertyReference.Parse($"[CredentialDefinitionNames]"));
+            result.ShouldNotBeNull();
         }
 
         [TestMethod, Ignore]
