@@ -13,7 +13,7 @@ namespace PopcornNetStandardTest.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.2");
+                .HasAnnotation("ProductVersion", "1.1.3");
 
             modelBuilder.Entity("PopcornNetStandardTest.Models.Credential", b =>
                 {
