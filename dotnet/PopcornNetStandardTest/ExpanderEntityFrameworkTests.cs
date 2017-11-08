@@ -30,37 +30,13 @@ namespace PopcornNetStandardTest
                         (destType, propertyInfo, sourceType, contextType, dbContext) =>
                         {
                             dbContext.Entry(sourceType).Collection("Credentials").Load();
-                            ((TestModelContext)dbContext).Credentials.Where(c => c.Id == sourceType.Id).Include(c => c.Definition).Load();
+                            sourceType.Credentials.ForEach(c => dbContext.Entry(c).Reference("Definition").Load());
                         }
                     );
                 });
-            //config.Map<Credential, CredentialProjection>(
-            //    config: (configuration) =>
-            //    {
-            //        configuration.PreparePropertyDbContext<Credential, CredentialProjection>("Definition",
-            //            (destType, propertyInfo, sourceType, contextType, dbContext) =>
-            //            {
-            //                dbContext.Entry(sourceType).Property("Definition");
-            //            }
-            //        );
-            //    });
+
             config.MapEntityFramework<Project, ProjectProjection, TestModelContext>(TestModelContext.ConfigureOptions(), null, (definition) => { definition.Translate(o => o.Id, () => Guid.NewGuid()); });
             config.MapEntityFramework<Models.Environment, EnvironmentProjection, TestModelContext>(TestModelContext.ConfigureOptions());
-                //,
-                //config: (configuration) => {
-                //    configuration.PreparePropertyDbContext<Models.Environment, EnvironmentProjection>("CredentialDefinitionNames",
-                //        (destType, propertyInfo, sourceType, contextType, dbContext) =>
-                //        {
-                //            dbContext.Entry(sourceType).Collection("Credentials").Load();
-                //        }
-                //    );
-                //    //configuration.PreparePropertyDbContext<Models.CredentialDefinition, EnvironmentProjection>("CredentialDefinitionNames",
-                //    //    (destType, propertyInfo, sourceType, contextType, dbContext) =>
-                //    //    {
-                //    //        var x = dbContext.Entry(sourceType).Member("CredentialDefinitions").CurrentValue;
-                //    //    }
-                //    // );
-                //});
             config.MapEntityFramework<Credential, CredentialProjection, TestModelContext>(TestModelContext.ConfigureOptions());
             config.MapEntityFramework<CredentialDefinition, CredentialDefinitionProjection, TestModelContext>(TestModelContext.ConfigureOptions());
             config.MapEntityFramework<CredentialType, CredentialTypeProjection, TestModelContext>(TestModelContext.ConfigureOptions());

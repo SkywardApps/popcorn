@@ -135,23 +135,6 @@ namespace Skyward.Popcorn
             return self;
         }
 
-        //public static MappingDefinitionConfiguration<TSourceType, TDestType> PrepareWithDbContext<TSourceType, TDestType>
-        //    (this MappingDefinitionConfiguration<TSourceType, TDestType> self, 
-        //     String propertyName, 
-        //     Action<TDestType, 
-        //     PropertyInfo, 
-        //     TSourceType, 
-        //     ContextType, 
-        //     DbContext> action) where TDestType:class where TSourceType:class
-        //{
-        //    self.InternalMappingDefinition.PrepareProperties.Add(propertyName, (destType, propertyInfo, sourceType, contextType) => {
-        //        DbContext database = contextType[DbKey] as DbContext;
-
-        //        action(destType as TDestType, propertyInfo, sourceType as TSourceType, contextType, database);
-        //    });
-        //    return self;
-        //}
-
         /// <summary>
         /// A helper method to build a DbContext given an options builder.
         /// </summary>
