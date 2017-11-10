@@ -23,9 +23,8 @@
     + ##### ["Sort Direction" parameter](dotnet/DotNetTutorialSorting.md#sortDirection)
   + #### Lazy Loading
   + #### [Authorizers](dotnet/DotNetTutorialAuthorizers.md)
-  + #### [Inspectors](dotnet/DotNetTutorialInspectors.md)
-  + #### [Advanced Projections](dotnet/DotNetTutorialAdvancedProjections.md)
   + #### [Internal Only](dotnet/DotNetTutorialInternalOnly)
+  + #### [Inspectors](dotnet/DotNetTutorialInspectors.md)
   
 + ### [Roadmap](Roadmap.md)
 
