@@ -15,7 +15,7 @@ can be leveraged with your APIs.
 
 ### "sort" Parameter
 
-First let's see an example of a typical response object to the following request from our Cars endpoint we've referenced before
+First let's see an example of a typical response object to the following request from a Cars endpoint
 ```javascript
 http://localhost:50353/api/example/cars?include=[Make, Model, Color, Owner[FirstName, LastName]]
 
@@ -58,7 +58,7 @@ is 500 results long. We ultimately want to be able to present this list of Cars 
 to our server and minimize the code and load on the front end.
 
 Now show me the sorting!
-Introducing our newest query parameter "sort" in action
+Introducing our query parameter "sort" in action
 ```javascript
 http://localhost:49695/api/example/cars?include=[Make, Model, Color, Owner[FirstName, LastName]]&sort=Model
 
@@ -103,9 +103,9 @@ We didn't aim to hit all use cases here so if there is something you'd like to s
 and we'd love to work with you!
 
 + The "sort" parameter passed in may only be one parameter and it is case sensitive.
-+ The parameter being targeted for "sort" may only be one on the primary response object.
-	+ i.e. "Model" works great, but sort=FirstName will not work.
-	+ Also targeting complex types will not work either because, for example, sorting based on "Vehicle" is a bit more tricky than a simple sort.
++ The parameter being targeted for "sort" may only be on the primary response object.
+	+ i.e. In the example above "Model" works great, but sort=FirstName will not work.
+	+ Also targeting complex types will not work either because, for example, sorting based on "Owner" is a bit more tricky than a simple sort.
 + An "include" is not required to sort a response.
 + For that matter, neither is a "sortDirection" as it will default to ascending.
 
@@ -114,10 +114,10 @@ and we'd love to work with you!
 ### "sortDirection" Parameter
 
 "sortDirection" is a far more simple query parameter as it just accepts two values, "Ascending" and "Descending" (case sensitive) 
-and specifies the way the specified sort target is to be sorted.
+and specifies the way the sort target is to be sorted.
 Just remember, as we mentioned already, the sort direction defaults to "Ascending" should a sort be provided and no "sortDirection".
 
-Without further ado, here we see it being used in the wild (with our standard Cars example)
+Here we see it being used in the wild with the same simple Cars example:
 ```javascript
 http://localhost:49695/api/example/cars?include=[Make, Model, Color, Owner[FirstName, LastName]]&sort=Model&sortDirection=Descending
 
@@ -158,4 +158,4 @@ http://localhost:49695/api/example/cars?include=[Make, Model, Color, Owner[First
 It may go without saying, but if no "sort" is provided, then we don't apply a "sortDirection" by default.
 
 Easy as that! Please don't hesitate to submit a PR or issue with requests for added functionality or updates that will help you in using 
-the sort functionality (or Popcorn in general).
+the sort functionality.

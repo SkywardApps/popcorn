@@ -39,6 +39,27 @@ namespace PopcornCoreExample.Models
 We also added a new "User" property to our "Cars" model and projection.
 ```csharp
 public string User { get; set; }
+public class Car
+{
+    public string Model { get; set; }
+    public string Make { get; set; }
+    public int Year { get; set; }
+	...
+
+    public string User { get; set; }
+}
+
+public class CarProjection
+{
+    public string Model { get; set; }
+    public string Make { get; set; }
+    public int? Year { get; set; }
+	...
+
+    public string User { get; set; }
+}
+```
+
 ```
 
 Then, we assigned a "User" value to the mock entries we have in our CreateExampleDatabase function in Startup.cs.
@@ -85,8 +106,33 @@ mvcOptions.UsePopcorn((popcornConfig) => {
 });
 ```
 
-From past tutorials, you'll remember that if we made a plain, empty GET call to our cars endpoint you would have gotten a list of 
-all 3 cars, so let's see what happens now with the addition of authorization.
+Prior to adding the authorization setting, a call to our cars endpoint would have returned all car objects in the database:
+```javascript
+http://localhost:49699/api/example/cars
+
+{
+    "Success": true,
+    "Data": [
+        {
+            "Model": "Firebird",
+            "Make": "Pontiac",
+            "Year": 1981
+        },
+		{
+            "Model": "250 GTO",
+            "Make": "Ferrari N.V.",
+            "Year": 1962
+        },
+		{
+            "Model": "Cayman",
+            "Make": "Porsche",
+            "Year": 2005
+        }
+    ]
+}
+```
+
+Let's see what happens now with the addition of authorization.
 ```javascript
 http://localhost:49699/api/example/cars
 

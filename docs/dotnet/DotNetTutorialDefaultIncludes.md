@@ -11,7 +11,20 @@ This tutorial will walk you through the two ways you can declare default propert
 to include subproperties on an object by default.
 
 First let's start with an example!
-Let's look back at our intial Employee projection
+Let's look at our intial Employee object and its projection
+```csharp
+public class Employee
+{
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+
+    public DateTimeOffset Birthday { get; set; }
+    public int VacationDays { get; set; }
+
+    public List<Car> Vehicles { get; set; }
+}
+```
+
 ```csharp
 public class EmployeeProjection
 {
@@ -121,12 +134,29 @@ You'll remember in our [Advanced Projections Tutorial](DotNetTutorialAdvancedPro
 In addition to that functionality, you can also pass in a defaultIncludes string at the time of a mapping to include certain properties 
 by default.
 
-Let's shift to the Car Projection and see how that is applied there.
+Let's shift to the Car object and projection and see how that is applied there
+```csharp
+public class Car
+{
+	public string Model { get; set; }
+    public string Make { get; set; }
+    public int Year { get; set; }
+
+    public enum Colors
+    {
+        Black,
+        Red,
+        Blue,
+        Gray,
+        White,
+        Yellow,
+    }
+    public Colors Color { get; set; }
+}
+
 ```csharp
 public class CarProjection
 {
-	public EmployeeProjection Owner { get; set; }
-
 	public string Model { get; set; }
 	public string Make { get; set; }
 	public int? Year { get; set; }
@@ -135,7 +165,7 @@ public class CarProjection
 ```
 
 As you've seen above with the Employee Projection, with no default includes, setting a request of the "cars" endpoint 
-will return all 5 exposed properties. Again, let us say we only care to see Make, Model, and Year by default on our returned objects.
+will return all 4 exposed properties. Again, let us say we only care to see Make, Model, and Year by default on our returned objects.
 
 We return to our mapping statement in Startup.cs and configure it as seen below, ignoring the translation for clarity.
 ```csharp

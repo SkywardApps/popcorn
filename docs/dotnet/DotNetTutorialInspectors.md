@@ -15,7 +15,15 @@ This tutorial will walk you through the two ways of setting an inspector and bri
 ### Example
 First let's start with an example of how our responses vary with the usage of an inspector versus not using one.
 
-Here is a standard response from popcorn with no inspector set, targeting our GET cars endpoint we've talked about before:
+Here is a standard response from popcorn with no inspector set, targeting a GET cars endpoint:
+```csharp
+[HttpGet, Route("cars")]
+public List<Car> Cars()
+{
+    return _context.Cars;
+}
+```
+
 ```javascript
 http://localhost:49699/api/example/cars
 
@@ -38,8 +46,9 @@ http://localhost:49699/api/example/cars
 ]
 ```
 
-Note that a simple array of "Car" objects is returned, as we stated as the response on our Car endpoint. Let's say we make an include call on the same endpoint
-for a property "Fishy" - which isn't our "Car" object (that probably didn't need explaining).
+Note that a simple array of "Car" objects is returned. Let's say we make an include call on the same endpoint
+for a property "Fishy" - which isn't a property on our "Car" object (that probably didn't need explaining).
+
 
 We would expect an error of some sort to be returned so lets see what the response object looks like now:
 
@@ -49,10 +58,14 @@ http://localhost:49699/api/example/cars?include=[Fishy]
 ... cricket... cricket...
 ```
 
-Now you won't actually see "cricket" as your response, but you will see a 500 status code and be stuck guessing what it is that went wrong.
+Now you won't actually see "cricket" as your response, but you will see a 500 status code and be stuck guessing what it is that went wrong 
+as there would be an error thrown within Popcorn, but that is not presented to the user unless it is instructed to do so.
+
 
 Enter the power of the inspector! We don't want to have to handle every single error possiblity in its own unique API response - rather
-we want to have one central response wrapper that handles all of the heavy lifting for us, so that our consumers get consistent responses, every time.
+we want to have one central response wrapper that handles all of the heavy lifting for us so our consumers get consistent responses, every time
+- be those errors coming from something to do with Popcorn or a server logic error.
+
 
 Here are both requests from above using our default inspector:
 
@@ -113,7 +126,21 @@ Done! That was easy. You've now implemented a standard inspector to wrap all of 
 
 Our default inspector may not meet the all of the needs of your organization, so we also offer the option to define your own inspector.
 
-Back to Startup.cs!
+We can add a custom response object and then pass it to Popcorn in our configuration declaration:
+```csharp
+public class Response
+{
+    [Required]
+    public bool Success { get; set; }
+
+	// We set this as an option to ALWAYS include a Data object, regardless if there is no data passed from the server
+    [JsonProperty(NullValueHandling = NullValueHandling.Include)]
+    public object Data { get; set; }
+}
+```
+
+Back to Startup.cs where we configure our custom inspector!
+
 ```csharp
 mvcOptions.UsePopcorn((popcornConfig) => {
     popcornConfig
