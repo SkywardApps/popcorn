@@ -367,6 +367,71 @@ namespace PopcornNetStandardTest
             projection.Id.ShouldBe(root.Id);
         }
 
+        // A valid includes with a wildcard
+        [TestMethod]
+        public void WildcardIncludes()
+        {
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Description = "Test",
+                    Id = Guid.NewGuid(),
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse("[*]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.StringValue.ShouldBe(root.StringValue);
+            projection.Id.ShouldBe(root.Id);
+
+            projection.Child.Id = root.Child.Id;
+            projection.Child.Description = root.Child.Description;
+            projection.Child.Name.ShouldBe(null);
+        }
+
+        // A valid includes with a wildcard on a property on the expanded object
+        [TestMethod]
+        public void WildcardIncludesOnProperty()
+        {
+            Assert.Fail();
+        }
+
+        // A wildcard included amongst other properties
+        [TestMethod]
+        public void WildcardIncludeNested()
+        {
+            Assert.Fail();
+        }
+
+        // A wildcard cast on itself
+        [TestMethod]
+        public void WildcardIncludeCastOnSelf()
+        {
+            Assert.Fail();
+        }
+
+        // A wildcard include on a blindly expanded object
+        [TestMethod]
+        public void WildcardIncludeBlind()
+        {
+            Assert.Fail();
+        }
+
+        // A wildcard includes on a collection object
+        [TestMethod]
+        public void WildcardIncludeCollection()
+        {
+            Assert.Fail();
+        }
+
         // Assign to nullable
         [TestMethod]
         public void AssignValueToNullable()

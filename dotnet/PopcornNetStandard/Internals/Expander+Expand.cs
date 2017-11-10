@@ -347,6 +347,60 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         private IEnumerable<PropertyReference> ValidateIncludes(IEnumerable<PropertyReference> includes, Type sourceType, Type destType)
         {
+            // Out of the gate we want to first see if the only property to be included is a wildcard
+            if ((includes.Count() == 1) && (includes.Any(i => i.PropertyName == "*")))
+            {
+                var wildCardIncludes = new List<PropertyReference> { };
+
+                // Check to see if the object is to be blind expanded and apply the source type values instead
+                if (destType == null)
+                {
+                    // Have all of the destination type properties set to be included
+                    foreach (PropertyInfo info in sourceType.GetProperties())
+                    {
+                        // Make sure that the property isn't marked as InternalOnly on the sourceType
+                        // Which is only an issue if they marked the type to throw an error if it's requested
+                        var matchingSourceProp = sourceType.GetProperty(info.Name);
+                        if (matchingSourceProp != null)
+                        {
+                            if (matchingSourceProp.GetCustomAttributes().Any(att => att.GetType() == typeof(InternalOnlyAttribute)))
+                            {
+                                // Only add the property if it isn't marked InternalOnly
+                                continue;
+                            }
+                        }
+
+                        wildCardIncludes.Add(new PropertyReference { PropertyName = info.Name });
+                    }
+                } else // in the case that the object isn't to be blind expanded
+                {
+                    // Have all of the destination type properties set to be included
+                    foreach (PropertyInfo info in destType.GetProperties())
+                    {
+                        var matchingSourceProp = sourceType.GetProperty(info.Name);
+
+                        // Make sure that the property isn't marked as InternalOnly on the sourceType
+                        // Which is only an issue if they marked the type to throw an error if it's requested
+                        if (matchingSourceProp != null)
+                        {
+                            if (matchingSourceProp.GetCustomAttributes().Any(att => att.GetType() == typeof(InternalOnlyAttribute)))
+                            {
+                                // Only add the property if it isn't marked InternalOnly
+                                continue;
+                            }
+                        }
+
+                        // TODO: THESE ARE INEFFICIENTLY SPLIT BECAUSE I THINK WE NEED TO LOOP THROUGH EVERY MAPPING TO MAKE SURE THAT
+                        // THE PROPERTIES ON THE DESTINATION CAN SOMEHOW BE MAPPED TO THE SOURCE OR WE WILL SEE AN INVALID CAST EXCEPTION
+                        // FOR REQUESTING IT
+
+                        wildCardIncludes.Add(new PropertyReference { PropertyName = info.Name });
+                    }
+                }
+
+                return wildCardIncludes;
+            }
+
             if (includes.Any())
                 return includes;
 
