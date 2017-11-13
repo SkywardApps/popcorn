@@ -4,6 +4,7 @@
 
 Tutorials:
 + [Getting Started](DotNetTutorialGettingStarted.md)
++ [Wildcard Includes](DotNetTutorialWildcardIncludes.md)
 + [Advanced Projections](DotNetTutorialAdvancedProjections.md)
 + [Default Includes](DotNetTutorialDefaultIncludes.md)
 + [Sorting](DotNetTutorialSorting.md)
