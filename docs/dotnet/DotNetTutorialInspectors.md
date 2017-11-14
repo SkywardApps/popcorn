@@ -124,7 +124,7 @@ Done! That was easy. You've now implemented a standard inspector to wrap all of 
 
 ## Set your own custom inspector
 
-Our default inspector may not meet the all of the needs of your organization, so we also offer the option to define your own inspector.
+Our default inspector may not meet all of the needs of your organization, so we also offer the option to define your own inspector.
 
 We can add a custom response object and then pass it to Popcorn in our configuration declaration:
 ```csharp

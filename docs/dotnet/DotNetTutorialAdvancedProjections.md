@@ -29,7 +29,7 @@ mvcOptions.UsePopcorn((popcornConfig) => {
 });
 ```
 
-New use the Employee API endpoint, and you should get something like:
+Now use the Employee API endpoint, and you should get something like:
 
 ```javascript
 http://localhost:50353/api/example/employees?include=[FirstName,LastName,FullName,Birthday]

@@ -294,7 +294,7 @@ To demonstrate, first call the same endpoint '/api/example/employees' and verify
 ]
 ```
 
-A few of things to point out: The casing has changed due to our internal popcorn settings (FirstName instead of firstName).  
+A few things to point out: The casing has changed due to our internal popcorn settings (FirstName instead of firstName).  
 Also, our Colors enumeration has gone from a numeric format (1,5) to textual (Red, Yellow), but this can all be configured to your tastes.
 
 To start seeing the real power of Popcorn, lets make a couple of advanced calls.  Maybe we only want our Employee's names? 

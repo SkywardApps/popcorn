@@ -65,7 +65,7 @@ http://localhost:49699/api/example/employees?include=[SocialSecurityNumber]
 ```
 
 An exception was thrown as expected!
-If we were to make a request for the of the GET employees method without a specific mention of SocialSecurityNumber, we would see a success response 
+If we were to make a request to the GET employees method without a specific mention of SocialSecurityNumber, we would see a success response 
 with all of the other relevant employee information - just not the Social.
 
 It is up to you on how you will use the throwException parameter based on your needs.

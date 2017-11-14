@@ -4,7 +4,7 @@
 
 If you are unfamiliar with how to 'project' a data entity into another type please complete the [Getting Started](DotNetTutorialGettingStarted.md) first.
 
-Popcorn's projects are very powerful, but you probably don't want to have to specify what should be included 
+Popcorn's projections are very powerful, but you probably don't want to have to specify what should be included 
 in a response object every time.
 
 This tutorial will walk you through the two ways you can declare default properties on your projections - while also discussing a way
@@ -80,7 +80,7 @@ http://localhost:50353/api/example/employees
 }
 ```
 
-That is a lot of information, but what if we know that the standard request for employees should only include the "FirstName" and "LastName" by default, as our database may be enormous and returning all information unnecessarily is time consuming?
+That is a lot of information, but what if we know that the standard request for employees should only include the "FirstName" and "LastName" by default, as our database may be enormous and returning all information unnecessarily is time consuming.
 
 The answer is default properties.
 
@@ -164,7 +164,7 @@ public class CarProjection
 }
 ```
 
-As you've seen above with the Employee Projection, with no default includes, setting a request of the "cars" endpoint 
+As you've seen above with the Employee Projection, with no default includes, making a request to the "cars" endpoint 
 will return all 4 exposed properties. Again, let us say we only care to see Make, Model, and Year by default on our returned objects.
 
 We return to our mapping statement in Startup.cs and configure it as seen below, ignoring the translation for clarity.
