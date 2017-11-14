@@ -259,7 +259,6 @@ namespace PopcornNetStandardTest
                     definition.Translate(o => o.ValueFromTranslator, () => 5.2);
                     definition.Translate(o => o.ComplexFromTranslator, () => new ChildObjectProjection { Id = new Guid(), Name = "Complex trans name", Description = "Complex trans description" });
                 });
-            config.Map<Dictionary<string, object>, RootObjectProjection>();
             config.Map<ChildObject, ChildObjectProjection>();
             config.Map<DerivedChildObject, DerivedChildObjectProjection>();
             config.Map<Loop, LoopProjection>();
@@ -333,14 +332,76 @@ namespace PopcornNetStandardTest
         public void ExpandDictionary()
         {
             new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var guid = Guid.NewGuid();
+
             var entity = new Dictionary<string, object>
             {
-                { "Id", Guid.NewGuid() },
-                { "StringValue", "String Value!" },
+                { "Id", guid },
+                { "Nullable", null },
+                { "StringValue", "This is a String!" },
+                { "Upconvert", "3.33" },
+                { "Downconvert", null },                
+                { "ValueFromTranslator", 2.22 }
             };
 
-            object result = _expander.Expand(entity, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Id)},{nameof(RootObjectProjection.StringValue)}]"));
+            RootObjectProjection result = _expander.Expand<RootObjectProjection>(entity, PropertyReference.Parse($"[{nameof(RootObjectProjection.Id)},{nameof(RootObjectProjection.StringValue)},{nameof(RootObjectProjection.Downconvert)}]"));
             result.ShouldNotBeNull();
+
+            // Id should be the original guid
+            result.Id.ShouldBe(guid);
+
+            // Test for nullabe guid to be null
+            // Nullable should be null
+            result.Nullable.ShouldBeNull();
+
+            // Test for string to double
+            // Upconvert should be a double (3.33)
+            result.Upconvert.ShouldBe(3.33);
+
+            // Test for nullable int to be null
+            // Downconvert should be null
+            result.Downconvert.ShouldBeNull();
+
+            // Test for double to be converted to a double
+            // ValueFromTranslator should be a double (2.22)
+            result.ValueFromTranslator.ShouldBe(2.22);
+        }
+
+        [TestMethod]
+        public void ExpandDictionary_NonStringValuesConvertedToString()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var guid = Guid.NewGuid();
+
+            var entity = new Dictionary<string, object>
+            {
+                { "Id", guid },
+                { "StringValue", 222 }
+            };
+
+            RootObjectProjection result = _expander.Expand<RootObjectProjection>(entity, PropertyReference.Parse($"[{nameof(RootObjectProjection.Id)},{nameof(RootObjectProjection.StringValue)},{nameof(RootObjectProjection.Downconvert)}]"));
+
+            result.ShouldNotBeNull();
+            result.StringValue.ShouldBe("222");
+        }
+
+        [TestMethod]
+        public void ExpandDictionary_InvalidValueForNullableType()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var guid = Guid.NewGuid();
+
+            var entity = new Dictionary<string, object>
+            {
+                { "Id", guid },
+                { "Nullable", "null" }
+            };
+
+            // There is no conversion for a string "null" to null for a non-string object, therefore there will be an invalid cast exception thrown
+            Should.Throw<InvalidCastException>(() =>
+            {
+                RootObjectProjection result = _expander.Expand<RootObjectProjection>(entity, PropertyReference.Parse($"[{nameof(RootObjectProjection.Id)},{nameof(RootObjectProjection.StringValue)},{nameof(RootObjectProjection.Downconvert)}]"));
+            });
         }
 
         // assign a null

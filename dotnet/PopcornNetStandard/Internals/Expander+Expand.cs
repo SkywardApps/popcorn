@@ -25,6 +25,19 @@ namespace Skyward.Popcorn
         }
 
         /// <summary>
+        /// Query if this is a Dictionary<string, object>
+        /// </summary>
+        /// <param name="sourceType"></param>
+        /// <returns></returns>
+        protected bool WillExpandDictionary(Type sourceType)
+        {
+            if (sourceType.IsConstructedGenericType)
+                return sourceType.GetGenericTypeDefinition() == typeof(Dictionary<,>) && sourceType.GenericTypeArguments[0] == typeof(string);
+            else
+                return false;
+        }
+
+        /// <summary>
         /// Query if this is a collection of a mapped type
         /// </summary>
         /// <param name="sourceType"></param>
@@ -117,7 +130,8 @@ namespace Skyward.Popcorn
             object destinationObject = CreateObjectInContext(context, sourceType, destType);
 
             // If the source is a dictionary we need to go through the keys to match the properties
-            if (sourceType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            // TODO: Add Recursion for dictionaries that may contain lists of the object within
+            if (sourceType.IsConstructedGenericType && sourceType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
                 var sourceDict = (Dictionary<string, object>)source;
                 PropertyInfo[] properties = destinationObject.GetType().GetProperties();
@@ -134,12 +148,19 @@ namespace Skyward.Popcorn
                     // Find which property type (int, string, double? etc) the CURRENT property is...
                     Type propertyType = destinationObject.GetType().GetProperty(property.Name).PropertyType;
 
-                    // Fix nullables...
-                    Type newType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+                    if (item.Value == null && Nullable.GetUnderlyingType(propertyType) != null)
+                    {
+                        destinationObject.GetType().GetProperty(property.Name).SetValue(destinationObject, null, null);
+                    }
+                    else
+                    {
+                        // Fix nullables...
+                        Type newType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
 
-                    // ...and change the type
-                    object newA = Convert.ChangeType(item.Value, newType);
-                    destinationObject.GetType().GetProperty(property.Name).SetValue(destinationObject, newA, null);
+                        // ...and change the type
+                        object newA = Convert.ChangeType(item.Value, newType);
+                        destinationObject.GetType().GetProperty(property.Name).SetValue(destinationObject, newA, null);
+                    }
                 }
 
                 return destinationObject;
