@@ -138,7 +138,7 @@ Let's shift to the Car object and projection and see how that is applied there
 ```csharp
 public class Car
 {
-	public string Model { get; set; }
+    public string Model { get; set; }
     public string Make { get; set; }
     public int Year { get; set; }
 
