@@ -33,7 +33,7 @@ This project has a few examples of how to use Popcorn, and can be used to troubl
 <a name="how-to-debug"></a>
 ### How to debug
 To build/run a debug version of our PorcornNetCoreExample, just load the solution with Visual Studio and build all. 
-Then choose **PopcornNetCoreExample** in the Startup Project dropdown menu, and **PopcornCoreExample** in the debug profile dropdown. 
+Then choose **PopcornNetCoreExample** in the Startup Project dropdown menu, and **PopcornNetCoreExample** in the debug profile dropdown. 
 You should now be able to begin debugging by using `Debug -> Start Debugging`. Dropping a breakpoint at one of the endpoints in `/Controllers/ExampleController.cs` 
 should serve as a good entry point for tracing the process that takes place when a query is submitted.
 <a name="submitting-queries"></a>
