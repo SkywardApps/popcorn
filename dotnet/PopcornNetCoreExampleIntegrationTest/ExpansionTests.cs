@@ -198,7 +198,8 @@ namespace PopcornNetCoreExampleIntegrationTest
 
             json.Success.ShouldBeFalse();
             json.ErrorCode.ShouldBe(typeof(ArgumentOutOfRangeException).FullName);
-            json.ErrorMessage.ShouldContain("Specified argument was out of the range of valid values.\r\nParameter name: Fishy");
+            json.ErrorMessage.ShouldContain("Specified argument was out of the range of valid values.");
+            json.ErrorMessage.ShouldContain("Parameter name: Fishy"); // Split these into separate lines to handle for linux/windows line break differences
         }
 
         // A complete null response object returned
