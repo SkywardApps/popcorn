@@ -8,21 +8,21 @@ There are currently 3 ways that an object can be "Mapped" so it will be expanded
 by Popcorn.
  1. [Blind expansion](DotNetTutorialBlindExpansion.md) - The most limiting option, but the quickest to configure
  2. [Mapping on the Popcorn configuration](DotNetQuickStart.md) - The most permissive and customizable option, but the slowest to configure
- 3. ExpandFrom declaration on a projection - Arguably the best combination of quick setup with type sturdiness
+ 3. ExpandFrom assigned to a projection class - Arguably the best combination of quick setup without the fragility of blind expansion
 
  ## Overview
  
- The ExpandFrom attribute is declared on an object's projection to tell Popcorn specifically where to look when attempting to 
+ The ExpandFrom attribute is assigned to an object's projection class to tell Popcorn specifically where to look when attempting to 
  expand the passed base object.
  The ExpandFrom object takes two properties:
   1. The type of the class to expand from
   2. Properties to include by default
 
 *This is where the limitations show a little. It is easy to configure the ExpandFrom property, but it doesn't extend 
-as many customizable options as mapping on the popcorn configuration declaration does*
+as many customizable options as mapping on the popcorn configuration does*
 
 #### Potential Gotcha
-+ Declaring default includes can get messy as they can be declared in a few different places so declaring properties to be included by default 
++ Setting default includes can get messy as they can be applied in a few different places so declaring properties to be included by default 
 within the ExpandFrom attribute while also declaring IncludeByDefault attributes on properties within that class will throw an error.
 
 ### Example
@@ -46,7 +46,7 @@ public class Manager : Employee
 }
 ```
 
-We want to declare a projection:
+We want to create a projection:
 ```csharp
 public class EmployeeProjection
 {
@@ -71,7 +71,7 @@ public class ManagerProjection : EmployeeProjection
 }
 ```
 
-Now, it doesn't really matter how we declare the mapping of the base EmployeeProjection class, but let's say we quickly want to declare the mapping 
+Now, it doesn't really matter how we set the mapping of the base EmployeeProjection class, but let's say we quickly want to set the mapping 
 for the ManagerProjection.
 All we need to do is add the ExpandFrom attribute to our Manager projection and we are done!
 ```csharp
@@ -86,7 +86,7 @@ public class ManagerProjection : EmployeeProjection
 Now, an important thing to notice here is we elected to not declare default includes in our ExpandFrom attribute for two reasons:
  1. As Manager is an inherited class we prefer to use the IncludeByDefault attributes on the base and inherited classes respectively 
  so we don't have to track properties in two places.
- 2. As mentioned above, we can't declare both IncludByDefault and default includes - error city!
+ 2. As mentioned above, we can't assign both IncludeByDefault attributes and default includes here - error city!
 
 That's really it! If we make a call to our GET "Managers" endpoint we see the below as our base response and we can customize it with include 
 statements to our heart's content.
