@@ -1,0 +1,84 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2002
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{A7EEB6B5-2616-4E2A-BFAA-FE87FF7AD77B}"
+	ProjectSection(SolutionItems) = preProject
+		..\.gitattributes = ..\.gitattributes
+		..\.gitignore = ..\.gitignore
+		..\.gitlab-ci.yml = ..\.gitlab-ci.yml
+		..\docs\Contributing.md = ..\docs\Contributing.md
+		..\docs\Documentation.md = ..\docs\Documentation.md
+		..\LICENSE = ..\LICENSE
+		..\markdown.json = ..\markdown.json
+		..\docs\QuickStart.md = ..\docs\QuickStart.md
+		..\README.md = ..\README.md
+		..\docs\Releases.md = ..\docs\Releases.md
+		..\docs\Roadmap.md = ..\docs\Roadmap.md
+		..\docs\TableOfContents.md = ..\docs\TableOfContents.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{6927209F-F97B-4039-9702-1544DF636EFB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tutorials", "Tutorials", "{1E83E1EE-8F81-4825-92E1-0B905200428D}"
+	ProjectSection(SolutionItems) = preProject
+		..\docs\dotnet\DotNetDocumentation.md = ..\docs\dotnet\DotNetDocumentation.md
+		..\docs\dotnet\DotNetQuickStart.md = ..\docs\dotnet\DotNetQuickStart.md
+		..\docs\dotnet\DotNetTutorialAdvancedProjections.md = ..\docs\dotnet\DotNetTutorialAdvancedProjections.md
+		..\docs\dotnet\DotNetTutorialAuthorizers.md = ..\docs\dotnet\DotNetTutorialAuthorizers.md
+		..\docs\dotnet\DotNetTutorialBlindExpansion.md = ..\docs\dotnet\DotNetTutorialBlindExpansion.md
+		..\docs\dotnet\DotNetTutorialContexts.md = ..\docs\dotnet\DotNetTutorialContexts.md
+		..\docs\dotnet\DotNetTutorialDefaultIncludes.md = ..\docs\dotnet\DotNetTutorialDefaultIncludes.md
+		..\docs\dotnet\DotNetTutorialGettingStarted.md = ..\docs\dotnet\DotNetTutorialGettingStarted.md
+		..\docs\dotnet\DotNetTutorialInspectors.md = ..\docs\dotnet\DotNetTutorialInspectors.md
+		..\docs\dotnet\DotNetTutorialInternalOnly.md = ..\docs\dotnet\DotNetTutorialInternalOnly.md
+		..\docs\dotnet\DotNetTutorialSorting.md = ..\docs\dotnet\DotNetTutorialSorting.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExample", "PopcornNetCoreExample\PopcornNetCoreExample.csproj", "{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandard", "PopcornNetStandard\PopcornNetStandard.csproj", "{66944808-E409-4BD8-9ADC-0D0011BB3D73}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExampleIntegrationTest", "PopcornNetCoreExampleIntegrationTest\PopcornNetCoreExampleIntegrationTest.csproj", "{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandardTest", "PopcornNetStandardTest\PopcornNetStandardTest.csproj", "{174D074E-0B02-4CCD-99D1-32377624625A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66944808-E409-4BD8-9ADC-0D0011BB3D73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66944808-E409-4BD8-9ADC-0D0011BB3D73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66944808-E409-4BD8-9ADC-0D0011BB3D73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66944808-E409-4BD8-9ADC-0D0011BB3D73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{174D074E-0B02-4CCD-99D1-32377624625A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{174D074E-0B02-4CCD-99D1-32377624625A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{174D074E-0B02-4CCD-99D1-32377624625A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{174D074E-0B02-4CCD-99D1-32377624625A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1E83E1EE-8F81-4825-92E1-0B905200428D} = {A7EEB6B5-2616-4E2A-BFAA-FE87FF7AD77B}
+		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1} = {6927209F-F97B-4039-9702-1544DF636EFB}
+		{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
+		{174D074E-0B02-4CCD-99D1-32377624625A} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {667890E8-370A-4157-82AE-C1F63EA834AF}
+	EndGlobalSection
+EndGlobal

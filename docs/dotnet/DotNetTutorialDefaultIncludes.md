@@ -1,5 +1,7 @@
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Default Includes
 
+[Table Of Contents](../../docs/TableOfContents.md)
+
 By now you've learned how to 'project' a data entity into another type and as we've said before 
 if that sentence didn't make sense, you should probably go back and complete [Getting Started](DotNetTutorialGettingStarted.md) first.
 We'll still be here when you get back.
@@ -112,6 +114,9 @@ http://localhost:50353/api/example/employees
 
 Ahhh, that's better. Simple and to the point. Now have no fear, you can still send a request out with ?include=[...] and access
 all of the properties exposed on the projection that you would like, completely overriding the DefaultInclude statement.
+
+*Important FYI: Derived classes will inherit their base class' [IncludeByDefault]'s by default and can be overridden 
+in the usual fashion with a specific ?include in a request.* 
 
 ### Option 2: Including a DefaultIncludes string at "Map" time
 

@@ -1,11 +1,15 @@
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Sorting
 
+[Table Of Contents](../TableOfContents.md)
+
 As we are a few releases in, we are going to assume you've read [Getting Started](DotNetTutorialGettingStarted.md) and our other tutorials to familiarize
 yourself with Popcorn. Now lets say not only do you want to have your response objects from your API's return only the specific properties you desire, but
 you'd also like the results to be sorted server side so you can just plug and play with your front end. We now have an answer.
 
 This tutorial will walk you through the two new additions to our query parameters that we've added, "sort" and its related partner "sortDirection", and how they 
 can be leveraged with your API's.
+
+<a name="sort"/>
 
 ### "sort" Parameter
 
@@ -102,6 +106,8 @@ and we'd love to work with you on that.
 	+ Also targeting complex types will not work either because, for example, sorting based on "Vehicle" is a bit more tricky than a simple sort.
 + An "include" is not required to sort a response.
 + For that matter, neither is a "sortDirection" as it will default to ascending.
+
+<a name="sortDirection"/>
 
 ### "sortDirection" Parameter
 
