@@ -1,6 +1,6 @@
 ﻿# [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Lazy Loading
 
-[Lazy Loading](https://en.wikipedia.org/wiki/Lazy_loading) is a design pattern used to save processing power when creating or retrieving objects. It is helpful when loading an entity that has a complex object as a property.
+[Lazy Loading](https://en.wikipedia.org/wiki/Lazy_loading) is a design pattern used to save processing power when creating or retrieving objects. It does this by only loading associated entities when required to do so.
 
 An example of where lazy loading is beneficial is a list of authors on a blog site. There could be many authors and each author could have many blog posts associated with them. A view is created to show all authors that have
 a post on the site. Without lazy loading, you run the risk of pulling back all posts for all authors in that list. For a large list, this could be very expensive and wasteful if the purpose of the view is not to show posts
