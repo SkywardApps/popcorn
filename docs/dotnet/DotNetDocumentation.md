@@ -5,7 +5,7 @@ Tutorials:
 + [Advanced Projections](DotNetTutorialAdvancedProjections.md)
 + [Default Includes](DotNetTutorialDefaultIncludes.md)
 + [Sorting](DotNetTutorialSorting.md)
-+ Lazy Loading
++ [Lazy Loading](DotNetTutorialLazyLoading.md)
 
 Implementation Details:
 + OutputFormatter
