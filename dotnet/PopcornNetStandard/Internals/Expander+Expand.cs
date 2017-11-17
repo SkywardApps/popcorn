@@ -111,7 +111,7 @@ namespace Skyward.Popcorn
                 }
             }
             
-            includes = ValidateIncludes(includes, sourceType, destType);
+            includes = ConstructIncludes(includes, sourceType, destType);
 
             // Attempt to create a projection object we'll map the data into
             object destinationObject = CreateObjectInContext(context, sourceType, destType);
@@ -209,7 +209,7 @@ namespace Skyward.Popcorn
             visited = UniqueVisit(source, visited);
 
             Type sourceType = source.GetType();
-            includes = ValidateIncludes(includes, sourceType, null);
+            includes = ConstructIncludes(includes, sourceType, null);
 
             // Attempt to create a projection object we'll map the data into
             var destinationObject = new Dictionary<string, object>();
@@ -345,8 +345,62 @@ namespace Skyward.Popcorn
         /// <param name="sourceType"></param>
         /// <param name="destType"></param>
         /// <returns></returns>
-        private IEnumerable<PropertyReference> ValidateIncludes(IEnumerable<PropertyReference> includes, Type sourceType, Type destType)
+        private IEnumerable<PropertyReference> ConstructIncludes(IEnumerable<PropertyReference> includes, Type sourceType, Type destType)
         {
+            // Out of the gate we want to first see if the only property to be included is a wildcard
+            if ((includes.Count() == 1) && (includes.Any(i => i.PropertyName == "*")))
+            {
+                var wildCardIncludes = new List<PropertyReference> { };
+                var mapDef = new MappingDefinition();
+
+                // Check to see if the object is to be blind expanded and make the destination the same as the source if it is
+                if (destType == null)
+                {
+                    destType = sourceType;
+                }
+                else // in the case that the object isn't to be blind expanded get the proper mapping
+                {
+                    Mappings.TryGetValue(sourceType, out mapDef);
+                }
+
+                // Have all of the destination type properties set to be included
+                foreach (PropertyInfo info in destType.GetProperties())
+                {
+                    var matchingSourceProp = sourceType.GetProperty(info.Name);
+
+                    // Make sure that the property isn't marked as InternalOnly on the sourceType
+                    // Which is only an issue if they marked the type to throw an error if it's requested
+                    if (matchingSourceProp != null)
+                    {
+                        if (matchingSourceProp.GetCustomAttributes().Any(att => att.GetType() == typeof(InternalOnlyAttribute)))
+                        {
+                            // Only add the property if it isn't marked InternalOnly
+                            continue;
+                        }
+                    }
+
+                    // Also make sure that the property exists on the destination type in some capacity
+                    // This will never be hit by a blindly expanded object as the source and destination type are identical
+                    if (matchingSourceProp == null)
+                    {
+                        try
+                        {
+                            // Check to see if there are any translators that would apply the object to the projection ultimately
+                            var transTest = mapDef.DefaultDestination().Translators[info.Name];
+                        }
+                        catch (Exception)
+                        {
+                            // This property isn't known to the projection at all and thus should not be included
+                            continue;
+                        }
+                    }
+
+                    wildCardIncludes.Add(new PropertyReference { PropertyName = info.Name });
+                }
+
+                return wildCardIncludes;
+            }
+
             if (includes.Any())
                 return includes;
 

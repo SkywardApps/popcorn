@@ -56,6 +56,10 @@ namespace Skyward.Popcorn
                         if (!String.IsNullOrWhiteSpace(child.PropertyName))
                         {
                             child.PropertyName = child.PropertyName.TrimStart(' ').TrimEnd(' ');
+                            if (child.PropertyName == "*" && stack.Peek().PropertyName == "*")
+                            {
+                                throw new InvalidCastException("A wildcard was cast on a wildcard as such [*[*]]");
+                            }
                             stack.Peek().Children.Add(child);
                         }
                         break;

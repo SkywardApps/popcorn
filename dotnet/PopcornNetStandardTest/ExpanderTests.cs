@@ -367,6 +367,223 @@ namespace PopcornNetStandardTest
             projection.Id.ShouldBe(root.Id);
         }
 
+        // A valid includes with a wildcard
+        [TestMethod]
+        public void WildcardIncludes()
+        {
+            // Doing a bit of a custom config here to avoid the issue with the invalid cast type not working
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            config.Map<RootObject, RootObjectProjection>($"[{nameof(RootObjectProjection.Id)},{nameof(RootObjectProjection.StringValue)},{nameof(RootObjectProjection.NonIncluded)}]",
+                (definition) =>
+                {
+                    definition.Translate(o => o.InvalidCastType, () => "test");
+                    definition.Translate(o => o.ValueFromTranslator, () => 5.2);
+                    definition.Translate(o => o.ComplexFromTranslator, () => new ChildObjectProjection { Id = new Guid(), Name = "Complex trans name", Description = "Complex trans description" });
+                });
+            config.Map<ChildObject, ChildObjectProjection>();
+
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Description = "Test",
+                    Id = Guid.NewGuid(),
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse("[*]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.StringValue.ShouldBe(root.StringValue);
+            projection.Id.ShouldBe(root.Id);
+            projection.InvalidCastType.ShouldBe("test");
+            projection.ValueFromTranslator.ShouldBe(5.2);
+            projection.ComplexFromTranslator.Name.ShouldBe("Complex trans name");
+            projection.ComplexFromTranslator.Description.ShouldBe("Complex trans description");
+
+            projection.Child.Id.ShouldBe(root.Child.Id);
+            projection.Child.Description.ShouldBe(root.Child.Description);
+            projection.Child.Name.ShouldBe(null);
+        }
+
+        // A valid includes with a wildcard on a property on the expanded object
+        [TestMethod]
+        public void WildcardIncludesOnProperty()
+        {
+            // Doing a bit of a custom config here to avoid the issue with the invalid cast type not working
+            _expander = new Expander();
+            var config = new PopcornConfiguration(_expander);
+            config.Map<RootObject, RootObjectProjection>($"[{nameof(RootObjectProjection.Id)},{nameof(RootObjectProjection.StringValue)}]",
+                (definition) =>
+                {
+                    definition.Translate(o => o.InvalidCastType, () => "test");
+                    definition.Translate(o => o.ValueFromTranslator, () => 5.2);
+                    definition.Translate(o => o.ComplexFromTranslator, () => new ChildObjectProjection { Id = new Guid(), Name = "Complex trans name", Description = "Complex trans description" });
+                });
+            config.Map<ChildObject, ChildObjectProjection>();
+
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Description = "Test",
+                    Id = Guid.NewGuid(),
+                    Name = "I have a value!"
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Id)},{nameof(RootObjectProjection.StringValue)},{nameof(RootObjectProjection.Child)}[*]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+            projection.NonIncluded.ShouldBeNull();
+            projection.Id.ShouldBe(root.Id);
+            projection.StringValue.ShouldBe(root.StringValue);
+
+            projection.Child.Id = root.Child.Id;
+            projection.Child.Description = root.Child.Description;
+            projection.Child.Name.ShouldBe(root.Child.Name);
+        }
+
+        // A wildcard included amongst other properties
+        [TestMethod]
+        public void WildcardIncludeNested()
+        {
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Description = "Test",
+                    Id = Guid.NewGuid(),
+                    Name = "I have a value!"
+                }
+            };
+
+            Should.Throw<ArgumentOutOfRangeException>(() =>_expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.Id)},*,{nameof(RootObjectProjection.StringValue)}]")), "Parameter name: *");
+        }
+
+        // A wildcard cast on itself
+        [TestMethod]
+        public void WildcardIncludeCastOnSelf()
+        {
+            var root = new RootObject
+            {
+                Id = Guid.NewGuid(),
+                StringValue = "Name",
+                NonIncluded = "A description",
+                ExcludedFromProjection = "Some Details",
+                Child = new ChildObject
+                {
+                    Description = "Test",
+                    Id = Guid.NewGuid(),
+                    Name = "I have a value!"
+                }
+            };
+
+            Should.Throw<InvalidCastException>(() => _expander.Expand(root, null, PropertyReference.Parse($"[*[*]]")), "A wildcard was cast on a wildcard as such [*[*]]");
+        }
+
+        // A wildcard include on a blindly expanded object
+        [TestMethod]
+        public void WildcardIncludeBlind()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var entity = new NonMappedType
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[*]"));
+            result.ShouldNotBeNull();
+
+            var mappedEntity = result as Dictionary<string, object>;
+            mappedEntity.ShouldNotBeNull();
+
+            mappedEntity["Name"].ShouldBe(nameof(BlindExpansion));
+            mappedEntity["Title"].ShouldBe("Test");
+            mappedEntity["Children"].ShouldNotBeNull();
+            var children = new List<Dictionary<string, object>>();
+            foreach (var item in mappedEntity["Children"] as ArrayList)
+            {
+                children.Add(item as Dictionary<string, object>);
+            };
+            children.Count.ShouldBe(3);
+            children.Count(c => c.ContainsKey("Name")).ShouldBe(3);
+            children.Count(c => c.ContainsKey("Title") && (string)c["Title"] == "Test").ShouldBe(3);
+        }
+
+        // A wildcard includes on a collection object
+        [TestMethod]
+        public void WildcardIncludeCollection()
+        {
+            var root = new RootObject
+            {
+                ChildrenInterface = new List<ChildObject>
+                {
+                    new DerivedChildObject
+                    {
+                        Name = "Item1",
+                        Description = "Description1",
+                        ExtendedProperty = "ExtendedProperty1"
+                    },
+                    new DerivedChildObject
+                    {
+                        Name = "Item2",
+                        Description = "Description2",
+                        ExtendedProperty = "ExtendedProperty2"
+                    }
+                }
+            };
+
+            object result = _expander.Expand(root, null, PropertyReference.Parse($"[{nameof(RootObjectProjection.ChildrenInterface)}[*]]"));
+            result.ShouldNotBeNull();
+
+            RootObjectProjection projection = result as RootObjectProjection;
+            projection.ShouldNotBeNull();
+
+            projection.ChildrenInterface.ShouldNotBeNull();
+            projection.ChildrenInterface.Count().ShouldBe(2);
+            projection.ChildrenInterface.All(c => c as DerivedChildObjectProjection != null).ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => c.Name == "Item1").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => c.Name == "Item2").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => (c as DerivedChildObjectProjection).ExtendedProperty == "ExtendedProperty1").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => (c as DerivedChildObjectProjection).ExtendedProperty == "ExtendedProperty2").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => (c as DerivedChildObjectProjection).Description == "Description1").ShouldBeTrue();
+            projection.ChildrenInterface.Any(c => (c as DerivedChildObjectProjection).Description == "Description2").ShouldBeTrue();
+        }
+
         // Assign to nullable
         [TestMethod]
         public void AssignValueToNullable()
