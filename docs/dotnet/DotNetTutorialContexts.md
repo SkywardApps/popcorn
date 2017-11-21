@@ -1,8 +1,7 @@
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Setting Contexts
 
-Popcorn does not know about every thing in your application on its own. Actually, it's aware of virtually nothing without being specifically told and thus 
-we use .NET MVC options with the Popcorn Configuration as an abstraction layer 
-between whatever it is you're doing on your back end and your API.
+Popcorn does not know about everything in your application on its own. Actually, it's aware of virtually nothing without being specifically told and thus 
+we use .NET MVC options with the Popcorn Configuration as an abstraction layer between whatever it is you're doing on your back end and your API.
 
 Enter the need for the ability to give context to Popcorn so it has access to the necessary bits and pieces to serve your API appropriately.
 
@@ -31,4 +30,3 @@ You'll see in our tutorials on [Authorizers](docs/dotnet/DotNetTutorialAuthorize
 within Popcorn itself. Authorizers uses a context to see what the "active user" is for each request, while Advanced Projections shows how a default Employment 
 context can be used with factories. We also shouldn't forget the obvious that you'll probably need to make your database accessible to Popcorn as a context!
 
-Let's not belabor this one because, frankly, you've got to give this a go and leverage it to your needs.

@@ -2,5 +2,5 @@ theme: jekyll-theme-dinky
 google_analytics: UA-107915191-2
 title: "Popcorn"
 email: popcorn@skywardapps.com
-incremental: true
+future: false
 repository: SkywardApps/popcorn

@@ -1,4 +1,6 @@
 # Popcorn
+
+[![Join the chat at https://gitter.im/popcorn-api/Lobby](https://badges.gitter.im/popcorn-api/Lobby.svg)](https://gitter.im/popcorn-api/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build status](https://ci.appveyor.com/api/projects/status/odjc31j0q0k213qh/branch/master?svg=true)](https://ci.appveyor.com/project/alexbarbato/popcorn/branch/master) 
 [![NuGet](https://img.shields.io/nuget/v/Skyward.Api.Popcorn.svg)](https://www.nuget.org/packages/Skyward.Api.Popcorn)
 
@@ -24,7 +26,7 @@ into one.
 	+ Configurable [response inspectors](docs/dotnet/DotNetTutorialInspectors.md)
 	+ [Factory and advanced projection](docs/dotnet/DotNetTutorialAdvancedProjections.md) support
 	+ Set relevant [contexts](docs/dotnet/DotNetTutorialContexts.md) for your API
-	+ [Blind expansion](docs/dotnet/DotNetTutorialAdvancedBlindExpansion.md) of response objects
+	+ [Blind expansion](docs/dotnet/DotNetTutorialBlindExpansion.md) of response objects
 
 **Ok, so.... what is it in action?**
 
