@@ -1,5 +1,4 @@
-﻿using Serilog;
-using System;
+﻿using System;
 using System.Reflection;
 
 namespace Skyward.Popcorn
@@ -38,7 +37,6 @@ namespace Skyward.Popcorn
             }
             catch (Exception ex)
             {
-                Log.Warning($"An exception was caught trying to set {propertyInfo?.Name} on {inputObject?.GetType().Name} from a {propertyVal?.GetType().Name}");
                 // If any exception happened we couldn't set the property, so return false.
                 return false;
             }
