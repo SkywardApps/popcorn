@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PopcornNetCoreExampleIntegrationTest._Utilities
+﻿namespace PopcornNetCoreExampleIntegrationTest._Utilities
 {
     class Utilities
     {
@@ -15,8 +11,6 @@ namespace PopcornNetCoreExampleIntegrationTest._Utilities
         public static string employeesRelUrl = exampleControllerRelUrl + "/employees";
         public static string carsRelUrl = exampleControllerRelUrl + "/cars";
         public static string businessesRelUrl = exampleControllerRelUrl + "/businesses";
-
-
 
     }
 }

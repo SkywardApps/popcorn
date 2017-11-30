@@ -39,17 +39,5 @@ namespace PopcornNetCoreExampleIntegrationTest
         {
             get { return LazyServer.Value; }
         }
-
-        [AssemblyInitialize]
-        public static void Setup(TestContext context)
-        {
-
-        }
-
-        [AssemblyCleanup]
-        public static void Cleanup()
-        {
-
-        }
     }
 }

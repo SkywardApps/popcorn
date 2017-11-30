@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using PopcornNetCoreExample;
 using PopcornNetCoreExample.Models;
 using PopcornNetCoreExample.Projections;
 using PopcornNetCoreExample.Wire;
@@ -11,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Globalization;
 
 namespace PopcornNetCoreExampleIntegrationTest
 {
