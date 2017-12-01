@@ -5,7 +5,7 @@
 Ok, so you want to jump in with both feet and get Popcorn set up and running.
 This tutorial will walk through a simple Asp.Net Core application demonstrating the basic functionality.
 
-All source code is available in the 'PopcornCoreExample' project in the dotnet solution.
+All source code is available in the 'PopcornNetCoreExample' project in the dotnet solution.
 
 To get us started off, create a brand new 'Asp.Net Core' project.
 
@@ -25,7 +25,7 @@ Instead, lets create an 'ExampleController' with just one endpoint for now.
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 
-namespace PopcornCoreExample.Controllers
+namespace PopcornNetCoreExample.Controllers
 {
     [Route("api/example/")]
     public class ExampleController : Controller

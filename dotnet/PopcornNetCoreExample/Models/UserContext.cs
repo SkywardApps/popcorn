@@ -1,4 +1,4 @@
-﻿namespace PopcornCoreExample.Models
+﻿namespace PopcornNetCoreExample.Models
 {
     public class UserContext
     {

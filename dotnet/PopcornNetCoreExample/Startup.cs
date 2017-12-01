@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using PopcornCoreExample.Models;
-using PopcornCoreExample.Projections;
+using PopcornNetCoreExample.Models;
+using PopcornNetCoreExample.Projections;
 using Skyward.Popcorn;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace PopcornCoreExample
+namespace PopcornNetCoreExample
 {
     public class Startup
     {

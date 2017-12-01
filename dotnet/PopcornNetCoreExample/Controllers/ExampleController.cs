@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
-using PopcornCoreExample.Models;
+using PopcornNetCoreExample.Models;
 using System;
 
-namespace PopcornCoreExample.Controllers
+namespace PopcornNetCoreExample.Controllers
 {
     [Route("api/example/")]
     public class ExampleController : Controller

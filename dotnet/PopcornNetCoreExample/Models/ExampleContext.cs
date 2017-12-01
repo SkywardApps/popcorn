@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace PopcornCoreExample.Models
+namespace PopcornNetCoreExample.Models
 {
     public class ExampleContext
     {

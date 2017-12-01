@@ -29,7 +29,7 @@ we could restrict access to things using the "Authorize" function.
 
 We are going to create a new UserContext in UserContext.cs that has a fixed active user "Alice" (a high tech user system, we know). 
 ```csharp
-namespace PopcornCoreExample.Models
+namespace PopcornNetCoreExample.Models
 {
     public class UserContext
     {
