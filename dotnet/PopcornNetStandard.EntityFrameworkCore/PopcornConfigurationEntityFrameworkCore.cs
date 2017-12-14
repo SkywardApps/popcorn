@@ -118,7 +118,7 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         private static DbContext ConstructDbContextWithOptions<TContext>(DbContextOptionsBuilder<TContext> optionsBuilder) where TContext : DbContext
         {
-            var constructor = typeof(TContext).GetConstructor(new Type[] { typeof(DbContextOptions<TContext>) });
+            var constructor = typeof(TContext).GetTypeInfo().GetConstructor(new Type[] { typeof(DbContextOptions<TContext>) });
             var db = (DbContext)constructor.Invoke(new[] { optionsBuilder.Options });
             return db;
         }
@@ -144,7 +144,7 @@ namespace Skyward.Popcorn
             //using the entityType name, and add it to the return set.
             foreach (var navigationProperty in entityElementType.GetNavigations().Where(np => np.IsCollection()))
             {
-                properties.Add(entityType.GetProperty(navigationProperty.Name));
+                properties.Add(entityType.GetTypeInfo().GetProperty(navigationProperty.Name));
             }
             return properties;
         }
@@ -169,7 +169,7 @@ namespace Skyward.Popcorn
             //using the entityType name, and add it to the return set.
             foreach (var navigationProperty in entityElementType.GetNavigations().Where(np => !np.IsCollection()))
             {
-                properties.Add(entityType.GetProperty(navigationProperty.Name));
+                properties.Add(entityType.GetTypeInfo().GetProperty(navigationProperty.Name));
             }
             return properties;
         }

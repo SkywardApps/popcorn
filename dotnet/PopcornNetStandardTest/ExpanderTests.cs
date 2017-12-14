@@ -1893,7 +1893,7 @@ namespace PopcornNetStandardTest
         public void AuthorizeWithContext()
         {
             new PopcornConfiguration(_expander).Authorize<ChildObject>((source, context, value) => {
-                return value.Name ==  context["Name"];
+                return value.Name == (string)context["Name"];
             });
 
             var root = new RootObject

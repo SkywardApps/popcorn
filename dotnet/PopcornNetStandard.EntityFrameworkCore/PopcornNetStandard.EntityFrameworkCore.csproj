@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.6</TargetFramework>
+    <RootNamespace>Popcorn</RootNamespace>
+    <AssemblyName>PopcornNetStandard.EntityFrameworkCore</AssemblyName>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>Skyward.Api.Popcorn.EntityFrameworkCore</PackageId>
+    <Version>3.0.0</Version>
+    <Authors>Skyward App Company, LLC</Authors>
+    <Company>Skyward App Company, LLC</Company>
+    <Description>EntityFrameworkCore extensions to Popcorn</Description>
+    <Copyright>Copyright 2017 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
+    <PackageLicenseUrl>https://github.com/SkywardApps/popcorn/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/SkywardApps/popcorn</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <PackageTags>api rest</PackageTags>
+    <PackageReleaseNotes>Broke out the library to isolate dependancies.</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>..\Build\Debug\netstandard1.6</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>PopcornNetStandard.EntityFrameworkCore.xml</DocumentationFile>
+    <OutputPath>..\Build\Release\netstandard1.6</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="1.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PopcornNetStandard\PopcornNetStandard.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -414,9 +414,9 @@ namespace Skyward.Popcorn
                 }
 
                 // Have all of the destination type properties set to be included
-                foreach (PropertyInfo info in destType.GetProperties())
+                foreach (PropertyInfo info in destType.GetTypeInfo().GetProperties())
                 {
-                    var matchingSourceProp = sourceType.GetProperty(info.Name);
+                    var matchingSourceProp = sourceType.GetTypeInfo().GetProperty(info.Name);
 
                     // Make sure that the property isn't marked as InternalOnly on the sourceType
                     // Which is only an issue if they marked the type to throw an error if it's requested

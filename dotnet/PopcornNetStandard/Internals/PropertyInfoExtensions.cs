@@ -35,7 +35,7 @@ namespace Skyward.Popcorn
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // If any exception happened we couldn't set the property, so return false.
                 return false;

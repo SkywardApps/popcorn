@@ -211,7 +211,7 @@ namespace Skyward.Popcorn
         /// <param name="assembly">The aseembly to seearch in</param>
         public void ScanAssemblyForMapping(Assembly assembly)
         {
-            MethodInfo method = typeof(PopcornConfiguration).GetMethod("Map");
+            MethodInfo method = typeof(PopcornConfiguration).GetTypeInfo().GetMethod("Map");
 
             foreach (Type type in assembly.GetTypes())
             {
