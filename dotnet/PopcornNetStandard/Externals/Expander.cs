@@ -72,6 +72,10 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public bool WillExpandType(Type sourceType)
         {
+            // Allow Dictionary<string, object> types without mapping
+            if (WillExpandDictionary(sourceType))
+                return true;
+
             if (BlacklistExpansion.Contains(sourceType))
                 return false;
 
@@ -132,6 +136,12 @@ namespace Skyward.Popcorn
             {
                 if (visited == null)
                     visited = new HashSet<int>();
+
+                // If this is a Dictionary<string,object> (Non-mapped)
+                if(WillExpandDictionary(sourceType) && destinationTypeHint != null)
+                {
+                    return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
+                }
 
                 // See if this is a directly expandable type (Mapped Type)
                 if (WillExpandDirect(sourceType))
