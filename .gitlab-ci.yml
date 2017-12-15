@@ -19,11 +19,11 @@ build:
   - dotnet restore
   - dotnet build 
   - cd ../PopcornNetStandard.WebApiCore
-  - dotnet restore
-  - dotnet Build
+  - dotnet restores
+  - dotnet build
   - cd ../PopcornNetStandard.EntityFrameworkCore
   - dotnet restore
-  - dotnet Build
+  - dotnet build
  tags:
   - x86
 
