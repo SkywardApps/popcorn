@@ -18,7 +18,7 @@ build:
   - cd dotnet/PopcornNetStandard
   - dotnet restore
   - dotnet build 
-  - cd ../PopcornNetStandard.WebApi
+  - cd ../PopcornNetStandard.WebApiCore
   - dotnet restore
   - dotnet Build
   - cd ../PopcornNetStandard.EntityFrameworkCore
@@ -32,7 +32,7 @@ popcornstandard_integrationtest:
  stage: test
  image: onsitedashboard:build
  script: 
-  - cd dotnet/PopcornNetCoreExampleIntegrationTest
+  - cd dotnet/Tests/PopcornNetCoreExampleIntegrationTest
   - dotnet restore
   - dotnet test
  tags:
@@ -43,7 +43,7 @@ popcornstandard_unittest:
  stage: test
  image: onsitedashboard:build
  script: 
-  - cd dotnet/PopcornNetStandardTest
+  - cd dotnet/Tests/PopcornNetStandardTest
   - dotnet restore
   - dotnet test
  tags:

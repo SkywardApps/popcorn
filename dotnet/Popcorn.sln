@@ -22,6 +22,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentat
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{6927209F-F97B-4039-9702-1544DF636EFB}"
+	ProjectSection(SolutionItems) = preProject
+		Examples\README.md = Examples\README.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tutorials", "Tutorials", "{1E83E1EE-8F81-4825-92E1-0B905200428D}"
 	ProjectSection(SolutionItems) = preProject
@@ -69,9 +72,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Popcorn", "Popcorn", "{9323
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFrameworkIntegrationTest", "Tests\PopcornNetFrameworkIntegrationTest\PopcornNetFrameworkIntegrationTest.csproj", "{F0405870-C792-4627-8835-9CD32BB33B82}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonIntegrationTest", "Tests\CommonIntegrationTest\CommonIntegrationTest.csproj", "{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommonIntegrationTest", "Tests\CommonIntegrationTest\CommonIntegrationTest.csproj", "{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleModel", "Examples\ExampleModel\ExampleModel.csproj", "{3876002E-5A0A-481E-8DC4-4E65873E4FCA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExampleModel", "Examples\ExampleModel\ExampleModel.csproj", "{3876002E-5A0A-481E-8DC4-4E65873E4FCA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

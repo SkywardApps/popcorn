@@ -19,13 +19,13 @@
     <PackageReleaseNotes>Broke out the library to isolate dependancies.</PackageReleaseNotes>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>..\Build\Debug\netstandard1.6</OutputPath>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>PopcornStandard.EntityFrameworkCore.xml</DocumentationFile>
+    <OutputPath>..\Build\Release\</OutputPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>PopcornNetStandard.EntityFrameworkCore.xml</DocumentationFile>
-    <OutputPath>..\Build\Release\netstandard1.6</OutputPath>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>..\Build\Debug\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
