@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using PopcornNetCoreExampleIntegrationTest;
 using PopcornNetCoreExampleIntegrationTest._Utilities;
 using PopcornNetFrameworkExample.Models;
 using PopcornNetFrameworkExample.Projections;
@@ -216,7 +215,7 @@ namespace CommonIntegrationTest
         }
 
         // A complete error response object returned from a server side error (i.e. not Popcorn itself)
-        [TestMethod, Ignore("We can't set a custom response code in the self-hosted environment")]
+        [TestMethod]
         public async Task ResponseObjectServerError()
         {
             var response = await TestSetup.Client.GetAsync(Utilities.errorRelUrl);

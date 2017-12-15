@@ -1,15 +1,22 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PopcornNetCoreExample;
+using System;
 using System.Net.Http;
 
 namespace PopcornNetCoreExampleIntegrationTest
 {
     [TestClass]
-    class TestSetup
+    public class TestSetup : CommonIntegrationTest.TestSetup
     {
+        [AssemblyInitialize]
+        public static void AssemblySetup(TestContext context)
+        {
+            Assert.IsNotNull(LazyServer.Value);
+            Client = LazyClient.Value;
+        }
+
         /// <summary>
         /// This will create the TestServer on demand
         /// </summary>
@@ -29,11 +36,6 @@ namespace PopcornNetCoreExampleIntegrationTest
             var client = Server.CreateClient();
             return client;
         });
-
-        public static HttpClient Client
-        {
-            get { return LazyClient.Value; }
-        }
 
         public static TestServer Server
         {

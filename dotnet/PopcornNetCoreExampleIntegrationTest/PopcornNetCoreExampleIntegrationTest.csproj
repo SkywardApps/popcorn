@@ -29,6 +29,7 @@
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="..\CommonIntegrationTest\CommonIntegrationTest.csproj" />
     <ProjectReference Include="..\PopcornNetCoreExample\PopcornNetCoreExample.csproj" />
     <ProjectReference Include="..\PopcornNetStandard\PopcornNetStandard.csproj" />
   </ItemGroup>

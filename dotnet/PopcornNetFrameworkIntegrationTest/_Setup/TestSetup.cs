@@ -6,7 +6,7 @@ using System;
 using System.Net.Http;
 using System.Web.Http;
 
-namespace PopcornNetCoreExampleIntegrationTest
+namespace PopcornNetFrameworkExampleIntegrationTest
 {
     [TestClass]
     public class TestSetup : CommonIntegrationTest.TestSetup

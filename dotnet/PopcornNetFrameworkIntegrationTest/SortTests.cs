@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace PopcornNetCoreExampleIntegrationTest
+namespace PopcornNetFrameworkExampleIntegrationTest
 {
     [TestClass]
     public class SortTests : CommonIntegrationTest.SortTests

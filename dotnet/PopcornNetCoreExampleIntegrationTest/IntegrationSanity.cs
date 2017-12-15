@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace PopcornNetFrameworkExampleIntegrationTest
+namespace PopcornNetCoreExampleIntegrationTest
 {
     [TestClass]
     public class IntegrationSanity : CommonIntegrationTest.IntegrationSanity
