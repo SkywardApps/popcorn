@@ -39,20 +39,20 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tutorials", "Tutorials", "{
 		..\docs\dotnet\DotNetTutorialWildcardIncludes.md = ..\docs\dotnet\DotNetTutorialWildcardIncludes.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExample", "PopcornNetCoreExample\PopcornNetCoreExample.csproj", "{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExample", "Examples\PopcornNetCoreExample\PopcornNetCoreExample.csproj", "{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}"
 	ProjectSection(ProjectDependencies) = postProject
 		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandard", "PopcornNetStandard\PopcornNetStandard.csproj", "{66944808-E409-4BD8-9ADC-0D0011BB3D73}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExampleIntegrationTest", "PopcornNetCoreExampleIntegrationTest\PopcornNetCoreExampleIntegrationTest.csproj", "{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExampleIntegrationTest", "Tests\PopcornNetCoreExampleIntegrationTest\PopcornNetCoreExampleIntegrationTest.csproj", "{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}
 		{07D125F0-3081-4E1A-84EF-E74FED737F55} = {07D125F0-3081-4E1A-84EF-E74FED737F55}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandardTest", "PopcornNetStandardTest\PopcornNetStandardTest.csproj", "{174D074E-0B02-4CCD-99D1-32377624625A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandardTest", "Tests\PopcornNetStandardTest\PopcornNetStandardTest.csproj", "{174D074E-0B02-4CCD-99D1-32377624625A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}
 	EndProjectSection
@@ -61,17 +61,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandard.WebApiCo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandard.EntityFrameworkCore", "PopcornNetStandard.EntityFrameworkCore\PopcornNetStandard.EntityFrameworkCore.csproj", "{07D125F0-3081-4E1A-84EF-E74FED737F55}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFrameworkExample", "PopcornNetFrameworkExample\PopcornNetFrameworkExample.csproj", "{0F064D08-2E27-49DA-9E84-8905A83E3692}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFrameworkExample", "Examples\PopcornNetFrameworkExample\PopcornNetFrameworkExample.csproj", "{0F064D08-2E27-49DA-9E84-8905A83E3692}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFramework.WebApi", "PopcornNetFramework.WebApi\PopcornNetFramework.WebApi.csproj", "{BD99FD93-6999-4F44-B807-2DF84FDFB6AB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Popcorn", "Popcorn", "{9323797C-D1AC-4778-9941-241B7298A0A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFrameworkIntegrationTest", "PopcornNetFrameworkIntegrationTest\PopcornNetFrameworkIntegrationTest.csproj", "{F0405870-C792-4627-8835-9CD32BB33B82}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFrameworkIntegrationTest", "Tests\PopcornNetFrameworkIntegrationTest\PopcornNetFrameworkIntegrationTest.csproj", "{F0405870-C792-4627-8835-9CD32BB33B82}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonIntegrationTest", "CommonIntegrationTest\CommonIntegrationTest.csproj", "{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonIntegrationTest", "Tests\CommonIntegrationTest\CommonIntegrationTest.csproj", "{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleModel", "ExampleModel\ExampleModel.csproj", "{3876002E-5A0A-481E-8DC4-4E65873E4FCA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleModel", "Examples\ExampleModel\ExampleModel.csproj", "{3876002E-5A0A-481E-8DC4-4E65873E4FCA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

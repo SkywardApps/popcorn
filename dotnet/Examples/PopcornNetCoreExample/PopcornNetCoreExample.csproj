@@ -23,9 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PopcornNetStandard.EntityFrameworkCore\PopcornNetStandard.EntityFrameworkCore.csproj" />
-    <ProjectReference Include="..\PopcornNetStandard.WebApiCore\PopcornNetStandard.WebApiCore.csproj" />
-    <ProjectReference Include="..\PopcornNetStandard\PopcornNetStandard.csproj" />
+    <ProjectReference Include="..\..\PopcornNetStandard.EntityFrameworkCore\PopcornNetStandard.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\PopcornNetStandard.WebApiCore\PopcornNetStandard.WebApiCore.csproj" />
+    <ProjectReference Include="..\..\PopcornNetStandard\PopcornNetStandard.csproj" />
   </ItemGroup>
 
 </Project>
