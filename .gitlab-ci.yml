@@ -19,7 +19,7 @@ build:
   - dotnet restore
   - dotnet build 
   - cd ../PopcornNetStandard.WebApiCore
-  - dotnet restores
+  - dotnet restore
   - dotnet build
   - cd ../PopcornNetStandard.EntityFrameworkCore
   - dotnet restore
