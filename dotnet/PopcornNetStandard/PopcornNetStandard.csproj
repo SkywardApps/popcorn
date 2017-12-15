@@ -26,7 +26,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>..\Build\Debug\netstandard1.6</OutputPath>
+    <OutputPath>..\Build\Debug\netstandard1.6\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

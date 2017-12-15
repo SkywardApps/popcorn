@@ -209,17 +209,8 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Models\Business.cs" />
-    <Compile Include="Models\Car.cs" />
-    <Compile Include="Models\Employee.cs" />
-    <Compile Include="Models\EmploymentType.cs" />
-    <Compile Include="Models\ExampleContext.cs" />
-    <Compile Include="Models\UserContext.cs" />
-    <Compile Include="Projections\CarProjection.cs" />
-    <Compile Include="Projections\EmployeeProjection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Response.cs" />
-    <Compile Include="Wire\Response.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />
@@ -242,6 +233,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ExampleModel\ExampleModel.csproj">
+      <Project>{3876002e-5a0a-481e-8dc4-4e65873e4fca}</Project>
+      <Name>ExampleModel</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PopcornNetFramework.WebApi\PopcornNetFramework.WebApi.csproj">
       <Project>{bd99fd93-6999-4f44-b807-2df84fdfb6ab}</Project>
       <Name>PopcornNetFramework.WebApi</Name>

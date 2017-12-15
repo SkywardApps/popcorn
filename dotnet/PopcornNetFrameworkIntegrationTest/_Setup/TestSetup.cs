@@ -1,17 +1,23 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using Microsoft.Owin.Hosting;
-using System.Net.Http;
+﻿using Microsoft.Owin.Hosting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Owin;
-using System.Web.Http;
 using PopcornNetFrameworkExample;
-using Microsoft.Practices.Unity;
+using System;
+using System.Net.Http;
+using System.Web.Http;
 
 namespace PopcornNetCoreExampleIntegrationTest
 {
     [TestClass]
-    class TestSetup
+    public class TestSetup : CommonIntegrationTest.TestSetup
     {
+        [AssemblyInitialize]
+        public static void AssemblySetup(TestContext context)
+        {
+            Assert.IsNotNull(LazyServer.Value);
+            Client = LazyClient.Value;
+        }
+
         static readonly string baseUri = "http://localhost:46588";
 
         /// <summary>
@@ -33,14 +39,7 @@ namespace PopcornNetCoreExampleIntegrationTest
             };
             return client;
         });
-
-        public static HttpClient Client
-        {
-            get {
-                Assert.IsNotNull(LazyServer.Value);
-                return LazyClient.Value;
-            }
-        }
+        
 
         public static IDisposable Server
         {

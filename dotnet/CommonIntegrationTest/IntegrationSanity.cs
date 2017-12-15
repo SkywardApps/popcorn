@@ -1,10 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using PopcornNetCoreExample.Wire;
+using PopcornNetFrameworkExample.Wire;
 using Shouldly;
 using System.Threading.Tasks;
 
-namespace PopcornNetCoreExampleIntegrationTest
+namespace CommonIntegrationTest
 {
     [TestClass]
     public class IntegrationSanity

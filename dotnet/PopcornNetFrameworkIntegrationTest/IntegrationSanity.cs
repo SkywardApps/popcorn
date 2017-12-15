@@ -3,7 +3,7 @@
 namespace PopcornNetCoreExampleIntegrationTest
 {
     [TestClass]
-    public class SortTests : CommonIntegrationTest.SortTests
+    public class IntegrationSanity : CommonIntegrationTest.IntegrationSanity
     {
     }
 }

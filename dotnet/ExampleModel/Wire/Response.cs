@@ -1,11 +1,9 @@
 ﻿using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
 
 namespace PopcornNetFrameworkExample.Wire
 {
     public class Response
     {
-        [Required]
         public bool Success { get; set; }
 
         /// <summary>

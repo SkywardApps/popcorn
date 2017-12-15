@@ -83,6 +83,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Console, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Console.4.3.0\lib\net46\System.Console.dll</HintPath>
     </Reference>
@@ -179,18 +180,20 @@
   <ItemGroup>
     <Compile Include="DefaultIncludesTests.cs" />
     <Compile Include="ExpansionTests.cs" />
+    <Compile Include="IntegrationSanity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SortTests.cs" />
-    <Compile Include="_Setup\IntegrationSanity.cs" />
     <Compile Include="_Setup\TestSetup.cs" />
-    <Compile Include="_Utilities\ErrorResponse.cs" />
-    <Compile Include="_Utilities\Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CommonIntegrationTest\CommonIntegrationTest.csproj">
+      <Project>{3d1dcfcf-da84-4e6b-b97f-184c0ab31b63}</Project>
+      <Name>CommonIntegrationTest</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PopcornNetFrameworkExample\PopcornNetFrameworkExample.csproj">
       <Project>{0f064d08-2e27-49da-9e84-8905a83e3692}</Project>
       <Name>PopcornNetFrameworkExample</Name>

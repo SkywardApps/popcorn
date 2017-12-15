@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
-
-namespace PopcornNetCoreExampleIntegrationTest._Utilities
+﻿namespace PopcornNetCoreExampleIntegrationTest._Utilities
 {
     public class ErrorResponse
     {
