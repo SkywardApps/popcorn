@@ -9,7 +9,7 @@ Tutorials:
 + [Default Includes](DotNetTutorialDefaultIncludes.md)
 + [Sorting](DotNetTutorialSorting.md)
 + [Internal Only Attrribute](DotNetTutorialInternalOnly.md)
-+ Lazy Loading
++ [Lazy Loading](DotNetTutorialLazyLoading.md)
 + [Authorizers](DotNetTutorialAuthorizers.md)
 + [Inspectors](DotNetTutorialInspectors.md)
 + [Contexts](DotNetTutorialContexts)
