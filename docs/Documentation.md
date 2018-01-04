@@ -26,13 +26,13 @@ This basically means a simple name that starts with an alphabetical or underscor
 The minimum field name length is two characters.
 
 ### Examples
-All the following are acceptable:
+Acceptable formats:
 
 No properties referenced: `[]`  
 Properties with simple names: `[FirstName,LastName]`  
 Properties with numbers and underscores: `[MyProperty1,_ASecondProperty,_0]`  
 
-Some disallowed field names are:
+Disallowed field names are:
 
 Starting with a number: `1One`  
 Punctuation: `Property!Name`  
@@ -42,7 +42,7 @@ Only underscores: `___`
 <a name="includingSubEntities"/>
 
 ## Including Sub-entities
-Sub-entities are referred to as traditional fields, and can be embedded by simply referencing the subentity field name.  Optionally, after the field name, an additional include list may be emdedded in the larger call, 
+Sub-entities are referred to as traditional fields, and can be embedded by simply referencing the subentity field name.  Optionally, after the field name, an additional include list may be embedded in the larger call, 
 listing field names of the subentity to include.  These declarations can be recursive, allowing as many nested field lists as needed to define the full scope of the desired response.
 
 ### Examples
@@ -59,8 +59,8 @@ Assuming a subentity field named 'Child':
 <a name="includingCollections"/>
 
 ## Including Collections
-Collections shall behave as any other field.  If the collection is of a simple type, simply reference the field that contains the collection and the contents of the collection shall be returned.  If the collection is of a subentity type,
-then an additional include list may be emdedded in the larger call, listing field names of each subentity in the list to include.  As with direct sub-entities, these may be nested.
+Collections shall behave as any other field.  If the collection is of a simple type, reference the field that contains the collection and the contents of the collection shall be returned.  If the collection is of a subentity type,
+then an additional include list may be embedded in the larger call, listing field names of each subentity in the list to include.  As with direct sub-entities, these may be nested.
 
 ### Examples
 

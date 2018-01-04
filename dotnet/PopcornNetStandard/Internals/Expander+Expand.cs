@@ -25,6 +25,19 @@ namespace Skyward.Popcorn
         }
 
         /// <summary>
+        /// Query if this is a Dictionary<string, object>
+        /// </summary>
+        /// <param name="sourceType"></param>
+        /// <returns></returns>
+        protected bool WillExpandDictionary(Type sourceType)
+        {
+            if (sourceType.IsConstructedGenericType)
+                return sourceType.GetGenericTypeDefinition() == typeof(Dictionary<,>) && sourceType.GenericTypeArguments[0] == typeof(string);
+            else
+                return false;
+        }
+
+        /// <summary>
         /// Query if this is a collection of a mapped type
         /// </summary>
         /// <param name="sourceType"></param>
@@ -111,10 +124,47 @@ namespace Skyward.Popcorn
                 }
             }
             
-            includes = ValidateIncludes(includes, sourceType, destType);
+            includes = ConstructIncludes(includes, sourceType, destType);
 
             // Attempt to create a projection object we'll map the data into
             object destinationObject = CreateObjectInContext(context, sourceType, destType);
+
+            // If the source is a dictionary we need to go through the keys to match the properties
+            // TODO: Add Recursion for dictionaries that may contain lists of the object within
+            if (sourceType.IsConstructedGenericType && sourceType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            {
+                var sourceDict = (Dictionary<string, object>)source;
+                PropertyInfo[] properties = destinationObject.GetType().GetProperties();
+
+                foreach (PropertyInfo property in properties)
+                {
+                    if (!sourceDict.Any(x => x.Key.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        continue;
+                    }
+
+                    KeyValuePair<string, object> item = sourceDict.First(x => x.Key.Equals(property.Name, StringComparison.OrdinalIgnoreCase));
+
+                    // Find which property type (int, string, double? etc) the CURRENT property is...
+                    Type propertyType = destinationObject.GetType().GetProperty(property.Name).PropertyType;
+
+                    if (item.Value == null && Nullable.GetUnderlyingType(propertyType) != null)
+                    {
+                        destinationObject.GetType().GetProperty(property.Name).SetValue(destinationObject, null, null);
+                    }
+                    else
+                    {
+                        // Fix nullables...
+                        Type newType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+
+                        // ...and change the type
+                        object newA = Convert.ChangeType(item.Value, newType);
+                        destinationObject.GetType().GetProperty(property.Name).SetValue(destinationObject, newA, null);
+                    }
+                }
+
+                return destinationObject;
+            }
 
             // Allow any actions to run ahead of mapping
             foreach (var action in Mappings[sourceType].BeforeExpansion)
@@ -209,7 +259,7 @@ namespace Skyward.Popcorn
             visited = UniqueVisit(source, visited);
 
             Type sourceType = source.GetType();
-            includes = ValidateIncludes(includes, sourceType, null);
+            includes = ConstructIncludes(includes, sourceType, null);
 
             // Attempt to create a projection object we'll map the data into
             var destinationObject = new Dictionary<string, object>();
@@ -345,8 +395,62 @@ namespace Skyward.Popcorn
         /// <param name="sourceType"></param>
         /// <param name="destType"></param>
         /// <returns></returns>
-        private IEnumerable<PropertyReference> ValidateIncludes(IEnumerable<PropertyReference> includes, Type sourceType, Type destType)
+        private IEnumerable<PropertyReference> ConstructIncludes(IEnumerable<PropertyReference> includes, Type sourceType, Type destType)
         {
+            // Out of the gate we want to first see if the only property to be included is a wildcard
+            if ((includes.Count() == 1) && (includes.Any(i => i.PropertyName == "*")))
+            {
+                var wildCardIncludes = new List<PropertyReference> { };
+                var mapDef = new MappingDefinition();
+
+                // Check to see if the object is to be blind expanded and make the destination the same as the source if it is
+                if (destType == null)
+                {
+                    destType = sourceType;
+                }
+                else // in the case that the object isn't to be blind expanded get the proper mapping
+                {
+                    Mappings.TryGetValue(sourceType, out mapDef);
+                }
+
+                // Have all of the destination type properties set to be included
+                foreach (PropertyInfo info in destType.GetProperties())
+                {
+                    var matchingSourceProp = sourceType.GetProperty(info.Name);
+
+                    // Make sure that the property isn't marked as InternalOnly on the sourceType
+                    // Which is only an issue if they marked the type to throw an error if it's requested
+                    if (matchingSourceProp != null)
+                    {
+                        if (matchingSourceProp.GetCustomAttributes().Any(att => att.GetType() == typeof(InternalOnlyAttribute)))
+                        {
+                            // Only add the property if it isn't marked InternalOnly
+                            continue;
+                        }
+                    }
+
+                    // Also make sure that the property exists on the destination type in some capacity
+                    // This will never be hit by a blindly expanded object as the source and destination type are identical
+                    if (matchingSourceProp == null)
+                    {
+                        try
+                        {
+                            // Check to see if there are any translators that would apply the object to the projection ultimately
+                            var transTest = mapDef.DefaultDestination().Translators[info.Name];
+                        }
+                        catch (Exception)
+                        {
+                            // This property isn't known to the projection at all and thus should not be included
+                            continue;
+                        }
+                    }
+
+                    wildCardIncludes.Add(new PropertyReference { PropertyName = info.Name });
+                }
+
+                return wildCardIncludes;
+            }
+
             if (includes.Any())
                 return includes;
 

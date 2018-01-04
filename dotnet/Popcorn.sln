@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2006
+VisualStudioVersion = 15.0.27004.2008
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}"
 EndProject
@@ -32,11 +32,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tutorials", "Tutorials", "{
 		..\docs\dotnet\DotNetTutorialBlindExpansion.md = ..\docs\dotnet\DotNetTutorialBlindExpansion.md
 		..\docs\dotnet\DotNetTutorialContexts.md = ..\docs\dotnet\DotNetTutorialContexts.md
 		..\docs\dotnet\DotNetTutorialDefaultIncludes.md = ..\docs\dotnet\DotNetTutorialDefaultIncludes.md
-		..\docs\dotnet\DotNetTutorialExpandFrom.md = ..\docs\dotnet\DotNetTutorialExpandFrom.md
 		..\docs\dotnet\DotNetTutorialGettingStarted.md = ..\docs\dotnet\DotNetTutorialGettingStarted.md
 		..\docs\dotnet\DotNetTutorialInspectors.md = ..\docs\dotnet\DotNetTutorialInspectors.md
 		..\docs\dotnet\DotNetTutorialInternalOnly.md = ..\docs\dotnet\DotNetTutorialInternalOnly.md
 		..\docs\dotnet\DotNetTutorialSorting.md = ..\docs\dotnet\DotNetTutorialSorting.md
+		..\docs\dotnet\DotNetTutorialWildcardIncludes.md = ..\docs\dotnet\DotNetTutorialWildcardIncludes.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExample", "PopcornNetCoreExample\PopcornNetCoreExample.csproj", "{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}"

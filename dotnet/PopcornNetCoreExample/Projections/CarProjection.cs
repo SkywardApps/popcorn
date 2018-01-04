@@ -1,4 +1,4 @@
-﻿using PopcornNetCoreExample.Models;
+using PopcornNetCoreExample.Models;
 using Skyward.Popcorn;
 
 namespace PopcornNetCoreExample.Projections
@@ -12,7 +12,7 @@ namespace PopcornNetCoreExample.Projections
         public string Make { get; set; }
         public int? Year { get; set; }
         public string Color { get; set; }
-        public bool Insured { get; set; }
+        public bool? Insured { get; set; }
 
         public string User { get; set; }
 

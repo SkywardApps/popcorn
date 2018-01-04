@@ -14,6 +14,7 @@
     
 + ### [DotNet](dotnet/DotNetDocumentation.md)
   + #### [Getting Started](dotnet/DotNetTutorialGettingStarted.md)
+  + #### [Wildcard Includes](dotnet/DotNetTutorialWildcardIncludes.md)
   + #### [Advanced Projections](dotnet/DotNetTutorialAdvancedProjections.md)
     + ##### [Factories](dotnet/DotNetTutorialAdvancedProjections.md#factories)
   + #### [Contexts](dotnet/DotNetTutorialContexts.md)
@@ -24,9 +25,8 @@
     + ##### ["Sort Direction" parameter](dotnet/DotNetTutorialSorting.md#sortDirection)
   + #### Lazy Loading
   + #### [Authorizers](dotnet/DotNetTutorialAuthorizers.md)
-  + #### [Inspectors](dotnet/DotNetTutorialInspectors.md)
-  + #### [Advanced Projections](dotnet/DotNetTutorialAdvancedProjections.md)
   + #### [Internal Only](dotnet/DotNetTutorialInternalOnly)
+  + #### [Inspectors](dotnet/DotNetTutorialInspectors.md)
   
 + ### [Roadmap](Roadmap.md)
 
