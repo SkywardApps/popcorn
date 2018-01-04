@@ -9,6 +9,7 @@ using Skyward.Popcorn;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace PopcornNetCoreExample
 {
@@ -40,12 +41,14 @@ namespace PopcornNetCoreExample
                     popcornConfig
                         .EnableBlindExpansion(true)
                         .SetDefaultApiResponseInspector()
+                        .ScanAssemblyForMapping(this.GetType().GetTypeInfo().Assembly)
                         .Map<Employee, EmployeeProjection>(config: (employeeConfig) =>
                         {
                             // For employees we will determine a full name and reformat the date to include only the day portion.
                             employeeConfig
                                 .Translate(ep => ep.FullName, (e) => e.FirstName + " " + e.LastName)
-                                .Translate(ep => ep.Birthday, (e) => e.Birthday.ToString("MM/dd/yyyy"));
+                                .Translate(ep => ep.Birthday, (e) => e.Birthday.ToString("MM/dd/yyyy"))
+                                .Translate(ep => ep.InsuredVehicles, (e) => e.GetInsuredCars());
                         })
                         .Map<Car, CarProjection>(defaultIncludes: "[Model,Make,Year]", config: (carConfig) =>
                         {
@@ -54,11 +57,6 @@ namespace PopcornNetCoreExample
                                 .Translate(cp => cp.Owner, (car, context) =>
                                     // The car parameter is the source object; the context parameter is the dictionary we configure below.
                                     (context["database"] as ExampleContext).Employees.FirstOrDefault(e => e.Vehicles.Contains(car)));
-                        })
-                        .Map<Employee, EmployeeProjection>(config: (employeeConfig) =>
-                        {
-                        employeeConfig
-                            .Translate(ep => ep.InsuredVehicles, (e) => e.GetInsuredCars());                                    
                         })
                         .AssignFactory<EmployeeProjection>((context) => EmployeeFactory(context))
                         // Pass in our 'database' via the context
@@ -164,6 +162,34 @@ namespace PopcornNetCoreExample
                 Employees = new List<Employee>()
             };
             context.Businesses.Add(carBusiness);
+            porsche.Manufacturer = carBusiness;
+            ferrari.Manufacturer = carBusiness;
+
+            var stacyManager = new Manager
+            {
+                FirstName = "Stacy",
+                LastName = "Hughes",
+                SocialSecurityNumber = 2223334444,
+                Employment = EmploymentType.FullTime,
+                Birthday = DateTimeOffset.Parse("1940-07-07"),
+                VacationDays = 20,
+                Vehicles = new List<Car>(),
+                Subordinates = new List<Employee> { liz }
+            };
+            context.Managers.Add(stacyManager);
+
+            var jamalManager = new Manager
+            {
+                FirstName = "Jamal",
+                LastName = "Henry",
+                SocialSecurityNumber = 5556667777,
+                Employment = EmploymentType.FullTime,
+                Birthday = DateTimeOffset.Parse("1970-10-12"),
+                VacationDays = 30,
+                Vehicles = new List<Car>(),
+                Subordinates = new List<Employee> { stacyManager, jack }
+            };
+            context.Managers.Add(jamalManager);
 
             return context;
         }

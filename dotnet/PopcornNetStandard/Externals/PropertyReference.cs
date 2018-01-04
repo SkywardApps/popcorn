@@ -90,7 +90,7 @@ namespace Skyward.Popcorn
             baseDefaultIncludesHolder.AddRange(DeconstructDefaultIncludes(new List<PropertyReference>(), destTypeInfo.BaseType.GetTypeInfo()));
 
             // Deconstruct the main object in target
-            parsedDefaultIncludesHolder.AddRange(DeconstructDefaultIncludes(parsedDefaultIncludesHolder, destTypeInfo));
+            parsedDefaultIncludesHolder = DeconstructDefaultIncludes(parsedDefaultIncludesHolder, destTypeInfo, baseDefaultIncludesHolder);
 
             // Combine the base and subclass results as necessary
             if (baseDefaultIncludesHolder.Count != 0)
@@ -119,8 +119,14 @@ namespace Skyward.Popcorn
         /// <param name="parsedDefaultIncludes"></param>
         /// <param name="destTypeInfo"></param>
         /// <returns></returns>
-        public static List<PropertyReference> DeconstructDefaultIncludes(List<PropertyReference> parsedDefaultIncludes, TypeInfo destTypeInfo)
+        public static List<PropertyReference> DeconstructDefaultIncludes(List<PropertyReference> parsedDefaultIncludes, TypeInfo destTypeInfo, List<PropertyReference> baseClassDefaultIncludes = null)
         {
+            // Check to ensure that there are no passed in parsedDefaultIncludes should there be declarations on a base class
+            if (parsedDefaultIncludes.Count != 0 && baseClassDefaultIncludes.Count != 0)
+            {
+                throw new MultipleDefaultsException($"Defaults are declared for {destTypeInfo.Name} in the configuration mapping and on the projection attributes of its base class.");
+            }
+
             // Create a variable to allow looping through adding all the defaultIncludes properties that are tagged
             var parsedDefaultIncludesHolder = new List<PropertyReference> { };
             parsedDefaultIncludesHolder.AddRange(parsedDefaultIncludes);

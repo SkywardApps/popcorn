@@ -19,5 +19,7 @@
         public Colors Color { get; set; }
 
         public string User { get; set; }
+
+        public Business Manufacturer { get; set; }
     }
 }

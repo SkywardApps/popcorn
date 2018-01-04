@@ -1,4 +1,5 @@
-﻿using Skyward.Popcorn;
+using PopcornNetCoreExample.Models;
+using Skyward.Popcorn;
 
 namespace PopcornNetCoreExample.Projections
 {
@@ -14,5 +15,7 @@ namespace PopcornNetCoreExample.Projections
         public bool? Insured { get; set; }
 
         public string User { get; set; }
+
+        public Business Manufacturer { get; set; }
     }
 }

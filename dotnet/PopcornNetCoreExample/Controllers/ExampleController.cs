@@ -41,6 +41,12 @@ namespace PopcornNetCoreExample.Controllers
             return _context.Employees;
         }
 
+        [HttpGet, Route("managers")]
+        public List<Manager> Managers()
+        {
+            return _context.Managers;
+        }
+
         [HttpGet, Route("cars")]
         public List<Car> Cars()
         {
