@@ -10,7 +10,7 @@ namespace Skyward.Popcorn
     {
         static Expander _expander;
         static Dictionary<string, object> _context;
-        static Func<object, object, Exception, object> _inspector;
+        static Func<object, object, Exception, object> _inspector,,
 
         public ExpandResultAttribute() { }
 
