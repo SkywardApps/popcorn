@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2003
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}"
 EndProject
@@ -70,11 +70,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFramework.WebApi"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Popcorn", "Popcorn", "{9323797C-D1AC-4778-9941-241B7298A0A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFrameworkIntegrationTest", "Tests\PopcornNetFrameworkIntegrationTest\PopcornNetFrameworkIntegrationTest.csproj", "{F0405870-C792-4627-8835-9CD32BB33B82}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommonIntegrationTest", "Tests\CommonIntegrationTest\CommonIntegrationTest.csproj", "{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExampleModel", "Examples\ExampleModel\ExampleModel.csproj", "{3876002E-5A0A-481E-8DC4-4E65873E4FCA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFrameworkExampleIntegrationTest", "Tests\PopcornNetFrameworkExampleIntegrationTest\PopcornNetFrameworkExampleIntegrationTest.csproj", "{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -114,10 +114,6 @@ Global
 		{BD99FD93-6999-4F44-B807-2DF84FDFB6AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD99FD93-6999-4F44-B807-2DF84FDFB6AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD99FD93-6999-4F44-B807-2DF84FDFB6AB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F0405870-C792-4627-8835-9CD32BB33B82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F0405870-C792-4627-8835-9CD32BB33B82}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F0405870-C792-4627-8835-9CD32BB33B82}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F0405870-C792-4627-8835-9CD32BB33B82}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -126,6 +122,10 @@ Global
 		{3876002E-5A0A-481E-8DC4-4E65873E4FCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3876002E-5A0A-481E-8DC4-4E65873E4FCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3876002E-5A0A-481E-8DC4-4E65873E4FCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -140,9 +140,9 @@ Global
 		{07D125F0-3081-4E1A-84EF-E74FED737F55} = {9323797C-D1AC-4778-9941-241B7298A0A3}
 		{0F064D08-2E27-49DA-9E84-8905A83E3692} = {6927209F-F97B-4039-9702-1544DF636EFB}
 		{BD99FD93-6999-4F44-B807-2DF84FDFB6AB} = {9323797C-D1AC-4778-9941-241B7298A0A3}
-		{F0405870-C792-4627-8835-9CD32BB33B82} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
 		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
 		{3876002E-5A0A-481E-8DC4-4E65873E4FCA} = {6927209F-F97B-4039-9702-1544DF636EFB}
+		{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {667890E8-370A-4157-82AE-C1F63EA834AF}
