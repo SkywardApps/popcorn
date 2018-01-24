@@ -1,4 +1,4 @@
-![popcorn api]({{ "/media/PopcoroLogo.png" | absolute_url }})
+<img src="../media/PopcornLogo.png" width=50%">
 # Popcorn
 
 [![Join the chat at https://gitter.im/popcorn-api/Lobby](https://badges.gitter.im/popcorn-api/Lobby.svg)](https://gitter.im/popcorn-api/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
