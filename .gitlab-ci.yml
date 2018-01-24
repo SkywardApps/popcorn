@@ -10,7 +10,7 @@ stages:
 # Option to upload an updated nuget package
  - deployment
 
-# Deploy our project to the internal site for testing
+# Build all three projects, minus the Net Framework project as it is windows/mono dependent.
 build:
  stage: build
  image: onsitedashboard:build
@@ -74,6 +74,7 @@ documentation:
   - x86
   
 # Create an instance of this server.
+# Also publish relevant nuget packages
 nuget:
  stage: deployment
  image: onsitedashboard:build

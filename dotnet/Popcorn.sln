@@ -14,6 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentat
 		..\docs\Documentation.md = ..\docs\Documentation.md
 		..\LICENSE = ..\LICENSE
 		..\markdown.json = ..\markdown.json
+		Projects.md = Projects.md
 		..\docs\QuickStart.md = ..\docs\QuickStart.md
 		..\README.md = ..\README.md
 		..\docs\Releases.md = ..\docs\Releases.md

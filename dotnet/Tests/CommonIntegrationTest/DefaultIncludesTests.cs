@@ -1,12 +1,12 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using PopcornNetCoreExampleIntegrationTest._Utilities;
-using PopcornNetFrameworkExample.Projections;
-using PopcornNetFrameworkExample.Wire;
+using CommonIntegrationTest._Utilities;
 using Shouldly;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ExampleModel.Wire;
+using ExampleModel.Projections;
 
 namespace CommonIntegrationTest
 {

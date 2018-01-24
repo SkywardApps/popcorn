@@ -8,7 +8,7 @@ using System.Net.Http;
 namespace PopcornNetCoreExampleIntegrationTest
 {
     [TestClass]
-    public class TestSetup : CommonIntegrationTest.TestSetup
+    public class TestSetup : CommonIntegrationTest._Utilities.TestSetup
     {
         [AssemblyInitialize]
         public static void AssemblySetup(TestContext context)

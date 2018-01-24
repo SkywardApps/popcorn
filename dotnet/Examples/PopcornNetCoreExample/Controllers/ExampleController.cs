@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
-using PopcornNetCoreExample.Models;
+using ExampleModel.Models;
 using System;
 
 namespace PopcornNetCoreExample.Controllers

@@ -1,6 +1,7 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using CommonIntegrationTest._Utilities;
+using ExampleModel.Wire;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using PopcornNetFrameworkExample.Wire;
 using Shouldly;
 using System.Threading.Tasks;
 

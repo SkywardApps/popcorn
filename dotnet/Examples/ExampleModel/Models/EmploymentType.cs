@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace PopcornNetFrameworkExample.Models
+namespace ExampleModel.Models
 {
     [JsonConverter(typeof(StringEnumConverter))]
     public enum EmploymentType

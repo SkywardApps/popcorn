@@ -1,4 +1,4 @@
-﻿namespace PopcornNetCoreExampleIntegrationTest._Utilities
+﻿namespace CommonIntegrationTest._Utilities
 {
     public class ErrorResponse
     {

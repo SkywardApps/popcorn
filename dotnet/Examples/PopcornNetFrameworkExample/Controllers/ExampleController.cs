@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using PopcornNetFrameworkExample.Models;
+using ExampleModel.Models;
 using System;
 using System.Web.Http;
 using System.Web;

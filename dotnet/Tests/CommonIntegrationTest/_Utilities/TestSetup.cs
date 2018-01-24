@@ -1,6 +1,6 @@
 ﻿using System.Net.Http;
 
-namespace CommonIntegrationTest
+namespace CommonIntegrationTest._Utilities
 {
     public class TestSetup
     {

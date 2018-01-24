@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PopcornNetFrameworkExample.Models
+namespace ExampleModel.Models
 {
     public class Employee
     {

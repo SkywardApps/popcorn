@@ -1,6 +1,6 @@
 ﻿using Skyward.Popcorn;
 
-namespace PopcornNetFrameworkExample.Projections
+namespace ExampleModel.Projections
 {
     public class CarProjection
     {

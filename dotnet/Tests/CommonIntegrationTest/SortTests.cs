@@ -1,9 +1,8 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using CommonIntegrationTest._Utilities;
+using ExampleModel.Projections;
+using ExampleModel.Wire;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using PopcornNetCoreExampleIntegrationTest;
-using PopcornNetCoreExampleIntegrationTest._Utilities;
-using PopcornNetFrameworkExample.Projections;
-using PopcornNetFrameworkExample.Wire;
 using Shouldly;
 using System;
 using System.Collections.Generic;
