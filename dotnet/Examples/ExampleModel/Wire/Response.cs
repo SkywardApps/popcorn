@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace PopcornNetFrameworkExample.Wire
+namespace ExampleModel.Wire
 {
     public class Response
     {

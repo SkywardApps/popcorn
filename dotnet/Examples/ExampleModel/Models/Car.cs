@@ -1,4 +1,4 @@
-﻿namespace PopcornNetFrameworkExample.Models
+﻿namespace ExampleModel.Models
 {
     public class Car
     {

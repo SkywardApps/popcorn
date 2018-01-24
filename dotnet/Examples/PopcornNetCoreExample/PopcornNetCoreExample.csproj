@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\PopcornNetStandard.EntityFrameworkCore\PopcornNetStandard.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\..\PopcornNetStandard.WebApiCore\PopcornNetStandard.WebApiCore.csproj" />
     <ProjectReference Include="..\..\PopcornNetStandard\PopcornNetStandard.csproj" />
+    <ProjectReference Include="..\ExampleModel\ExampleModel.csproj" />
   </ItemGroup>
 
 </Project>

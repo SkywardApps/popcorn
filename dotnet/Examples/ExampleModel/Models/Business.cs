@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace PopcornNetFrameworkExample.Models
+namespace ExampleModel.Models
 {
     public class Business
     {

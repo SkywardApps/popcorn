@@ -203,14 +203,11 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\UnityConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
-    <Compile Include="CarProjection.cs" />
     <Compile Include="Controllers\ExampleController.cs" />
-    <Compile Include="EmployeeProjection.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Response.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />

@@ -1,8 +1,8 @@
-﻿using PopcornNetFrameworkExample.Models;
+﻿using ExampleModel.Models;
 using Skyward.Popcorn;
 using System.Collections.Generic;
 
-namespace PopcornNetFrameworkExample.Projections
+namespace ExampleModel.Projections
 {
     public class EmployeeProjection
     {

@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using ExampleModel.Models;
+using ExampleModel.Projections;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using PopcornNetCoreExample.Models;
-using PopcornNetCoreExample.Projections;
 using Skyward.Popcorn;
 using System;
 using System.Collections.Generic;

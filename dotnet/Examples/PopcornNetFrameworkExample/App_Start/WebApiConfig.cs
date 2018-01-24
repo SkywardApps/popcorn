@@ -1,9 +1,9 @@
-﻿using PopcornNetFrameworkExample.Projections;
+﻿using ExampleModel.Models;
+using ExampleModel.Projections;
 using PopcornNetFramework.WebApi;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Http;
-using PopcornNetFrameworkExample.Models;
 using Unity;
 
 namespace PopcornNetFrameworkExample
@@ -52,7 +52,7 @@ namespace PopcornNetFrameworkExample
                                 // The car parameter is the source object; the context parameter is the dictionary we configure below.
                                 (context["database"] as ExampleContext).Employees.FirstOrDefault(e => e.Vehicles.Contains(car)));
                     })
-                    .Map<Models.Employee, EmployeeProjection>(config: (employeeConfig) =>
+                    .Map<ExampleModel.Models.Employee, EmployeeProjection>(config: (employeeConfig) =>
                     {
                         employeeConfig
                             .Translate(ep => ep.InsuredVehicles, (e) => e.GetInsuredCars());
