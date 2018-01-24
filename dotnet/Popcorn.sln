@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2008
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}"
 EndProject
@@ -14,6 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentat
 		..\docs\Documentation.md = ..\docs\Documentation.md
 		..\LICENSE = ..\LICENSE
 		..\markdown.json = ..\markdown.json
+		Projects.md = Projects.md
 		..\docs\QuickStart.md = ..\docs\QuickStart.md
 		..\README.md = ..\README.md
 		..\docs\Releases.md = ..\docs\Releases.md
@@ -22,6 +23,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentat
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{6927209F-F97B-4039-9702-1544DF636EFB}"
+	ProjectSection(SolutionItems) = preProject
+		Examples\README.md = Examples\README.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tutorials", "Tutorials", "{1E83E1EE-8F81-4825-92E1-0B905200428D}"
 	ProjectSection(SolutionItems) = preProject
@@ -39,13 +43,39 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tutorials", "Tutorials", "{
 		..\docs\dotnet\DotNetTutorialWildcardIncludes.md = ..\docs\dotnet\DotNetTutorialWildcardIncludes.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExample", "PopcornNetCoreExample\PopcornNetCoreExample.csproj", "{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExample", "Examples\PopcornNetCoreExample\PopcornNetCoreExample.csproj", "{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandard", "PopcornNetStandard\PopcornNetStandard.csproj", "{66944808-E409-4BD8-9ADC-0D0011BB3D73}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExampleIntegrationTest", "PopcornNetCoreExampleIntegrationTest\PopcornNetCoreExampleIntegrationTest.csproj", "{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExampleIntegrationTest", "Tests\PopcornNetCoreExampleIntegrationTest\PopcornNetCoreExampleIntegrationTest.csproj", "{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}
+		{07D125F0-3081-4E1A-84EF-E74FED737F55} = {07D125F0-3081-4E1A-84EF-E74FED737F55}
+	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandardTest", "PopcornNetStandardTest\PopcornNetStandardTest.csproj", "{174D074E-0B02-4CCD-99D1-32377624625A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandardTest", "Tests\PopcornNetStandardTest\PopcornNetStandardTest.csproj", "{174D074E-0B02-4CCD-99D1-32377624625A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandard.WebApiCore", "PopcornNetStandard.WebApiCore\PopcornNetStandard.WebApiCore.csproj", "{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandard.EntityFrameworkCore", "PopcornNetStandard.EntityFrameworkCore\PopcornNetStandard.EntityFrameworkCore.csproj", "{07D125F0-3081-4E1A-84EF-E74FED737F55}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFrameworkExample", "Examples\PopcornNetFrameworkExample\PopcornNetFrameworkExample.csproj", "{0F064D08-2E27-49DA-9E84-8905A83E3692}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFramework.WebApi", "PopcornNetFramework.WebApi\PopcornNetFramework.WebApi.csproj", "{BD99FD93-6999-4F44-B807-2DF84FDFB6AB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Popcorn", "Popcorn", "{9323797C-D1AC-4778-9941-241B7298A0A3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommonIntegrationTest", "Tests\CommonIntegrationTest\CommonIntegrationTest.csproj", "{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExampleModel", "Examples\ExampleModel\ExampleModel.csproj", "{3876002E-5A0A-481E-8DC4-4E65873E4FCA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornNetFrameworkExampleIntegrationTest", "Tests\PopcornNetFrameworkExampleIntegrationTest\PopcornNetFrameworkExampleIntegrationTest.csproj", "{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +99,34 @@ Global
 		{174D074E-0B02-4CCD-99D1-32377624625A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{174D074E-0B02-4CCD-99D1-32377624625A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{174D074E-0B02-4CCD-99D1-32377624625A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07D125F0-3081-4E1A-84EF-E74FED737F55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07D125F0-3081-4E1A-84EF-E74FED737F55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07D125F0-3081-4E1A-84EF-E74FED737F55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07D125F0-3081-4E1A-84EF-E74FED737F55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F064D08-2E27-49DA-9E84-8905A83E3692}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F064D08-2E27-49DA-9E84-8905A83E3692}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F064D08-2E27-49DA-9E84-8905A83E3692}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F064D08-2E27-49DA-9E84-8905A83E3692}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD99FD93-6999-4F44-B807-2DF84FDFB6AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD99FD93-6999-4F44-B807-2DF84FDFB6AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD99FD93-6999-4F44-B807-2DF84FDFB6AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD99FD93-6999-4F44-B807-2DF84FDFB6AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3876002E-5A0A-481E-8DC4-4E65873E4FCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3876002E-5A0A-481E-8DC4-4E65873E4FCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3876002E-5A0A-481E-8DC4-4E65873E4FCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3876002E-5A0A-481E-8DC4-4E65873E4FCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -76,8 +134,16 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{1E83E1EE-8F81-4825-92E1-0B905200428D} = {A7EEB6B5-2616-4E2A-BFAA-FE87FF7AD77B}
 		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1} = {6927209F-F97B-4039-9702-1544DF636EFB}
+		{66944808-E409-4BD8-9ADC-0D0011BB3D73} = {9323797C-D1AC-4778-9941-241B7298A0A3}
 		{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
 		{174D074E-0B02-4CCD-99D1-32377624625A} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
+		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {9323797C-D1AC-4778-9941-241B7298A0A3}
+		{07D125F0-3081-4E1A-84EF-E74FED737F55} = {9323797C-D1AC-4778-9941-241B7298A0A3}
+		{0F064D08-2E27-49DA-9E84-8905A83E3692} = {6927209F-F97B-4039-9702-1544DF636EFB}
+		{BD99FD93-6999-4F44-B807-2DF84FDFB6AB} = {9323797C-D1AC-4778-9941-241B7298A0A3}
+		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
+		{3876002E-5A0A-481E-8DC4-4E65873E4FCA} = {6927209F-F97B-4039-9702-1544DF636EFB}
+		{5ACDBE7B-E512-43A9-ACC3-12BD3257BFB8} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {667890E8-370A-4157-82AE-C1F63EA834AF}

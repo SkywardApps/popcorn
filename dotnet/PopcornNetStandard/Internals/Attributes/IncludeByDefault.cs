@@ -8,7 +8,5 @@ namespace Skyward.Popcorn
     [AttributeUsage(AttributeTargets.Property)]
     public class IncludeByDefault : Attribute
     {
-        // Unused property to simply give it a value by default
-        private bool includeByDefault = true;
     }
 }

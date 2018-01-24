@@ -134,7 +134,7 @@ namespace Skyward.Popcorn
             if (sourceType.IsConstructedGenericType && sourceType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
                 var sourceDict = (Dictionary<string, object>)source;
-                PropertyInfo[] properties = destinationObject.GetType().GetProperties();
+                PropertyInfo[] properties = destinationObject.GetType().GetTypeInfo().GetProperties();
 
                 foreach (PropertyInfo property in properties)
                 {
@@ -146,11 +146,11 @@ namespace Skyward.Popcorn
                     KeyValuePair<string, object> item = sourceDict.First(x => x.Key.Equals(property.Name, StringComparison.OrdinalIgnoreCase));
 
                     // Find which property type (int, string, double? etc) the CURRENT property is...
-                    Type propertyType = destinationObject.GetType().GetProperty(property.Name).PropertyType;
+                    Type propertyType = destinationObject.GetType().GetTypeInfo().GetProperty(property.Name).PropertyType;
 
                     if (item.Value == null && Nullable.GetUnderlyingType(propertyType) != null)
                     {
-                        destinationObject.GetType().GetProperty(property.Name).SetValue(destinationObject, null, null);
+                        destinationObject.GetType().GetTypeInfo().GetProperty(property.Name).SetValue(destinationObject, null, null);
                     }
                     else
                     {
@@ -159,7 +159,7 @@ namespace Skyward.Popcorn
 
                         // ...and change the type
                         object newA = Convert.ChangeType(item.Value, newType);
-                        destinationObject.GetType().GetProperty(property.Name).SetValue(destinationObject, newA, null);
+                        destinationObject.GetType().GetTypeInfo().GetProperty(property.Name).SetValue(destinationObject, newA, null);
                     }
                 }
 
@@ -414,9 +414,9 @@ namespace Skyward.Popcorn
                 }
 
                 // Have all of the destination type properties set to be included
-                foreach (PropertyInfo info in destType.GetProperties())
+                foreach (PropertyInfo info in destType.GetTypeInfo().GetProperties())
                 {
-                    var matchingSourceProp = sourceType.GetProperty(info.Name);
+                    var matchingSourceProp = sourceType.GetTypeInfo().GetProperty(info.Name);
 
                     // Make sure that the property isn't marked as InternalOnly on the sourceType
                     // Which is only an issue if they marked the type to throw an error if it's requested

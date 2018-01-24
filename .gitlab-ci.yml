@@ -10,7 +10,7 @@ stages:
 # Option to upload an updated nuget package
  - deployment
 
-# Deploy our project to the internal site for testing
+# Build all three projects, minus the Net Framework project as it is windows/mono dependent.
 build:
  stage: build
  image: onsitedashboard:build
@@ -18,6 +18,12 @@ build:
   - cd dotnet/PopcornNetStandard
   - dotnet restore
   - dotnet build 
+  - cd ../PopcornNetStandard.WebApiCore
+  - dotnet restore
+  - dotnet build
+  - cd ../PopcornNetStandard.EntityFrameworkCore
+  - dotnet restore
+  - dotnet build
  tags:
   - x86
 
@@ -26,7 +32,7 @@ popcornstandard_integrationtest:
  stage: test
  image: onsitedashboard:build
  script: 
-  - cd dotnet/PopcornNetCoreExampleIntegrationTest
+  - cd dotnet/Tests/PopcornNetCoreExampleIntegrationTest
   - dotnet restore
   - dotnet test
  tags:
@@ -37,7 +43,7 @@ popcornstandard_unittest:
  stage: test
  image: onsitedashboard:build
  script: 
-  - cd dotnet/PopcornNetStandardTest
+  - cd dotnet/Tests/PopcornNetStandardTest
   - dotnet restore
   - dotnet test
  tags:
@@ -68,6 +74,7 @@ documentation:
   - x86
   
 # Create an instance of this server.
+# Also publish relevant nuget packages
 nuget:
  stage: deployment
  image: onsitedashboard:build
