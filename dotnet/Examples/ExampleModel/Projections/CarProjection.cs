@@ -1,4 +1,4 @@
-using PopcornNetCoreExample.Models;
+using ExampleModel.Models;
 using Skyward.Popcorn;
 
 namespace ExampleModel.Projections

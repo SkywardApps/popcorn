@@ -1,11 +1,8 @@
-﻿using PopcornNetCoreExample.Models;
+﻿using ExampleModel.Models;
 using Skyward.Popcorn;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace PopcornNetCoreExample.Projections
+namespace ExampleModel.Projections
 {
     [ExpandFrom(typeof(Manager))]
     public class ManagerProjection : EmployeeProjection
