@@ -75,7 +75,7 @@ documentation:
   
 # Create an instance of this server.
 # Also publish relevant nuget packages
-nuget:
+nugetPopcornStandard:
  stage: deployment
  image: onsitedashboard:build
  when: manual
@@ -92,5 +92,45 @@ nuget:
   - cd ../Build/Release
   - ls
   - dotnet nuget push Skyward.Api.Popcorn.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
+ tags:
+  - x86
+  
+nugetPopcornEFCore:
+ stage: deployment
+ image: onsitedashboard:build
+ when: manual
+ allow_failure: true
+ only:
+  - master
+  - alpha
+  - beta
+  - production
+ script:
+  - cd dotnet/PopcornNetStandard.EntityFrameworkCore
+  - dotnet restore
+  - dotnet build -c Release
+  - cd ../Build/Release
+  - ls
+  - dotnet nuget push Skyward.Api.Popcorn.EntityFrameworkCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
+ tags:
+  - x86
+  
+nugetPopcornWebApiCore:
+ stage: deployment
+ image: onsitedashboard:build
+ when: manual
+ allow_failure: true
+ only:
+  - master
+  - alpha
+  - beta
+  - production
+ script:
+  - cd dotnet/PopcornNetStandard.WebApiCore
+  - dotnet restore
+  - dotnet build -c Release
+  - cd ../Build/Release
+  - ls
+  - dotnet nuget push Skyward.Api.Popcorn.WebApiCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
  tags:
   - x86
