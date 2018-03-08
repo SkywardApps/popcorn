@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Skyward.Api.Popcorn.WebApiFramework</id>
+    <version>3.0.0</version>
+    <authors>Skyward App Company, LLC</authors>
+    <owners>Skyward App Company, LLC</owners>
+    <licenseUrl>https://github.com/SkywardApps/popcorn/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/SkywardApps/popcorn</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Object dynamic filtering and expansion</description>
+    <releaseNotes>Broke out the library to isolate dependencies.</releaseNotes>
+    <copyright>Copyright 2018 (c) Skyward App Company, LLC. All rights reserved.</copyright>
+    <tags>api rest</tags>
+  </metadata>
+</package>
