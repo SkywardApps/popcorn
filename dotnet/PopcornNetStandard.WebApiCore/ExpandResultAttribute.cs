@@ -3,29 +3,50 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace Skyward.Popcorn
 {
-    public class ExpandResultAttribute : ActionFilterAttribute
+    public class ExpandActionFilter : IActionFilter
     {
-        static Expander _expander;
-        static Dictionary<string, object> _context;
-        static Func<object, object, Exception, object> _inspector;
+        Expander _expander;
+        Dictionary<string, object> _context;
+        Func<object, object, Exception, object> _inspector;
+        bool _expandAllEndpoints;
 
-        public ExpandResultAttribute() { }
 
-        public ExpandResultAttribute(Expander expander, Dictionary<string, object> expandContext = null, Func<object, object, Exception, object> inspector = null) :
+        public ExpandActionFilter(Expander expander, Dictionary<string, object> expandContext, Func<object, object, Exception, object> inspector, bool expandAll) :
             base()
         {
             _expander = expander;
             _context = expandContext;
             _inspector = inspector;
+            _expandAllEndpoints = expandAll;
         }
 
-        public override void OnActionExecuted(ActionExecutedContext context)
+        public void OnActionExecuted(ActionExecutedContext context)
         {
             Exception exceptionResult = null;
             object resultObject = null;
+
+            if (!_expandAllEndpoints)
+            {
+                var expandAttribute = context
+                    .ActionDescriptor
+                    .FilterDescriptors
+                    .SingleOrDefault(d => d.Filter.GetType() == typeof(ExpandResultAttribute));
+
+                if (expandAttribute == null)
+                    return;
+            }
+
+            var doNotExpandAttribute = context
+                .ActionDescriptor
+                .FilterDescriptors
+                .SingleOrDefault(d => d.Filter.GetType() == typeof(DoNotExpandResultAttribute));
+
+            if (doNotExpandAttribute != null)
+                return;
 
             // Set the error out of the gate should something have gone wrong coming into Popcorn
             if (context.Exception != null)
@@ -85,7 +106,8 @@ namespace Skyward.Popcorn
                             resultObject = _expander.Sort(resultObject, context.HttpContext.Request.Query["sort"], sortDirection);
                         }
                     }
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     exceptionResult = e;
                     // Set the response code as appropriate for a caught error
@@ -97,7 +119,8 @@ namespace Skyward.Popcorn
             if (_inspector != null)
             {
                 resultObject = _inspector(resultObject, _context, exceptionResult);
-            } else if (exceptionResult != null) // Have to rethrow the error if there is no inspector set so as to not return false positives
+            }
+            else if (exceptionResult != null) // Have to rethrow the error if there is no inspector set so as to not return false positives
             {
                 throw exceptionResult;
             }
@@ -107,8 +130,26 @@ namespace Skyward.Popcorn
                 {
                     NullValueHandling = NullValueHandling.Ignore
                 });
-            base.OnActionExecuted(context);
+            
         }
+
+        public void OnActionExecuting(ActionExecutingContext context)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Apply this attribute to ensure a result is always expanded
+    /// </summary>
+    public class ExpandResultAttribute : ActionFilterAttribute
+    {
+    }
+
+    /// <summary>
+    /// Apply this attribute to ensure a result is never expanded
+    /// </summary>
+    public class DoNotExpandResultAttribute : ActionFilterAttribute
+    {
     }
 
     /// <summary>
@@ -134,10 +175,7 @@ namespace Skyward.Popcorn
             }
 
             // Assign a global expander that'll run on all endpoints
-            if (configuration.ApplyToAllEndpoints)
-            {
-                options.Filters.Add(new ExpandResultAttribute(expander, configuration.Context, configuration.Inspector));
-            }
+            options.Filters.Add(new ExpandActionFilter(expander, configuration.Context, configuration.Inspector, configuration.ApplyToAllEndpoints));
         }
     }
 }

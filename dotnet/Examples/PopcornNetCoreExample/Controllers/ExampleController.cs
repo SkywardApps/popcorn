@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ExampleModel.Models;
 using System;
+using Skyward.Popcorn;
 
 namespace PopcornNetCoreExample.Controllers
 {
@@ -47,7 +48,7 @@ namespace PopcornNetCoreExample.Controllers
             return _context.Managers;
         }
 
-        [HttpGet, Route("cars")]
+        [HttpGet, Route("cars"), ExpandResult]
         public List<Car> Cars()
         {
             return _context.Cars;
@@ -57,6 +58,12 @@ namespace PopcornNetCoreExample.Controllers
         public List<Business> Businesses()
         {
             return _context.Businesses;
+        }
+
+        [HttpGet, Route("donotexpand"), DoNotExpandResult]
+        public object NonExpanded()
+        {
+            return new { name = "OK", status = "OK" };
         }
     }
 }

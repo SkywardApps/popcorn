@@ -5,30 +5,51 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
 
 namespace PopcornNetFramework.WebApi
 {
-
-    public class ExpandResultAttribute : ActionFilterAttribute
+    public class ExpandActionFilter : ActionFilterAttribute
     {
-        static Expander _expander;
-        static Dictionary<string, object> _context;
-        static Func<object, object, Exception, object> _inspector;
+        Expander _expander;
+        Dictionary<string, object> _context;
+        Func<object, object, Exception, object> _inspector;
+        bool _expandAllEndpoints;
 
-        public ExpandResultAttribute() { }
-
-        public ExpandResultAttribute(Expander expander, Dictionary<string, object> expandContext = null, Func<object, object, Exception, object> inspector = null) :
+        public ExpandActionFilter(Expander expander, Dictionary<string, object> expandContext, Func<object, object, Exception, object> inspector, bool expandAll) :
             base()
         {
             _expander = expander;
             _context = expandContext;
             _inspector = inspector;
+            _expandAllEndpoints = expandAll;
         }
-
+        
         public override void OnActionExecuted(HttpActionExecutedContext context)
         {
+            if (!_expandAllEndpoints)
+            {
+                var expandAttribute = context.ActionContext
+                    .ActionDescriptor
+                    .GetFilters()
+                    .SingleOrDefault(f => f.GetType() == typeof(ExpandResultAttribute));
+
+                if (expandAttribute == null)
+                    return;
+            }
+
+            var doNotExpandAttribute = context.ActionContext
+                .ActionDescriptor
+                .GetFilters()
+                .SingleOrDefault(f => f.GetType() == typeof(DoNotExpandResultAttribute));
+
+            if (doNotExpandAttribute != null)
+                return;
+
             Exception exceptionResult = null;
             object resultObject = null;
 
@@ -38,7 +59,7 @@ namespace PopcornNetFramework.WebApi
                 exceptionResult = context.Exception;
                 if (context.Response == null || context.Response.StatusCode == System.Net.HttpStatusCode.Accepted)
                 {
-                    context.Response = context.Request.CreateResponse(System.Net.HttpStatusCode.InternalServerError);;
+                    context.Response = context.Request.CreateResponse(System.Net.HttpStatusCode.InternalServerError); ;
                 }
             }
             else if (context.Response.Content is ObjectContent) // Disect the response if there is something to unfold and no exception
@@ -101,7 +122,7 @@ namespace PopcornNetFramework.WebApi
 
             // Apply our inspector to the expanded content
             if (_inspector != null)
-            { 
+            {
                 resultObject = _inspector(resultObject, _context, exceptionResult);
             }
             else if (exceptionResult != null) // Have to rethrow the error if there is no inspector set so as to not return false positives
@@ -115,9 +136,23 @@ namespace PopcornNetFramework.WebApi
                     NullValueHandling = NullValueHandling.Ignore
                 });
             context.Response.Content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
             base.OnActionExecuted(context);
         }
+    }
+
+    /// <summary>
+    /// Apply this attribute to ensure a result is always expanded
+    /// </summary>
+    public class ExpandResultAttribute : ActionFilterAttribute
+    {
+    }
+
+    /// <summary>
+    /// Apply this attribute to ensure a result is never expanded
+    /// </summary>
+    public class DoNotExpandResultAttribute : ActionFilterAttribute
+    {
     }
 
     /// <summary>
@@ -143,10 +178,8 @@ namespace PopcornNetFramework.WebApi
             }
 
             // Assign a global expander that'll run on all endpoints
-            if (configuration.ApplyToAllEndpoints)
-            {
-                options.Filters.Add(new ExpandResultAttribute(expander, configuration.Context, configuration.Inspector));
-            }
+            options.Filters.Add(new ExpandActionFilter(expander, configuration.Context, configuration.Inspector, configuration.ApplyToAllEndpoints));
+            
         }
     }
 }

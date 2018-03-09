@@ -3,6 +3,7 @@ using ExampleModel.Models;
 using System;
 using System.Web.Http;
 using System.Web;
+using PopcornNetFramework.WebApi;
 
 namespace PopcornNetFrameworkExample.Controllers
 {
@@ -51,5 +52,12 @@ namespace PopcornNetFrameworkExample.Controllers
         {
             return _context.Businesses;
         }
+
+        [HttpGet, Route("donotexpand"), DoNotExpandResult]
+        public object NonExpanded()
+        {
+            return new { name = "OK", status = "OK" };
+        }
+
     }
 }

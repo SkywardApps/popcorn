@@ -231,5 +231,16 @@ namespace CommonIntegrationTest
             json.ErrorCode.ShouldBe(typeof(ArgumentException).FullName);
             json.ErrorMessage.ShouldBe("This is a test exception");
         }
+
+        [TestMethod]
+        public async Task TestDoNotExpand()
+        {
+            var response = await TestSetup.Client.GetAsync(Utilities.exampleControllerRelUrl + "/donotexpand?include=[Name]");
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<Dictionary<string,string>>(responseBody);
+            result.ContainsKey("Success").ShouldBeFalse();
+            result.ContainsKey("status").ShouldBeTrue();
+            result["status"].ShouldBe("OK");
+        }
     }
 }

@@ -3,14 +3,14 @@
     class Utilities
     {
         // Relative URLs for Endpoints
-        public static string exampleControllerRelUrl = "api/example";
+        public const string exampleControllerRelUrl = "api/example";
 
-        public static string nullRelUrl = exampleControllerRelUrl + "/null";
-        public static string statusRelUrl = exampleControllerRelUrl + "/status";
-        public static string errorRelUrl = exampleControllerRelUrl + "/error";
-        public static string employeesRelUrl = exampleControllerRelUrl + "/employees";
-        public static string carsRelUrl = exampleControllerRelUrl + "/cars";
-        public static string businessesRelUrl = exampleControllerRelUrl + "/businesses";
+        public const string nullRelUrl = exampleControllerRelUrl + "/null";
+        public const string statusRelUrl = exampleControllerRelUrl + "/status";
+        public const string errorRelUrl = exampleControllerRelUrl + "/error";
+        public const string employeesRelUrl = exampleControllerRelUrl + "/employees";
+        public const string carsRelUrl = exampleControllerRelUrl + "/cars";
+        public const string businessesRelUrl = exampleControllerRelUrl + "/businesses";
 
     }
 }
