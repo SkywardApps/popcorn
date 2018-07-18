@@ -28,16 +28,19 @@ namespace Skyward.Popcorn
         {
             Exception exceptionResult = null;
             object resultObject = null;
+            Type destinationType = null;
 
-            if (!_expandAllEndpoints)
+            var expandAttribute = context
+                .ActionDescriptor
+                .FilterDescriptors
+                .SingleOrDefault(d => d.Filter.GetType() == typeof(ExpandResultAttribute));
+
+            if (!_expandAllEndpoints && expandAttribute == null)
+                return;
+
+            if (expandAttribute != null)
             {
-                var expandAttribute = context
-                    .ActionDescriptor
-                    .FilterDescriptors
-                    .SingleOrDefault(d => d.Filter.GetType() == typeof(ExpandResultAttribute));
-
-                if (expandAttribute == null)
-                    return;
+                destinationType = ((ExpandResultAttribute)expandAttribute.Filter).DestinationType;
             }
 
             var doNotExpandAttribute = context
@@ -79,7 +82,7 @@ namespace Skyward.Popcorn
                         }
 
                         // Use our expander and expand the object
-                        resultObject = _expander.Expand(resultObject, _context, PropertyReference.Parse(includes));
+                        resultObject = _expander.Expand(resultObject, _context, PropertyReference.Parse(includes), destinationTypeHint: destinationType);
                     }
 
                     // Sort should there be anything to sort
@@ -143,6 +146,16 @@ namespace Skyward.Popcorn
     /// </summary>
     public class ExpandResultAttribute : ActionFilterAttribute
     {
+        public ExpandResultAttribute(Type destinationType)
+        {
+            DestinationType = destinationType;
+        }
+
+        public ExpandResultAttribute()
+        {
+        }
+
+        public Type DestinationType { get; private set; }
     }
 
     /// <summary>

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>PopcornNetStandard.WebApiCore</name>
+    </assembly>
+    <members>
+        <member name="T:Skyward.Popcorn.ExpandResultAttribute">
+            <summary>
+            Apply this attribute to ensure a result is always expanded
+            </summary>
+        </member>
+        <member name="T:Skyward.Popcorn.DoNotExpandResultAttribute">
+            <summary>
+            Apply this attribute to ensure a result is never expanded
+            </summary>
+        </member>
+        <member name="T:Skyward.Popcorn.PopcornExtensions">
+            <summary>
+            Some useful extensions for Web App style configuration
+            </summary>
+        </member>
+        <member name="M:Skyward.Popcorn.PopcornExtensions.UsePopcorn(Microsoft.AspNetCore.Mvc.MvcOptions,System.Action{Skyward.Popcorn.PopcornConfiguration})">
+            <summary>
+            Configure the AspNet Core MVC options to include an Api Expander.  Allow the caller to configure it with an action.
+            </summary>
+            <param name="options"></param>
+            <param name="configure"></param>
+        </member>
+    </members>
+</doc>

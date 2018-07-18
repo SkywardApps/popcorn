@@ -147,6 +147,9 @@ namespace Skyward.Popcorn
 
             InternalMappingDefinition.Destinations.Add(typeof(TNewDestType), newMapping.InternalProjectionDefinition);
 
+            if (config != null)
+                config(newMapping);
+
             return newMapping;
         }
     }
