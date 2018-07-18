@@ -6,7 +6,7 @@
     <AssemblyName>PopcornNetStandard.EntityFrameworkCore</AssemblyName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Skyward.Api.Popcorn.EntityFrameworkCore</PackageId>
-    <Version>3.1.0</Version>
+    <Version>3.2.0</Version>
     <Authors>Skyward App Company, LLC</Authors>
     <Company>Skyward App Company, LLC</Company>
     <Description>EntityFrameworkCore extensions to Popcorn</Description>
