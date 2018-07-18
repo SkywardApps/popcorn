@@ -77,7 +77,7 @@ documentation:
 # Also publish relevant nuget packages
 nugetPopcornStandard:
  stage: deployment
- image: onsitedashboard:build
+ image: microsoft/dotnet:2.0-sdk
  when: manual
  allow_failure: true
  only:
@@ -97,7 +97,7 @@ nugetPopcornStandard:
   
 nugetPopcornEFCore:
  stage: deployment
- image: onsitedashboard:build
+ image: microsoft/dotnet:2.0-sdk
  when: manual
  allow_failure: true
  only:
@@ -117,7 +117,7 @@ nugetPopcornEFCore:
   
 nugetPopcornWebApiCore:
  stage: deployment
- image: onsitedashboard:build
+ image: microsoft/dotnet:2.0-sdk
  when: manual
  allow_failure: true
  only:
