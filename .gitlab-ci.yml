@@ -13,7 +13,7 @@ stages:
 # Build all three projects, minus the Net Framework project as it is windows/mono dependent.
 build:
  stage: build
- image: microsoft/dotnet:2.0-sdk
+ image: microsoft/dotnet:2.1-sdk
  script: 
   - cd dotnet/PopcornNetStandard
   - dotnet restore
@@ -30,7 +30,7 @@ build:
 # Running the example test integration tests
 popcornstandard_integrationtest:
  stage: test
- image: microsoft/dotnet:2.0-sdk
+ image: microsoft/dotnet:2.1-sdk
  script: 
   - cd dotnet/Tests/PopcornNetCoreExampleIntegrationTest
   - dotnet restore
@@ -41,7 +41,7 @@ popcornstandard_integrationtest:
 # Running the standard library tests
 popcornstandard_unittest:
  stage: test
- image: microsoft/dotnet:2.0-sdk
+ image: microsoft/dotnet:2.1-sdk
  script: 
   - cd dotnet/Tests/PopcornNetStandardTest
   - dotnet restore
@@ -77,7 +77,7 @@ documentation:
 # Also publish relevant nuget packages
 nugetPopcornStandard:
  stage: deployment
- image: microsoft/dotnet:2.0-sdk
+ image: microsoft/dotnet:2.1-sdk
  when: manual
  allow_failure: true
  only:
@@ -97,7 +97,7 @@ nugetPopcornStandard:
   
 nugetPopcornEFCore:
  stage: deployment
- image: microsoft/dotnet:2.0-sdk
+ image: microsoft/dotnet:2.1-sdk
  when: manual
  allow_failure: true
  only:
@@ -117,7 +117,7 @@ nugetPopcornEFCore:
   
 nugetPopcornWebApiCore:
  stage: deployment
- image: microsoft/dotnet:2.0-sdk
+ image: microsoft/dotnet:2.1-sdk
  when: manual
  allow_failure: true
  only:
