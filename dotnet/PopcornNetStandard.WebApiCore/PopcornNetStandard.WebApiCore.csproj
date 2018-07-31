@@ -4,7 +4,7 @@
     <TargetFramework>netstandard1.6</TargetFramework>
     <RootNamespace>Popcorn</RootNamespace>
     <PackageId>Skyward.Api.Popcorn.WebApiCore</PackageId>
-    <Version>3.2.0</Version>
+    <Version>3.3.0</Version>
     <Authors>Skyward App Company, LLC</Authors>
     <Company>Skyward App Company, LLC</Company>
     <Copyright>Copyright 2017 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
@@ -14,7 +14,7 @@
     <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>api rest</PackageTags>
-    <PackageReleaseNotes>Broke out the library to isolate dependancies.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added options to set Json Serializer settings</PackageReleaseNotes>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 

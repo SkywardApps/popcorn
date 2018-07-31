@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using Microsoft.Extensions.Options;
 
 namespace Skyward.Popcorn
 {
@@ -13,15 +14,16 @@ namespace Skyward.Popcorn
         Dictionary<string, object> _context;
         Func<object, object, Exception, object> _inspector;
         bool _expandAllEndpoints;
+        private readonly JsonSerializerSettings _jsonOptions;
 
-
-        public ExpandActionFilter(Expander expander, Dictionary<string, object> expandContext, Func<object, object, Exception, object> inspector, bool expandAll) :
+        public ExpandActionFilter(Expander expander, Dictionary<string, object> expandContext, Func<object, object, Exception, object> inspector, bool expandAll, JsonSerializerSettings jsonOptions = null) :
             base()
         {
             _expander = expander;
             _context = expandContext;
             _inspector = inspector;
             _expandAllEndpoints = expandAll;
+            _jsonOptions = jsonOptions;
         }
 
         public void OnActionExecuted(ActionExecutedContext context)
@@ -128,11 +130,9 @@ namespace Skyward.Popcorn
                 throw exceptionResult;
             }
 
-            context.Result = new JsonResult(resultObject,
-                new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore
-                });
+            var settings = _jsonOptions?.DeepCopy() ?? new JsonSerializerSettings();
+            settings.NullValueHandling = NullValueHandling.Ignore;
+            context.Result = new JsonResult(resultObject, settings);
             
         }
 
@@ -186,9 +186,9 @@ namespace Skyward.Popcorn
             {
                 configure(configuration);
             }
-
+            
             // Assign a global expander that'll run on all endpoints
-            options.Filters.Add(new ExpandActionFilter(expander, configuration.Context, configuration.Inspector, configuration.ApplyToAllEndpoints));
+            options.Filters.Add(new ExpandActionFilter(expander, configuration.Context, configuration.Inspector, configuration.ApplyToAllEndpoints, configuration.JsonOptions));
         }
     }
 }

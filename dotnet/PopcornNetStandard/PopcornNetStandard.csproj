@@ -7,7 +7,7 @@
     <Authors>Skyward App Company, LLC</Authors>
     <Description>Object dynamic filtering and expansion</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Bugfixes for blind expansion</PackageReleaseNotes>
+    <PackageReleaseNotes>Added options to set Json Serializer settings</PackageReleaseNotes>
     <Copyright>Copyright 2017 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
     <PackageTags>api rest</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -15,9 +15,9 @@
     <PackageLicenseUrl>https://github.com/SkywardApps/popcorn/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
-    <AssemblyVersion>3.2.0.0</AssemblyVersion>
-    <FileVersion>3.2.0.0</FileVersion>
-    <Version>3.2.0</Version>
+    <AssemblyVersion>3.3.0.0</AssemblyVersion>
+    <FileVersion>3.3.0.0</FileVersion>
+    <Version>3.3.0</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -30,6 +30,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
     <PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
     <PackageReference Include="System.Reflection" Version="4.3.0" />

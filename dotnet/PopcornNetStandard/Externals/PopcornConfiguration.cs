@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -18,6 +19,8 @@ namespace Skyward.Popcorn
         public Func<object, object, Exception, object> Inspector { get; private set; }
 
         public bool ApplyToAllEndpoints { get; private set; } = true;
+
+        public JsonSerializerSettings JsonOptions { get; private set; }
 
         /// <summary>
         /// Designate the context for this target
@@ -66,6 +69,12 @@ namespace Skyward.Popcorn
         public PopcornConfiguration SetOptIn()
         {
             ApplyToAllEndpoints = false;
+            return this;
+        }
+
+        public PopcornConfiguration SetJsonOptions(JsonSerializerSettings settings)
+        {
+            JsonOptions = settings;
             return this;
         }
 

@@ -2,9 +2,11 @@
 using ExampleModel.Projections;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Skyward.Popcorn;
 using System;
 using System.Collections.Generic;
@@ -66,6 +68,7 @@ namespace PopcornNetCoreExample
                             ["defaultEmployment"] = EmploymentType.Employed,
                             ["activeUser"] = userContext.user
                         })
+                        .SetJsonOptions(services.BuildServiceProvider().GetService<IOptions<MvcJsonOptions>>().Value.SerializerSettings)
                         .Authorize<Car>((source, context, value) => {
                             return value.User == (string)context["activeUser"];
                         });
