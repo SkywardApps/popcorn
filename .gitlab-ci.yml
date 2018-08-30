@@ -150,8 +150,9 @@ package:
  script:
   # This assumes that Release is the correct build to publish
   - cd dotnet
-  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release} 
-  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols --no-build --output ../publish
+  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
+  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols --output ../publish PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
+  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
 
 #Publish internal nuget package
 nugetInternal:
