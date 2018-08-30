@@ -134,3 +134,38 @@ nugetPopcornWebApiCore:
   - dotnet nuget push Skyward.Api.Popcorn.WebApiCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
  tags:
   - x86
+  
+# Create internal nuget package
+package:
+ stage: build
+ image: microsoft/dotnet:2.1-sdk
+ only:
+  - master
+ tags:
+  - x86
+ artifacts:
+  when: always
+  paths:
+   - publish
+ script:
+  # This assumes that Release is the correct build to publish
+  - cd dotnet
+  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release} 
+  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols --no-build --output ../publish
+
+#Publish internal nuget package
+nugetInternal:
+    stage: deployment
+    image: alpine
+    when: manual
+    allow_failure: true
+    only:
+        - master
+    tags:
+        - x86
+    script:
+    - apk update
+    - apk add samba-client
+    - cd dotnet
+    - cd publish
+    - for fileName in *.nupkg; do smbclient -U ${SambaUsername}%${SambaPassword} ${NugetShare} -c "put ${fileName}"; done
