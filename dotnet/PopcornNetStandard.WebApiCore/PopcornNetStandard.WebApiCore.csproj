@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Popcorn</RootNamespace>
     <PackageId>Skyward.Api.Popcorn.WebApiCore</PackageId>
-    <Version>5.0.0</Version>
+    <Version>5.0.1</Version>
     <Authors>Skyward App Company, LLC</Authors>
     <Company>Skyward App Company, LLC</Company>
     <Copyright>Copyright 2017 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
@@ -14,8 +14,7 @@
     <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>api rest</PackageTags>
-    <PackageReleaseNotes>Added options to set Json Serializer settings
-Updates require .Net Standard 2.0</PackageReleaseNotes>
+    <PackageReleaseNotes>Reset dependencies to Microsoft.AspNetCore 2.1.0 to support AWS Lambda</PackageReleaseNotes>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
