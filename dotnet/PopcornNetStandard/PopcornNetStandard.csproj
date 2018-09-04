@@ -7,18 +7,17 @@
     <Authors>Skyward App Company, LLC</Authors>
     <Description>Object dynamic filtering and expansion</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Added options to set Json Serializer settings
-Updates require .Net Standard 2.0</PackageReleaseNotes>
-    <Copyright>Copyright 2017 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
+    <PackageReleaseNotes>Allow IncludeByDefault to propogate from the source object in a blind expansion.</PackageReleaseNotes>
+    <Copyright>Copyright 2018 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
     <PackageTags>api rest</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/SkywardApps/popcorn</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/SkywardApps/popcorn/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
-    <AssemblyVersion>4.0.0.0</AssemblyVersion>
-    <FileVersion>4.0.0.0</FileVersion>
-    <Version>4.0.0</Version>
+    <AssemblyVersion>4.1.0.0</AssemblyVersion>
+    <FileVersion>4.1.0.0</FileVersion>
+    <Version>4.1.0</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

@@ -458,7 +458,15 @@ namespace Skyward.Popcorn
             {
                 // in the case of a blind object, default to source properties.  This is a bit dangerous!
                 includes = sourceType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.GetCustomAttributes<IncludeByDefault>().Any())
                     .Select(p => new PropertyReference() { PropertyName = p.Name });
+
+                // If nothing is marked as include by default, get all properties.
+                if (!includes.Any())
+                {
+                    includes = sourceType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                        .Select(p => new PropertyReference() { PropertyName = p.Name });
+                }
             }
 
             // if this doesn't have any includes specified, use the default

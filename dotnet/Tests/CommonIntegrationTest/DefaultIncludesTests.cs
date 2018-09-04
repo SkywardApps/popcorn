@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ExampleModel.Wire;
 using ExampleModel.Projections;
+using ExampleModel.Models;
 
 namespace CommonIntegrationTest
 {
@@ -72,5 +73,27 @@ namespace CommonIntegrationTest
 
             result.Any(c => c.Vehicles.Any(v => v.Year != null)).ShouldBeFalse();
         }
+
+
+        // A blind mapped object returns properly
+        [TestMethod]
+        public async Task DefaultIncludesBlindFromSource()
+        {
+            var response = await TestSetup.Client.GetAsync(Utilities.businessesRelUrl);
+
+            // convert the response
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var json = JsonConvert.DeserializeObject<Response>(responseBody);
+            var result = JsonConvert.DeserializeObject<List<Business>>(json.Data.ToString());
+
+            // Assert that the mapping applied accurately and the desired results came through
+            result.Any(c => c.Name != null).ShouldBeTrue();
+            result.Any(c => c.Employees != new List<Employee>()).ShouldBeTrue();
+
+            // Make sure the non-default includes did not come through
+            result.All(c => c.StreetAddress == null).ShouldBeTrue();
+            result.All(c => c.ZipCode == 0).ShouldBeTrue();
+        }
+
     }
 }
