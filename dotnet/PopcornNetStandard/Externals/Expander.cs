@@ -42,6 +42,9 @@ namespace Skyward.Popcorn
         Dictionary<Type, Func<ContextType, object>> IExpanderInternalConfiguration.Factories { get; } = new Dictionary<Type, Func<ContextType, object>>();
         internal Dictionary<Type, Func<ContextType, object>> Factories => ((IExpanderInternalConfiguration)this).Factories;
         bool IExpanderInternalConfiguration.ExpandBlindObjects { get; set; } = false;
+
+        public IServiceProvider ServiceProvider { get; set; }
+
         internal bool ExpandBlindObjects {
             get => ((IExpanderInternalConfiguration)this).ExpandBlindObjects;
             set => ((IExpanderInternalConfiguration)this).ExpandBlindObjects = value;
@@ -51,6 +54,7 @@ namespace Skyward.Popcorn
         {
             typeof(string),
         };
+
 
         /// <summary>
         /// Query whether or not a particular object is either a Mapped type or a collection of a Mapped type.

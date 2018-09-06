@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
 using Skyward.Popcorn;
@@ -246,6 +247,14 @@ namespace PopcornNetStandardTest
             public List<NonMappedType> Children { get; set; }
         }
 
+        public class MethodMapping
+        {
+            public string NoParameter() { return "NoParameter"; }
+            public string OneBuiltInType(string param) { return param; }
+            public string OneValueType(int param) { return $"OneValueType {param}"; }
+            public string TwoComplexObjects(IDictionary<string, string> dictionary, IEnumerable<string> list) { return $"TwoComplexObjects {dictionary.Count()} {list.Count()}"; }
+        }
+
         Expander _expander;
 
         [TestInitialize]
@@ -326,6 +335,36 @@ namespace PopcornNetStandardTest
             projection.Upconvert.ShouldBeNull();
             projection.ValueFromTranslator.ShouldBeNull();
             projection.Downconvert.ShouldBeNull();
+        }
+
+        [TestMethod]
+        public void TestMethodMappingWithServiceProvider()
+        {
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddScoped<string>((context) => "String");
+            serviceCollection.AddScoped<IDictionary<string, string>>((context) => new Dictionary<string, string> {
+                ["One"] = "One",
+                ["Two"] = "Two"
+            });
+            serviceCollection.AddScoped<IEnumerable<string>>((context) => new List<string> { });
+
+            var expanderConfig = new PopcornConfiguration(_expander)
+                .EnableBlindExpansion(true);
+            _expander.ServiceProvider = serviceCollection.BuildServiceProvider();
+
+
+            var originalObject = new MethodMapping();
+
+            object result = _expander.Expand(
+                originalObject,
+                null, 
+                PropertyReference.Parse($"[{nameof(MethodMapping.NoParameter)},{nameof(MethodMapping.OneBuiltInType)},{nameof(MethodMapping.TwoComplexObjects)}]"));
+            result.ShouldNotBeNull();
+
+            var data = result as Dictionary<string, object>;
+            data["NoParameter"].ShouldBe("NoParameter");
+            data["OneBuiltInType"].ShouldBe("String");
+            data["TwoComplexObjects"].ShouldBe("TwoComplexObjects 2 0");
         }
 
         [TestMethod]

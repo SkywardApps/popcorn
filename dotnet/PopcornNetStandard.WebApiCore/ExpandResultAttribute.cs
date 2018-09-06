@@ -5,25 +5,47 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Skyward.Popcorn
 {
     public class ExpandActionFilter : IActionFilter
     {
-        Expander _expander;
-        Dictionary<string, object> _context;
-        Func<object, object, Exception, object> _inspector;
-        bool _expandAllEndpoints;
+        private readonly Expander _expander;
+        private readonly Dictionary<string, object> _context;
+        private readonly Func<object, object, Exception, object> _inspector;
+        private readonly bool _expandAllEndpoints;
         private readonly JsonSerializerSettings _jsonOptions;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ExpandActionFilter(Expander expander, Dictionary<string, object> expandContext, Func<object, object, Exception, object> inspector, bool expandAll, JsonSerializerSettings jsonOptions = null) :
+        public ExpandActionFilter(Expander expander, Dictionary<string, object> expandContext, Func<object, object, Exception, object> inspector, bool expandAll, JsonSerializerSettings jsonOptions = null, IServiceProvider serviceProvider = null) :
             base()
         {
             _expander = expander;
             _context = expandContext;
             _inspector = inspector;
             _expandAllEndpoints = expandAll;
-            _jsonOptions = jsonOptions;
+            _serviceProvider = serviceProvider;
+
+            JsonSerializerSettings settings = new JsonSerializerSettings();
+            // if explicit settings are provided, use them
+            if (jsonOptions != null)
+            {
+                settings = jsonOptions.DeepCopy();
+            }
+
+            // otherwise if we got a service provider, try to find it
+            else if (serviceProvider != null)
+            {
+                settings = serviceProvider?
+                    .GetService<IOptions<MvcJsonOptions>>()?
+                    .Value?
+                    .SerializerSettings ?? settings;
+            }
+
+            // Make sure these settings ignore nulls
+            settings.NullValueHandling = NullValueHandling.Ignore;
+            _jsonOptions = settings;
         }
 
         public void OnActionExecuted(ActionExecutedContext context)
@@ -130,9 +152,7 @@ namespace Skyward.Popcorn
                 throw exceptionResult;
             }
 
-            var settings = _jsonOptions?.DeepCopy() ?? new JsonSerializerSettings();
-            settings.NullValueHandling = NullValueHandling.Ignore;
-            context.Result = new JsonResult(resultObject, settings);
+            context.Result = new JsonResult(resultObject, _jsonOptions);
             
         }
 
@@ -186,9 +206,11 @@ namespace Skyward.Popcorn
             {
                 configure(configuration);
             }
-            
+
+            expander.ServiceProvider = configuration.ServiceProvider;
+
             // Assign a global expander that'll run on all endpoints
-            options.Filters.Add(new ExpandActionFilter(expander, configuration.Context, configuration.Inspector, configuration.ApplyToAllEndpoints, configuration.JsonOptions));
+            options.Filters.Add(new ExpandActionFilter(expander, configuration.Context, configuration.Inspector, configuration.ApplyToAllEndpoints, configuration.JsonOptions, configuration.ServiceProvider));
         }
     }
 }

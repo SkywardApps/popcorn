@@ -326,7 +326,7 @@ namespace Skyward.Popcorn
         /// <param name="propertyName"></param>
         /// <param name="translators"></param>
         /// <returns></returns>
-        private static object GetSourceValue(object source, ContextType context, string propertyName, Dictionary<string, Func<object, ContextType, object>> translators = null)
+        private object GetSourceValue(object source, ContextType context, string propertyName, Dictionary<string, Func<object, ContextType, object>> translators = null)
         {
             object valueToAssign = null;
             Type sourceType = source.GetType();
@@ -371,18 +371,37 @@ namespace Skyward.Popcorn
             // If there's a simple method we can call, invoke it and assign the results
             else if (matchingMethod != null
                 && matchingMethod.ReturnType != null
-                && matchingMethod.ReturnType != typeof(void)
-                && !matchingMethod.GetParameters().Any())
+                && matchingMethod.ReturnType != typeof(void))
             {
-                valueToAssign = matchingMethod.Invoke(source, new object[] { });
+                var parameterList = matchingMethod.GetParameters();
+                if (!parameterList.Any())
+                    valueToAssign = matchingMethod.Invoke(source, new object[] { });
+                else
+                {
+                    List<object> parameterArray = new List<object>();
+                    foreach (var parameter in parameterList)
+                    {
+                        var parameterValue = ServiceProvider.GetService(parameter.ParameterType);
+                        if (parameterValue != null)
+                            parameterArray.Add(parameterValue);
+                    }
+
+                    if (parameterArray.Count() == parameterList.Count())
+                    {
+                        valueToAssign = matchingMethod.Invoke(source, parameterArray.ToArray());
+                    }
+                    else
+                    {
+                        // Couldn't map it, but it was explicitly requested, so throw an error
+                        throw new InvalidCastException(propertyName);
+                    }
+                }
             }
             else
             {
                 // Couldn't map it, but it was explicitly requested, so throw an error
                 throw new InvalidCastException(propertyName);
             }
-
-
 
             return valueToAssign;
         }

@@ -21,6 +21,7 @@ namespace Skyward.Popcorn
         public bool ApplyToAllEndpoints { get; private set; } = true;
 
         public JsonSerializerSettings JsonOptions { get; private set; }
+        public IServiceProvider ServiceProvider { get; private set;}
 
         /// <summary>
         /// Designate the context for this target
@@ -75,6 +76,12 @@ namespace Skyward.Popcorn
         public PopcornConfiguration SetJsonOptions(JsonSerializerSettings settings)
         {
             JsonOptions = settings;
+            return this;
+        }
+
+        public PopcornConfiguration SetServiceProvider(IServiceProvider provider)
+        {
+            ServiceProvider = provider;
             return this;
         }
 
