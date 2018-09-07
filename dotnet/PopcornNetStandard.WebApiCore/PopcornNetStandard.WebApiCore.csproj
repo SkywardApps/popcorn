@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Popcorn</RootNamespace>
     <PackageId>Skyward.Api.Popcorn.WebApiCore</PackageId>
-    <Version>5.0.1</Version>
+    <Version>5.0.2</Version>
     <Authors>Skyward App Company, LLC</Authors>
     <Company>Skyward App Company, LLC</Company>
     <Copyright>Copyright 2017 (c) Skyward App Company, LLC. All rights reserved.</Copyright>

@@ -148,14 +148,14 @@ package:
   paths:
    - dotnet/publish
  script:
-  # This assumes that Release is the correct build to publish
+  # This assumes that Debug is the correct build to publish
   - cd dotnet
-  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release} PopcornNetStandard/PopcornNetStandard.csproj
-  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release} PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
-  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release} PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
-  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
-  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols --output ../publish PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
-  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Debug} PopcornNetStandard/PopcornNetStandard.csproj
+  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Debug} PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
+  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Debug} PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+  - dotnet pack -c ${PublishConfiguration:-Debug} --include-source --include-symbols --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
+  - dotnet pack -c ${PublishConfiguration:-Debug} --include-source --include-symbols --output ../publish PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
+  - dotnet pack -c ${PublishConfiguration:-Debug} --include-source --include-symbols --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
 
 #Publish internal nuget package
 nugetInternal:
