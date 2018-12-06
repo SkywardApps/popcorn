@@ -150,12 +150,12 @@ package:
  script:
   # This assumes that Debug is the correct build to publish
   - cd dotnet
-  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Debug} PopcornNetStandard/PopcornNetStandard.csproj
-  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Debug} PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
-  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Debug} PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
-  - dotnet pack -c ${PublishConfiguration:-Debug} --include-source --include-symbols --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
-  - dotnet pack -c ${PublishConfiguration:-Debug} --include-source --include-symbols --output ../publish PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
-  - dotnet pack -c ${PublishConfiguration:-Debug} --include-source --include-symbols --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+  - dotnet build --ignore-failed-sources -c Release PopcornNetStandard/PopcornNetStandard.csproj
+  - dotnet build --ignore-failed-sources -c Release PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
+  - dotnet build --ignore-failed-sources -c Release PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+  - dotnet pack -c Release --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
+  - dotnet pack -c Release --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
+  - dotnet pack -c Release --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
 
 #Publish internal nuget package
 nugetInternal:
@@ -172,4 +172,5 @@ nugetInternal:
     - apk add samba-client
     - cd dotnet
     - cd publish
-    - for fileName in *.nupkg; do smbclient -U ${SambaUsername}%${SambaPassword} ${NugetShare} -c "put ${fileName}"; done
+    - for fileName in *.nupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
+    - for fileName in *.snupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
