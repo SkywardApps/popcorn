@@ -150,17 +150,17 @@ package:
  script:
   # This assumes that Debug is the correct build to publish
   - cd dotnet
-  - dotnet build --ignore-failed-sources -c Release PopcornNetStandard/PopcornNetStandard.csproj
-  - dotnet build --ignore-failed-sources -c Release PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
-  - dotnet build --ignore-failed-sources -c Release PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
-  - dotnet pack -c Release --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
-  - dotnet pack -c Release --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
-  - dotnet pack -c Release --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard/PopcornNetStandard.csproj
+  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
+  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
+  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
+  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
 
 #Publish internal nuget package
 nugetInternal:
     stage: deployment
-    image: alpine
+    image: microsoft/dotnet:2.1-sdk
     when: manual
     allow_failure: true
     only:
@@ -168,8 +168,6 @@ nugetInternal:
     tags:
         - x86
     script:
-    - apk update
-    - apk add samba-client
     - cd dotnet
     - cd publish
     - for fileName in *.nupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
