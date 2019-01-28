@@ -33,13 +33,19 @@ namespace PopcornNetFramework.WebApi
         {
             if (!_expandAllEndpoints)
             {
-                var expandAttribute = context.ActionContext
+                var filterDescriptor = context.ActionContext
                     .ActionDescriptor
                     .GetFilters()
                     .SingleOrDefault(f => f.GetType() == typeof(ExpandResultAttribute));
 
-                if (expandAttribute == null)
+                //Cast the filter to ExpandResultAttribute
+                var attributeInstance = filterDescriptor as ExpandResultAttribute;
+
+                //If the attribute is null, i.e. not present, or false, it shouldn't expand and we return here
+                if (!(attributeInstance?.ShouldExpand ?? false))
+                {
                     return;
+                }
             }
 
             var doNotExpandAttribute = context.ActionContext
@@ -142,17 +148,30 @@ namespace PopcornNetFramework.WebApi
     }
 
     /// <summary>
-    /// Apply this attribute to ensure a result is always expanded
+    /// Apply this attribute to ensure a result is always expanded or optionally pass a boolean specifying behaviour
     /// </summary>
     public class ExpandResultAttribute : ActionFilterAttribute
     {
+        public bool ShouldExpand { get; private set; }
+        /// <summary>
+        /// Apply this attribute to specify whether a result is to always expand or never expand
+        /// </summary>
+        /// <param name="shouldExpand">Defaults to <c>true</c>. If set to false, result will not be expanded. If passing <c>false</c>, you can also use <seealso cref="DoNotExpandResultAttribute"/></param>
+        public ExpandResultAttribute(bool shouldExpand = true)
+        {
+            ShouldExpand = shouldExpand;
+        }
     }
 
     /// <summary>
     /// Apply this attribute to ensure a result is never expanded
     /// </summary>
-    public class DoNotExpandResultAttribute : ActionFilterAttribute
+    public class DoNotExpandResultAttribute : ExpandResultAttribute
     {
+        public DoNotExpandResultAttribute() : base(false)
+        {
+
+        }
     }
 
     /// <summary>
