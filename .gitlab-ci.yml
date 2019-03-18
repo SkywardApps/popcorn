@@ -14,6 +14,12 @@ stages:
 build:
  stage: build
  image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  script: 
   - cd dotnet/PopcornNetStandard
   - dotnet restore
@@ -31,6 +37,12 @@ build:
 popcornstandard_integrationtest:
  stage: test
  image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  script: 
   - cd dotnet/Tests/PopcornNetCoreExampleIntegrationTest
   - dotnet restore
@@ -42,6 +54,12 @@ popcornstandard_integrationtest:
 popcornstandard_unittest:
  stage: test
  image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  script: 
   - cd dotnet/Tests/PopcornNetStandardTest
   - dotnet restore
@@ -53,6 +71,12 @@ popcornstandard_unittest:
 documentation:
  stage: uploadresults
  image: onsitedashboard:build
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  only: 
   - master
  before_script:
@@ -78,6 +102,12 @@ documentation:
 nugetPopcornStandard:
  stage: deployment
  image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  when: manual
  allow_failure: true
  only:
@@ -98,6 +128,12 @@ nugetPopcornStandard:
 nugetPopcornEFCore:
  stage: deployment
  image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  when: manual
  allow_failure: true
  only:
@@ -118,6 +154,12 @@ nugetPopcornEFCore:
 nugetPopcornWebApiCore:
  stage: deployment
  image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  when: manual
  allow_failure: true
  only:
@@ -139,6 +181,12 @@ nugetPopcornWebApiCore:
 package:
  stage: build
  image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  only:
   - master
  tags:
@@ -161,6 +209,12 @@ package:
 nugetInternal:
     stage: deployment
     image: microsoft/dotnet:2.1-sdk
+    cache:
+      key: linux-build
+      paths:
+        - /root/.local/share/NuGet/Cache
+        - /root/.nuget/packages
+        - .nuget
     when: manual
     allow_failure: true
     only:
