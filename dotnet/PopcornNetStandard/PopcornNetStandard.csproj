@@ -7,7 +7,7 @@
     <Authors>Skyward App Company, LLC</Authors>
     <Description>Object dynamic filtering and expansion</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Allow registration of a DI provider to allow methods with parameters to map</PackageReleaseNotes>
+    <PackageReleaseNotes>Handle JObject in a basic way.</PackageReleaseNotes>
     <Copyright>Copyright 2018 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
     <PackageTags>api rest</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -17,7 +17,7 @@
     <RepositoryType>GitHub</RepositoryType>
     <AssemblyVersion>4.3.1.0</AssemblyVersion>
     <FileVersion>4.3.1.0</FileVersion>
-    <Version>4.3.1</Version>
+    <Version>4.4.1</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

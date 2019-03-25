@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 using Shouldly;
 using Skyward.Popcorn;
 using System;
@@ -1620,6 +1621,47 @@ namespace PopcornNetStandardTest
             Dictionary<string, string> entity = new Dictionary<string, string>() { { "test", "test" }, { "test2", "test2" } };
             Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
         }
+
+
+        public class SelfReferencingType : IEnumerable<SelfReferencingType>
+        {
+            public IEnumerator<SelfReferencingType> GetEnumerator()
+            {
+                throw new NotImplementedException();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [TestMethod]
+        public void TypeCycle()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var entity = new SelfReferencingType();
+            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
+        }
+
+        // Generic blind expansion of a JObject should succeed
+        [TestMethod]
+        public void BlindExpansionJObject()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var entity = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(new 
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test"
+            }));
+
+            var expanded = _expander.Expand(entity, null, PropertyReference.Parse($"[]"));
+            var serialized = JsonConvert.SerializeObject(expanded);
+            var mappedEntity = expanded as Dictionary<string, object>;
+
+            mappedEntity["Name"].ToString().ShouldBe(nameof(BlindExpansion));
+        }
+
 
         // prove that sorting blindly expanded objects is not supported
         [TestMethod]

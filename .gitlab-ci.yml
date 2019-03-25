@@ -66,37 +66,7 @@ popcornstandard_unittest:
   - dotnet test
  tags:
   - x86
-
-# Updating documentation on confluence markdowns within the project
-documentation:
- stage: uploadresults
- image: onsitedashboard:build
- cache:
-  key: linux-build
-  paths:
-    - /root/.local/share/NuGet/Cache
-    - /root/.nuget/packages
-    - .nuget
- only: 
-  - master
- before_script:
-  - mkdir -p ~/.ssh
-  # Sadly Gitlab mangles these secret variables by prepending a space on susequent lines
-  - echo $MarkdownConfluenceCORE_pk | tr '.' '\n' >~/.ssh/id_rsa
-  - chmod 600 ~/.ssh/id_rsa
-  - ssh-keyscan -t rsa khan.skywardapps.us >>~/.ssh/known_hosts
- script: 
-  # Pull down the connector project to connect results to TP
-  - git clone git@khan.skywardapps.us:internal/markdown-confluence.git
-  - cd markdown-confluence/MarkdownUploaderCore
-  - dotnet restore
-  - dotnet build
-  # Run with the hardcoded project id as this will always be OnsiteDashboard
-  - cd ../..
-  - dotnet run --project markdown-confluence/MarkdownUploaderCore/MarkdownUploaderCore.csproj
- tags:
-  - x86
-  
+    
 # Create an instance of this server.
 # Also publish relevant nuget packages
 nugetPopcornStandard:

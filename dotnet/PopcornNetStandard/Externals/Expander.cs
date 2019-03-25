@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,6 +44,9 @@ namespace Skyward.Popcorn
         internal Dictionary<Type, Func<ContextType, object>> Factories => ((IExpanderInternalConfiguration)this).Factories;
         bool IExpanderInternalConfiguration.ExpandBlindObjects { get; set; } = false;
 
+        // Cache whether or not we will expand a type.  This allows us to also detect type-reference-cycles.
+        private static Dictionary<Type, bool> CachedWillExpand = new Dictionary<Type, bool>();
+
         public IServiceProvider ServiceProvider { get; set; }
 
         internal bool ExpandBlindObjects {
@@ -71,11 +75,35 @@ namespace Skyward.Popcorn
 
         /// <summary>
         /// Query whether or not a particular type is either a Mapped type or a collection of a Mapped type.
+        /// This references a cache for quicker answers.
         /// </summary>
         /// <param name="sourceType"></param>
         /// <returns></returns>
         public bool WillExpandType(Type sourceType)
         {
+            if (CachedWillExpand.ContainsKey(sourceType))
+            {
+                return CachedWillExpand[sourceType];
+            }
+
+            CachedWillExpand[sourceType] = false;
+
+            var willExpand = WillExpandTypeInner(sourceType);
+
+            CachedWillExpand[sourceType] = willExpand;
+
+            return willExpand;
+        }
+
+        /// <summary>
+        /// Query whether or not a particular type is either a Mapped type or a collection of a Mapped type.
+        /// This bypasses the cache, although inner lookups may still use the cache.
+        /// </summary>
+        /// <param name="sourceType"></param>
+        /// <returns></returns>
+        private bool WillExpandTypeInner(Type sourceType)
+        {
+
             // Allow Dictionary<string, object> types without mapping
             if (WillExpandDictionary(sourceType))
                 return true;
@@ -85,8 +113,13 @@ namespace Skyward.Popcorn
 
             if (WillExpandDirect(sourceType))
                 return true;
+
             if (WillExpandCollection(sourceType))
                 return true;
+
+            if (sourceType == typeof(JObject))
+                return true;
+
             return WillExpandBlind(sourceType);
         }
 
@@ -157,6 +190,11 @@ namespace Skyward.Popcorn
                 if (WillExpandCollection(sourceType))
                 {
                     return ExpandCollection(source, destinationTypeHint ?? typeof(ArrayList), context, includes, visited);
+                }
+
+                if (sourceType == typeof(JObject))
+                {
+                    return ExpandJObject((JObject)source, context, includes, visited);
                 }
 
                 if (WillExpandBlind(sourceType))
