@@ -127,6 +127,11 @@ namespace Skyward.Popcorn
             
             includes = ConstructIncludes(includes, sourceType, destType);
 
+            if (!includes.Any())
+            {
+                return null;
+            }
+
             // Attempt to create a projection object we'll map the data into
             object destinationObject = CreateObjectInContext(context, sourceType, destType);
 
@@ -262,6 +267,9 @@ namespace Skyward.Popcorn
             Type sourceType = source.GetType();
             includes = ConstructIncludes(includes, sourceType, null);
 
+            if (!includes.Any())
+                return null;
+
             // Attempt to create a projection object we'll map the data into
             var destinationObject = new Dictionary<string, object>();
 
@@ -306,7 +314,8 @@ namespace Skyward.Popcorn
                     valueToAssign = Expand(valueToAssign, context, propertyReference.Children, visited);
                 }
 
-                destinationObject[propertyName] = valueToAssign;
+                if(valueToAssign != null)
+                    destinationObject[propertyName] = valueToAssign;
             }
 
             // Allow any actions to run after the mapping
@@ -525,13 +534,13 @@ namespace Skyward.Popcorn
             }
 
             // if this doesn't have any includes specified, use the default
-            if (!includes.Any())
+            if (!includes.Any() && Mappings.ContainsKey(sourceType))
             {
                 includes = PropertyReference.Parse(Mappings[sourceType].DestinationForType(destType).DefaultIncludes);
             }
 
             // if this STILL doesn't have any includes, that means include everything
-            if (!includes.Any())
+            if (!includes.Any() && destType != null)
             {
                 includes = destType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
                     .Select(p => new PropertyReference() { PropertyName = p.Name });
