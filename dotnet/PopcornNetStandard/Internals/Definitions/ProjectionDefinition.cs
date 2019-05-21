@@ -27,5 +27,10 @@ namespace Skyward.Popcorn
         /// </summary>
         public string DefaultIncludes { get; set; } = "";
 
+        /// <summary>
+        /// A handler that simply executes the projection.  Useful if the result isn't a complex object.
+        /// </summary>
+        public Func<object, IEnumerable<PropertyReference>, ContextType, MappingDefinition, ProjectionDefinition, object> Handler { get; internal set; }
+
     }
 }
