@@ -6,7 +6,7 @@
     <AssemblyName>PopcornNetStandard.EntityFrameworkCore</AssemblyName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Skyward.Api.Popcorn.EntityFrameworkCore</PackageId>
-    <Version>4.1.2</Version>
+    <Version>4.2.2</Version>
     <Authors>Skyward App Company, LLC</Authors>
     <Company>Skyward App Company, LLC</Company>
     <Description>EntityFrameworkCore extensions to Popcorn</Description>
@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>api rest</PackageTags>
-    <PackageReleaseNotes>Update downstream references.</PackageReleaseNotes>
+    <PackageReleaseNotes>Allow direct handling of object projection.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

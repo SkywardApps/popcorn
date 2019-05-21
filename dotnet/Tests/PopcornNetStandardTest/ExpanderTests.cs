@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
+using NodaTime;
 using Shouldly;
 using Skyward.Popcorn;
 using System;
@@ -256,6 +257,12 @@ namespace PopcornNetStandardTest
             public string TwoComplexObjects(IDictionary<string, string> dictionary, IEnumerable<string> list) { return $"TwoComplexObjects {dictionary.Count()} {list.Count()}"; }
         }
 
+        public class TimeWrapper
+        {
+            public Instant Instant { get; set; }
+            public DateTime DateTime { get; set; }
+        }
+
         Expander _expander;
 
         [TestInitialize]
@@ -277,6 +284,31 @@ namespace PopcornNetStandardTest
             config.Map<InternalObjectValues, InternalObjectValuesProjection>();
             config.AssignFactory<EntityFromFactoryProjection>(() => new EntityFromFactoryProjection { ShouldBeEmpty = "Generated" });
             config.AssignFactory<EntityFromContextBasedFactoryProjection>((context) => new EntityFromContextBasedFactoryProjection{ ContextString = context["DefaultString"] as string, MappedString = context["DefaultString"] as string });
+            config.Map<Instant, string>(config: definition => {
+                definition.Handle((source, includes, context, map, projector) => {
+                    return ((Instant)source).ToString("yyyy-MM-dd HH:mm:ss", null);
+                });
+            });
+            config.Map<DateTime, string>(config: definition => {
+                definition.Handle((source, includes, context, map, projector) => {
+                    return ((DateTime)source).ToString("s", null);
+                });
+            });
+        }
+
+        [TestMethod]
+        public void Handlers()
+        {
+            var source = new TimeWrapper {
+                Instant = Instant.FromUtc(1980, 5, 1, 3, 53, 6),
+                DateTime = new DateTime(1981, 6, 2, 4, 54, 7)
+            };
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var result = _expander.Expand(source);
+            result.ShouldNotBeNull();
+            var resultDictionary = (Dictionary<string, object>)result;
+            resultDictionary["Instant"].ShouldBe("1980-05-01 03:53:06");
+            resultDictionary["DateTime"].ShouldBe("1981-06-02T04:54:07");
         }
 
         [TestMethod]

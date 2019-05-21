@@ -124,8 +124,16 @@ namespace Skyward.Popcorn
                     }
                 }
             }
-            
+
             includes = ConstructIncludes(includes, sourceType, destType);
+
+            if (Mappings.ContainsKey(sourceType)
+                && Mappings[sourceType].Destinations.ContainsKey(destType)
+                && Mappings[sourceType].Destinations[destType].Handler != null)
+            {
+                return Mappings[sourceType].DestinationForType(destType).Handler(source, includes, context, Mappings[sourceType], Mappings[sourceType].DestinationForType(destType));
+            }
+
 
             if (!includes.Any())
             {
