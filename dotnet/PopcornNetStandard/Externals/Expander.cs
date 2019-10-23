@@ -44,6 +44,8 @@ namespace Skyward.Popcorn
         internal Dictionary<Type, Func<ContextType, object>> Factories => ((IExpanderInternalConfiguration)this).Factories;
         bool IExpanderInternalConfiguration.ExpandBlindObjects { get; set; } = false;
 
+        public Dictionary<Type, Tuple<Type, Func<object, ContextType, object>>> BlindHandlers { get; } = new Dictionary<Type, Tuple<Type, Func<object, ContextType, object>>>();
+
         // Cache whether or not we will expand a type.  This allows us to also detect type-reference-cycles.
         private static Dictionary<Type, bool> CachedWillExpand = new Dictionary<Type, bool>();
 

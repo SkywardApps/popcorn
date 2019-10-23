@@ -67,85 +67,6 @@ popcornstandard_unittest:
  tags:
   - x86
     
-# Create an instance of this server.
-# Also publish relevant nuget packages
-nugetPopcornStandard:
- stage: deployment
- image: microsoft/dotnet:2.1-sdk
- cache:
-  key: linux-build
-  paths:
-    - /root/.local/share/NuGet/Cache
-    - /root/.nuget/packages
-    - .nuget
- when: manual
- allow_failure: true
- only:
-  - master
-  - alpha
-  - beta
-  - production
- script:
-  - cd dotnet/PopcornNetStandard
-  - dotnet restore
-  - dotnet build -c Release
-  - cd ../Build/Release
-  - ls
-  - dotnet nuget push Skyward.Api.Popcorn.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
- tags:
-  - x86
-  
-nugetPopcornEFCore:
- stage: deployment
- image: microsoft/dotnet:2.1-sdk
- cache:
-  key: linux-build
-  paths:
-    - /root/.local/share/NuGet/Cache
-    - /root/.nuget/packages
-    - .nuget
- when: manual
- allow_failure: true
- only:
-  - master
-  - alpha
-  - beta
-  - production
- script:
-  - cd dotnet/PopcornNetStandard.EntityFrameworkCore
-  - dotnet restore
-  - dotnet build -c Release
-  - cd ../Build/Release
-  - ls
-  - dotnet nuget push Skyward.Api.Popcorn.EntityFrameworkCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
- tags:
-  - x86
-  
-nugetPopcornWebApiCore:
- stage: deployment
- image: microsoft/dotnet:2.1-sdk
- cache:
-  key: linux-build
-  paths:
-    - /root/.local/share/NuGet/Cache
-    - /root/.nuget/packages
-    - .nuget
- when: manual
- allow_failure: true
- only:
-  - master
-  - alpha
-  - beta
-  - production
- script:
-  - cd dotnet/PopcornNetStandard.WebApiCore
-  - dotnet restore
-  - dotnet build -c Release
-  - cd ../Build/Release
-  - ls
-  - dotnet nuget push Skyward.Api.Popcorn.WebApiCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
- tags:
-  - x86
   
 # Create internal nuget package
 package:
@@ -178,6 +99,9 @@ package:
 #Publish internal nuget package
 nugetInternal:
     stage: deployment
+    environment:
+        name: internal_popcorn_nuget
+        url: https://nuget.skywardapps.us/packages/Skyward.Api.Popcorn
     image: microsoft/dotnet:2.1-sdk
     cache:
       key: linux-build
@@ -196,3 +120,27 @@ nugetInternal:
     - cd publish
     - for fileName in *.nupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
     - for fileName in *.snupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
+
+nugetExternal:
+    stage: deployment
+    environment:
+        name: public_popcorn_nuget
+        url: https://www.nuget.org/packages/Skyward.Api.Popcorn
+    image: microsoft/dotnet:2.1-sdk
+    cache:
+      key: linux-build
+      paths:
+        - /root/.local/share/NuGet/Cache
+        - /root/.nuget/packages
+        - .nuget
+    when: manual
+    allow_failure: true
+    only:
+        - master
+    tags:
+        - x86
+    script:
+    - cd dotnet
+    - cd publish
+    - for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://www.nuget.org/api/v2/package ${fileName} || :; done
+    - for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://www.nuget.org/api/v2/package ${fileName} || :; done

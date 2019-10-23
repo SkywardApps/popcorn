@@ -34,8 +34,11 @@ namespace Skyward.Popcorn
                 TraceWriter = serializer.TraceWriter,
                 TypeNameHandling = serializer.TypeNameHandling,
                 TypeNameAssemblyFormat = serializer.TypeNameAssemblyFormat,
+                TypeNameAssemblyFormatHandling = serializer.TypeNameAssemblyFormatHandling,
                 Binder = serializer.Binder,
+                SerializationBinder = serializer.SerializationBinder,
                 Error = serializer.Error,
+                Converters = serializer.Converters,
                 ReferenceResolverProvider = serializer.ReferenceResolverProvider
             };
             foreach (var converter in serializer.Converters)
