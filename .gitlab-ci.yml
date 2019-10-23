@@ -85,6 +85,7 @@ nugetPopcornStandard:
   - alpha
   - beta
   - production
+  - BlindHandler
  script:
   - cd dotnet/PopcornNetStandard
   - dotnet restore
@@ -218,6 +219,7 @@ nugetExternal:
     allow_failure: true
     only:
         - master
+        - BlindHandler
     tags:
         - x86
     script:
