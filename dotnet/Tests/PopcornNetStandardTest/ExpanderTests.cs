@@ -242,11 +242,12 @@ namespace PopcornNetStandardTest
             public string ContextString { get; set; }
         }
 
-        public class NonMappedType
+        public class NonMappedType : INonMappedType
         {
             public string Name { get; set; }
             public string Title { get; set; }
             public List<NonMappedType> Children { get; set; }
+
         }
 
         public class MethodMapping
@@ -1626,6 +1627,38 @@ namespace PopcornNetStandardTest
         {
             var config = new PopcornConfiguration(_expander).EnableBlindExpansion(true);
             config.BlindHandler<NonMappedType, string>((input, context) => "Hello World");
+
+            var entity = new NonMappedType
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[Name,Children[Title]]"));
+            result.ShouldNotBeNull();
+            result.ShouldBe("Hello World");
+        }
+
+        [TestMethod]
+        public void BlindExpansionHandlerInterface()
+        {
+            var config = new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            config.BlindHandler<INonMappedType, string>((input, context) => "Hello World");
 
             var entity = new NonMappedType
             {

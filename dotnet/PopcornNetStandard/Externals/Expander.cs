@@ -72,7 +72,6 @@ namespace Skyward.Popcorn
             if (source == null) { return false; } // handling the null response
             Type sourceType = source.GetType();
             return WillExpandType(sourceType);
-
         }
 
         /// <summary>
@@ -83,6 +82,7 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public bool WillExpandType(Type sourceType)
         {
+            var name = sourceType.Name;
             if (CachedWillExpand.ContainsKey(sourceType))
             {
                 return CachedWillExpand[sourceType];
