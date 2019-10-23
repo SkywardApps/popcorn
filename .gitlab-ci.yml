@@ -67,86 +67,6 @@ popcornstandard_unittest:
  tags:
   - x86
     
-# Create an instance of this server.
-# Also publish relevant nuget packages
-nugetPopcornStandard:
- stage: deployment
- image: microsoft/dotnet:2.1-sdk
- cache:
-  key: linux-build
-  paths:
-    - /root/.local/share/NuGet/Cache
-    - /root/.nuget/packages
-    - .nuget
- when: manual
- allow_failure: true
- only:
-  - master
-  - alpha
-  - beta
-  - production
-  - BlindHandler
- script:
-  - cd dotnet/PopcornNetStandard
-  - dotnet restore
-  - dotnet build -c Release
-  - cd ../Build/Release
-  - ls
-  - dotnet nuget push Skyward.Api.Popcorn.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
- tags:
-  - x86
-  
-nugetPopcornEFCore:
- stage: deployment
- image: microsoft/dotnet:2.1-sdk
- cache:
-  key: linux-build
-  paths:
-    - /root/.local/share/NuGet/Cache
-    - /root/.nuget/packages
-    - .nuget
- when: manual
- allow_failure: true
- only:
-  - master
-  - alpha
-  - beta
-  - production
- script:
-  - cd dotnet/PopcornNetStandard.EntityFrameworkCore
-  - dotnet restore
-  - dotnet build -c Release
-  - cd ../Build/Release
-  - ls
-  - dotnet nuget push Skyward.Api.Popcorn.EntityFrameworkCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
- tags:
-  - x86
-  
-nugetPopcornWebApiCore:
- stage: deployment
- image: microsoft/dotnet:2.1-sdk
- cache:
-  key: linux-build
-  paths:
-    - /root/.local/share/NuGet/Cache
-    - /root/.nuget/packages
-    - .nuget
- when: manual
- allow_failure: true
- only:
-  - master
-  - alpha
-  - beta
-  - production
- script:
-  - cd dotnet/PopcornNetStandard.WebApiCore
-  - dotnet restore
-  - dotnet build -c Release
-  - cd ../Build/Release
-  - ls
-  - dotnet nuget push Skyward.Api.Popcorn.WebApiCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
- tags:
-  - x86
   
 # Create internal nuget package
 package:
@@ -160,7 +80,6 @@ package:
     - .nuget
  only:
   - master
-  - BlindHandler
  tags:
   - x86
  artifacts:
@@ -194,7 +113,6 @@ nugetInternal:
     allow_failure: true
     only:
         - master
-        - BlindHandler
     tags:
         - x86
     script:
@@ -219,7 +137,6 @@ nugetExternal:
     allow_failure: true
     only:
         - master
-        - BlindHandler
     tags:
         - x86
     script:
