@@ -142,5 +142,5 @@ nugetExternal:
     script:
     - cd dotnet
     - cd publish
-    - for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://www.nuget.org/api/v2/package ${fileName} || :; done
-    - for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://www.nuget.org/api/v2/package ${fileName} || :; done
+    - for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
+    - for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
