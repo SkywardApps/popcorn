@@ -46,8 +46,8 @@ namespace Skyward.Popcorn
         protected bool WillExpandCollection(Type sourceType)
         {
             var blindAssignment = BlindHandlers.Where(kv => kv.Key.IsAssignableFrom(sourceType)).Select(kv => kv.Value).FirstOrDefault();
-            if (this.ExpandBlindObjects && blindAssignment == null)
-                return true;
+            if (this.ExpandBlindObjects && blindAssignment != null)
+                return false;
 
             // figure out if this is an expandable list, instead
             // Is this a list of items we need to project?
