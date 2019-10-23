@@ -268,11 +268,18 @@ namespace Skyward.Popcorn
         /// <param name="includes"></param>
         /// <param name="visited"></param>
         /// <returns></returns>
-        protected Dictionary<string, object> ExpandBlindObject(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
+        protected object ExpandBlindObject(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
         {
             visited = UniqueVisit(source, visited);
 
             Type sourceType = source.GetType();
+
+            var blindAssignment = BlindHandlers.Where(kv => kv.Key.IsAssignableFrom(sourceType)).Select(kv => kv.Value).FirstOrDefault();
+            if (blindAssignment != null)
+            {
+                return blindAssignment.Item2(source, context);
+            }
+
             includes = ConstructIncludes(includes, sourceType, null);
 
             if (!includes.Any())
@@ -619,11 +626,15 @@ namespace Skyward.Popcorn
 
 
             Type expandedType;
+            var blindAssignment = BlindHandlers.Where(kv => kv.Key.IsAssignableFrom(genericType)).Select(kv => kv.Value).FirstOrDefault();
+
             if (destInterfaceType != null)
                 expandedType = destInterfaceType.GenericTypeArguments[0];
             else if (this.Mappings.ContainsKey(genericType))
                 expandedType = this.Mappings[genericType].DefaultDestinationType;
-            else 
+            else if (this.ExpandBlindObjects && blindAssignment != null)
+                expandedType = blindAssignment.Item1;
+            else
                 expandedType = typeof(Dictionary<string, object>);
 
             // Ok, now we need to try and instantiate the destination type (if it is concrete) or take a guess 

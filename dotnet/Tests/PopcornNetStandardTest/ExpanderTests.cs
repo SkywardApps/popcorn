@@ -1618,6 +1618,111 @@ namespace PopcornNetStandardTest
             children.Count(c => c.ContainsKey("Title") && (string)c["Title"] == "Test").ShouldBe(3);
         }
 
+
+        // Blind expansion with a specific handler for a type
+        // This can be helpful in preparation for serializing 
+        [TestMethod]
+        public void BlindExpansionHandlerTopLevel()
+        {
+            var config = new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            config.BlindHandler<NonMappedType, string>((input, context) => "Hello World");
+
+            var entity = new NonMappedType
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[Name,Children[Title]]"));
+            result.ShouldNotBeNull();
+            result.ShouldBe("Hello World");
+        }
+
+        [TestMethod]
+        public void BlindExpansionHandlerCollection()
+        {
+            var config = new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            config.BlindHandler<NonMappedType, string>((input, context) => "Hello World");
+
+            var entity = new 
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[Name,Children[Title]]"));
+            result.ShouldNotBeNull();
+
+            var mappedEntity = result as Dictionary<string, object>;
+            mappedEntity.ShouldNotBeNull();
+
+            mappedEntity["Name"].ShouldBe(nameof(BlindExpansion));
+            mappedEntity.ContainsKey("Title").ShouldBeFalse();
+            mappedEntity["Children"].ShouldNotBeNull();
+            var children = (mappedEntity["Children"] as IList).Cast<object>();
+            children.All(child => child is string).ShouldBeTrue();
+            children.All(child => (string)child == "Hello World").ShouldBeTrue();
+            children.Count().ShouldBe(3);
+        }
+
+        [TestMethod]
+        public void BlindExpansionHandlerProperty()
+        {
+            var config = new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            config.BlindHandler<NonMappedType, string>((input, context) => "Hello World");
+
+            var entity = new
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Child = new NonMappedType {
+                    Name = "First",
+                    Title = "Test",
+                }
+            };
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[Name,Child]"));
+            result.ShouldNotBeNull();
+
+            var mappedEntity = result as Dictionary<string, object>;
+            mappedEntity.ShouldNotBeNull();
+
+            mappedEntity["Name"].ShouldBe(nameof(BlindExpansion));
+            mappedEntity.ContainsKey("Title").ShouldBeFalse();
+            mappedEntity["Child"].ShouldNotBeNull();
+            mappedEntity["Child"].ShouldBe("Hello World");
+        }
+
         // Blind expanding a string should fail
         [TestMethod]
         public void BlindExpansionString()

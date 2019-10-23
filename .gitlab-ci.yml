@@ -159,6 +159,7 @@ package:
     - .nuget
  only:
   - master
+  - BlindHandler
  tags:
   - x86
  artifacts:
@@ -178,6 +179,34 @@ package:
 #Publish internal nuget package
 nugetInternal:
     stage: deployment
+    environment:
+        name: internal_popcorn_nuget
+        url: https://nuget.skywardapps.us/packages/Skyward.Api.Popcorn
+    image: microsoft/dotnet:2.1-sdk
+    cache:
+      key: linux-build
+      paths:
+        - /root/.local/share/NuGet/Cache
+        - /root/.nuget/packages
+        - .nuget
+    when: manual
+    allow_failure: true
+    only:
+        - master
+        - BlindHandler
+    tags:
+        - x86
+    script:
+    - cd dotnet
+    - cd publish
+    - for fileName in *.nupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
+    - for fileName in *.snupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
+
+nugetExternal:
+    stage: deployment
+    environment:
+        name: public_popcorn_nuget
+        url: https://www.nuget.org/packages/Skyward.Api.Popcorn
     image: microsoft/dotnet:2.1-sdk
     cache:
       key: linux-build
@@ -194,5 +223,5 @@ nugetInternal:
     script:
     - cd dotnet
     - cd publish
-    - for fileName in *.nupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
-    - for fileName in *.snupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
+    - for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://www.nuget.org/api/v2/package ${fileName} || :; done
+    - for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://www.nuget.org/api/v2/package ${fileName} || :; done
