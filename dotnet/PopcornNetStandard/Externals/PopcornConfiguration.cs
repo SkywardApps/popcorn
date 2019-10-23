@@ -146,6 +146,13 @@ namespace Skyward.Popcorn
             return this;
         }
 
+        /// <summary>
+        /// Register a handler to translate from an input type (or a type assignable to that) to an output type.
+        /// </summary>
+        /// <typeparam name="TInput">The type or interface to handle.</typeparam>
+        /// <typeparam name="TOutput">The output format. This is mainly used for collections to create the appropriate generic collection output type.</typeparam>
+        /// <param name="handler">The handler -- must take in the input object (which may be a subclass or concrete implementation) and return a form of the output type.</param>
+        /// <returns>The original configuration to continue chaining requests.</returns>
         public PopcornConfiguration BlindHandler<TInput,TOutput>(Func<TInput, ContextType, TOutput> handler)
         {
             _expander.BlindHandlers.Add(typeof(TInput), new Tuple<Type, Func<object, ContextType, object>>(typeof(TOutput), (src, context) => handler((TInput)src, context)));
