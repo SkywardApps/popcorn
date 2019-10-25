@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Skyward.Popcorn
 {
@@ -38,7 +39,6 @@ namespace Skyward.Popcorn
                 Binder = serializer.Binder,
                 SerializationBinder = serializer.SerializationBinder,
                 Error = serializer.Error,
-                Converters = serializer.Converters,
                 ReferenceResolverProvider = serializer.ReferenceResolverProvider
             };
             foreach (var converter in serializer.Converters)
