@@ -151,6 +151,10 @@ namespace Skyward.Popcorn
                     context.HttpContext.Response.StatusCode = 500;
                 }
             }
+            else
+            {
+                return;
+            }
 
             // Apply our inspector to the expanded content
             if (_inspector != null)
