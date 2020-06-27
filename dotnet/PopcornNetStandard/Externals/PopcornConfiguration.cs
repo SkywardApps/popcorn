@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -18,6 +19,9 @@ namespace Skyward.Popcorn
         public Func<object, object, Exception, object> Inspector { get; private set; }
 
         public bool ApplyToAllEndpoints { get; private set; } = true;
+
+        public JsonSerializerSettings JsonOptions { get; private set; }
+        public IServiceProvider ServiceProvider { get; private set;}
 
         /// <summary>
         /// Designate the context for this target
@@ -66,6 +70,18 @@ namespace Skyward.Popcorn
         public PopcornConfiguration SetOptIn()
         {
             ApplyToAllEndpoints = false;
+            return this;
+        }
+
+        public PopcornConfiguration SetJsonOptions(JsonSerializerSettings settings)
+        {
+            JsonOptions = settings;
+            return this;
+        }
+
+        public PopcornConfiguration SetServiceProvider(IServiceProvider provider)
+        {
+            ServiceProvider = provider;
             return this;
         }
 
@@ -127,6 +143,19 @@ namespace Skyward.Popcorn
             if (config != null)
                 config(mappingConfiguration);
 
+            return this;
+        }
+
+        /// <summary>
+        /// Register a handler to translate from an input type (or a type assignable to that) to an output type.
+        /// </summary>
+        /// <typeparam name="TInput">The type or interface to handle.</typeparam>
+        /// <typeparam name="TOutput">The output format. This is mainly used for collections to create the appropriate generic collection output type.</typeparam>
+        /// <param name="handler">The handler -- must take in the input object (which may be a subclass or concrete implementation) and return a form of the output type.</param>
+        /// <returns>The original configuration to continue chaining requests.</returns>
+        public PopcornConfiguration BlindHandler<TInput,TOutput>(Func<TInput, ContextType, TOutput> handler)
+        {
+            _expander.BlindHandlers.Add(typeof(TInput), new Tuple<Type, Func<object, ContextType, object>>(typeof(TOutput), (src, context) => handler((TInput)src, context)));
             return this;
         }
 

@@ -13,7 +13,13 @@ stages:
 # Build all three projects, minus the Net Framework project as it is windows/mono dependent.
 build:
  stage: build
- image: onsitedashboard:build
+ image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  script: 
   - cd dotnet/PopcornNetStandard
   - dotnet restore
@@ -30,7 +36,13 @@ build:
 # Running the example test integration tests
 popcornstandard_integrationtest:
  stage: test
- image: onsitedashboard:build
+ image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  script: 
   - cd dotnet/Tests/PopcornNetCoreExampleIntegrationTest
   - dotnet restore
@@ -41,96 +53,94 @@ popcornstandard_integrationtest:
 # Running the standard library tests
 popcornstandard_unittest:
  stage: test
- image: onsitedashboard:build
+ image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
  script: 
   - cd dotnet/Tests/PopcornNetStandardTest
   - dotnet restore
   - dotnet test
  tags:
   - x86
+    
+  
+# Create internal nuget package
+package:
+ stage: build
+ image: microsoft/dotnet:2.1-sdk
+ cache:
+  key: linux-build
+  paths:
+    - /root/.local/share/NuGet/Cache
+    - /root/.nuget/packages
+    - .nuget
+ only:
+  - master
+ tags:
+  - x86
+ artifacts:
+  when: always
+  paths:
+   - dotnet/publish
+ script:
+  # This assumes that Debug is the correct build to publish
+  - cd dotnet
+  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard/PopcornNetStandard.csproj
+  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
+  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
+  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
+  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
 
-# Updating documentation on confluence markdowns within the project
-documentation:
- stage: uploadresults
- image: onsitedashboard:build
- only: 
-  - master
- before_script:
-  - mkdir -p ~/.ssh
-  # Sadly Gitlab mangles these secret variables by prepending a space on susequent lines
-  - echo $MarkdownConfluenceCORE_pk | tr '.' '\n' >~/.ssh/id_rsa
-  - chmod 600 ~/.ssh/id_rsa
-  - ssh-keyscan -t rsa khan.skywardapps.us >>~/.ssh/known_hosts
- script: 
-  # Pull down the connector project to connect results to TP
-  - git clone git@khan.skywardapps.us:internal/markdown-confluence.git
-  - cd markdown-confluence/MarkdownUploaderCore
-  - dotnet restore
-  - dotnet build
-  # Run with the hardcoded project id as this will always be OnsiteDashboard
-  - cd ../..
-  - dotnet run --project markdown-confluence/MarkdownUploaderCore/MarkdownUploaderCore.csproj
- tags:
-  - x86
-  
-# Create an instance of this server.
-# Also publish relevant nuget packages
-nugetPopcornStandard:
- stage: deployment
- image: onsitedashboard:build
- when: manual
- allow_failure: true
- only:
-  - master
-  - alpha
-  - beta
-  - production
- script:
-  - cd dotnet/PopcornNetStandard
-  - dotnet restore
-  - dotnet build -c Release
-  - cd ../Build/Release
-  - ls
-  - dotnet nuget push Skyward.Api.Popcorn.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
- tags:
-  - x86
-  
-nugetPopcornEFCore:
- stage: deployment
- image: onsitedashboard:build
- when: manual
- allow_failure: true
- only:
-  - master
-  - alpha
-  - beta
-  - production
- script:
-  - cd dotnet/PopcornNetStandard.EntityFrameworkCore
-  - dotnet restore
-  - dotnet build -c Release
-  - cd ../Build/Release
-  - ls
-  - dotnet nuget push Skyward.Api.Popcorn.EntityFrameworkCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
- tags:
-  - x86
-  
-nugetPopcornWebApiCore:
- stage: deployment
- image: onsitedashboard:build
- when: manual
- allow_failure: true
- only:
-  - master
-  - alpha
-  - beta
-  - production
- script:
-  - cd dotnet/PopcornNetStandard.WebApiCore
-  - dotnet restore
-  - dotnet build -c Release
-  - cd ../Build/Release
-  - ls
-  - dotnet nuget push Skyward.Api.Popcorn.WebApiCore.*.nupkg -k $NugetApiKey -s https://www.nuget.org/api/v2/package
- tags:
-  - x86
+#Publish internal nuget package
+nugetInternal:
+    stage: deployment
+    environment:
+        name: internal_popcorn_nuget
+        url: https://nuget.skywardapps.us/packages/Skyward.Api.Popcorn
+    image: microsoft/dotnet:2.1-sdk
+    cache:
+      key: linux-build
+      paths:
+        - /root/.local/share/NuGet/Cache
+        - /root/.nuget/packages
+        - .nuget
+    when: manual
+    allow_failure: true
+    only:
+        - master
+    tags:
+        - x86
+    script:
+    - cd dotnet
+    - cd publish
+    - for fileName in *.nupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
+    - for fileName in *.snupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
+
+nugetExternal:
+    stage: deployment
+    environment:
+        name: public_popcorn_nuget
+        url: https://www.nuget.org/packages/Skyward.Api.Popcorn
+    image: microsoft/dotnet:2.1-sdk
+    cache:
+      key: linux-build
+      paths:
+        - /root/.local/share/NuGet/Cache
+        - /root/.nuget/packages
+        - .nuget
+    when: manual
+    allow_failure: true
+    only:
+        - master
+    tags:
+        - x86
+    script:
+    - cd dotnet
+    - cd publish
+    - for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
+    - for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done

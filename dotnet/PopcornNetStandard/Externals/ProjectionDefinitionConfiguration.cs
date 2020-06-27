@@ -122,6 +122,17 @@ namespace Skyward.Popcorn
         }
 
         /// <summary>
+        /// Assign a function-equivalent that handles the entire projection
+        /// </summary>
+        /// <param name="handler"></param>
+        /// <returns></returns>
+        public ProjectionDefinitionConfiguration<TSourceType, TDestType> Handle(Func<object, IEnumerable<PropertyReference>, ContextType, MappingDefinition, ProjectionDefinition, object> handler)
+        {
+            InternalProjectionDefinition.Handler = handler;
+            return this;
+        }
+
+        /// <summary>
         /// Add an alternative mapping destination type, and provide the opportunity to customize that.
         /// </summary>
         /// <typeparam name="TNewDestType"></typeparam>
@@ -146,6 +157,9 @@ namespace Skyward.Popcorn
             };
 
             InternalMappingDefinition.Destinations.Add(typeof(TNewDestType), newMapping.InternalProjectionDefinition);
+
+            if (config != null)
+                config(newMapping);
 
             return newMapping;
         }

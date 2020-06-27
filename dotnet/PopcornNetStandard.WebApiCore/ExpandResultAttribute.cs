@@ -4,38 +4,64 @@ using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Skyward.Popcorn
 {
     public class ExpandActionFilter : IActionFilter
     {
-        Expander _expander;
-        Dictionary<string, object> _context;
-        Func<object, object, Exception, object> _inspector;
-        bool _expandAllEndpoints;
+        private readonly Expander _expander;
+        private readonly Dictionary<string, object> _context;
+        private readonly Func<object, object, Exception, object> _inspector;
+        private readonly bool _expandAllEndpoints;
+        private readonly JsonSerializerSettings _jsonOptions;
+        private readonly IServiceProvider _serviceProvider;
 
-
-        public ExpandActionFilter(Expander expander, Dictionary<string, object> expandContext, Func<object, object, Exception, object> inspector, bool expandAll) :
+        public ExpandActionFilter(Expander expander, Dictionary<string, object> expandContext, Func<object, object, Exception, object> inspector, bool expandAll, JsonSerializerSettings jsonOptions = null, IServiceProvider serviceProvider = null) :
             base()
         {
             _expander = expander;
             _context = expandContext;
             _inspector = inspector;
             _expandAllEndpoints = expandAll;
+            _serviceProvider = serviceProvider;
+
+            JsonSerializerSettings settings = new JsonSerializerSettings();
+            // if explicit settings are provided, use them
+            if (jsonOptions != null)
+            {
+                settings = jsonOptions.DeepCopy();
+            }
+
+            // otherwise if we got a service provider, try to find it
+            else if (serviceProvider != null)
+            {
+                settings = serviceProvider?
+                    .GetService<IOptions<MvcJsonOptions>>()?
+                    .Value?
+                    .SerializerSettings ?? settings;
+            }
+
+            // Make sure these settings ignore nulls
+            settings.NullValueHandling = NullValueHandling.Ignore;
+            _jsonOptions = settings;
         }
 
         public void OnActionExecuted(ActionExecutedContext context)
         {
             Exception exceptionResult = null;
             object resultObject = null;
+            Type destinationType = null;
+
+
+            var filterDescriptor = context
+                .ActionDescriptor
+                .FilterDescriptors
+                .SingleOrDefault(d => d.Filter.GetType() == typeof(ExpandResultAttribute));
 
             if (!_expandAllEndpoints)
             {
-                var filterDescriptor = context
-                    .ActionDescriptor
-                    .FilterDescriptors
-                    .SingleOrDefault(d => d.Filter.GetType() == typeof(ExpandResultAttribute));
-
                 //Cast the filter property to ExpandResultAttribute
                 var attributeInstance = filterDescriptor?.Filter as ExpandResultAttribute;
 
@@ -44,6 +70,11 @@ namespace Skyward.Popcorn
                 {
                     return;
                 }
+            }
+
+            if (filterDescriptor != null)
+            {
+                destinationType = ((ExpandResultAttribute)filterDescriptor.Filter).DestinationType;
             }
 
             var doNotExpandAttribute = context
@@ -85,7 +116,7 @@ namespace Skyward.Popcorn
                         }
 
                         // Use our expander and expand the object
-                        resultObject = _expander.Expand(resultObject, _context, PropertyReference.Parse(includes));
+                        resultObject = _expander.Expand(resultObject, _context, PropertyReference.Parse(includes), destinationTypeHint: destinationType);
                     }
 
                     // Sort should there be anything to sort
@@ -120,6 +151,10 @@ namespace Skyward.Popcorn
                     context.HttpContext.Response.StatusCode = 500;
                 }
             }
+            else
+            {
+                return;
+            }
 
             // Apply our inspector to the expanded content
             if (_inspector != null)
@@ -131,12 +166,7 @@ namespace Skyward.Popcorn
                 throw exceptionResult;
             }
 
-            context.Result = new JsonResult(resultObject,
-                new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore
-                });
-
+            context.Result = new JsonResult(resultObject, _jsonOptions);
         }
 
         public void OnActionExecuting(ActionExecutingContext context)
@@ -149,7 +179,6 @@ namespace Skyward.Popcorn
     /// </summary>
     public class ExpandResultAttribute : ActionFilterAttribute
     {
-        public bool ShouldExpand { get; private set; }
         /// <summary>
         /// Apply this attribute to specify whether a result is to always expand or never expand
         /// </summary>
@@ -158,6 +187,15 @@ namespace Skyward.Popcorn
         {
             ShouldExpand = shouldExpand;
         }
+
+        public ExpandResultAttribute(Type destinationType)
+        {
+            DestinationType = destinationType;
+            ShouldExpand = true;
+        }
+
+        public Type DestinationType { get; private set; }
+        public bool ShouldExpand { get; private set; }
     }
 
     /// <summary>
@@ -193,8 +231,10 @@ namespace Skyward.Popcorn
                 configure(configuration);
             }
 
+            expander.ServiceProvider = configuration.ServiceProvider;
+
             // Assign a global expander that'll run on all endpoints
-            options.Filters.Add(new ExpandActionFilter(expander, configuration.Context, configuration.Inspector, configuration.ApplyToAllEndpoints));
+            options.Filters.Add(new ExpandActionFilter(expander, configuration.Context, configuration.Inspector, configuration.ApplyToAllEndpoints, configuration.JsonOptions, configuration.ServiceProvider));
         }
     }
 }

@@ -42,8 +42,6 @@ namespace CommonIntegrationTest
 
             // Assert the error throws appropriately and has the correct error code
             json.Success.ShouldBeFalse();
-            json.ErrorCode.ShouldBe(typeof(ArgumentException).FullName);
-            json.ErrorMessage.ShouldBe("At least one object must implement IComparable.");
         }
 
         // Sorting based on a non-existent property throws an error

@@ -42,7 +42,7 @@ namespace CommonIntegrationTest
         [TestMethod]
         public async Task MappedObjectBlind()
         {
-            var response = await TestSetup.Client.GetAsync(Utilities.businessesRelUrl);
+            var response = await TestSetup.Client.GetAsync(Utilities.businessesRelUrl + "?include=[Name,StreetAddress,ZipCode,Employees]");
 
             // convert the response
             string responseBody = await response.Content.ReadAsStringAsync();

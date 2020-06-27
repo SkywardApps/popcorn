@@ -1,4 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
+using NodaTime;
 using Shouldly;
 using Skyward.Popcorn;
 using System;
@@ -239,11 +242,26 @@ namespace PopcornNetStandardTest
             public string ContextString { get; set; }
         }
 
-        public class NonMappedType
+        public class NonMappedType : INonMappedType
         {
             public string Name { get; set; }
             public string Title { get; set; }
             public List<NonMappedType> Children { get; set; }
+
+        }
+
+        public class MethodMapping
+        {
+            public string NoParameter() { return "NoParameter"; }
+            public string OneBuiltInType(string param) { return param; }
+            public string OneValueType(int param) { return $"OneValueType {param}"; }
+            public string TwoComplexObjects(IDictionary<string, string> dictionary, IEnumerable<string> list) { return $"TwoComplexObjects {dictionary.Count()} {list.Count()}"; }
+        }
+
+        public class TimeWrapper
+        {
+            public Instant Instant { get; set; }
+            public DateTime DateTime { get; set; }
         }
 
         Expander _expander;
@@ -267,6 +285,31 @@ namespace PopcornNetStandardTest
             config.Map<InternalObjectValues, InternalObjectValuesProjection>();
             config.AssignFactory<EntityFromFactoryProjection>(() => new EntityFromFactoryProjection { ShouldBeEmpty = "Generated" });
             config.AssignFactory<EntityFromContextBasedFactoryProjection>((context) => new EntityFromContextBasedFactoryProjection{ ContextString = context["DefaultString"] as string, MappedString = context["DefaultString"] as string });
+            config.Map<Instant, string>(config: definition => {
+                definition.Handle((source, includes, context, map, projector) => {
+                    return ((Instant)source).ToString("yyyy-MM-dd HH:mm:ss", null);
+                });
+            });
+            config.Map<DateTime, string>(config: definition => {
+                definition.Handle((source, includes, context, map, projector) => {
+                    return ((DateTime)source).ToString("s", null);
+                });
+            });
+        }
+
+        [TestMethod]
+        public void Handlers()
+        {
+            var source = new TimeWrapper {
+                Instant = Instant.FromUtc(1980, 5, 1, 3, 53, 6),
+                DateTime = new DateTime(1981, 6, 2, 4, 54, 7)
+            };
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var result = _expander.Expand(source);
+            result.ShouldNotBeNull();
+            var resultDictionary = (Dictionary<string, object>)result;
+            resultDictionary["Instant"].ShouldBe("1980-05-01 03:53:06");
+            resultDictionary["DateTime"].ShouldBe("1981-06-02T04:54:07");
         }
 
         [TestMethod]
@@ -326,6 +369,36 @@ namespace PopcornNetStandardTest
             projection.Upconvert.ShouldBeNull();
             projection.ValueFromTranslator.ShouldBeNull();
             projection.Downconvert.ShouldBeNull();
+        }
+
+        [TestMethod]
+        public void TestMethodMappingWithServiceProvider()
+        {
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddScoped<string>((context) => "String");
+            serviceCollection.AddScoped<IDictionary<string, string>>((context) => new Dictionary<string, string> {
+                ["One"] = "One",
+                ["Two"] = "Two"
+            });
+            serviceCollection.AddScoped<IEnumerable<string>>((context) => new List<string> { });
+
+            var expanderConfig = new PopcornConfiguration(_expander)
+                .EnableBlindExpansion(true);
+            _expander.ServiceProvider = serviceCollection.BuildServiceProvider();
+
+
+            var originalObject = new MethodMapping();
+
+            object result = _expander.Expand(
+                originalObject,
+                null, 
+                PropertyReference.Parse($"[{nameof(MethodMapping.NoParameter)},{nameof(MethodMapping.OneBuiltInType)},{nameof(MethodMapping.TwoComplexObjects)}]"));
+            result.ShouldNotBeNull();
+
+            var data = result as Dictionary<string, object>;
+            data["NoParameter"].ShouldBe("NoParameter");
+            data["OneBuiltInType"].ShouldBe("String");
+            data["TwoComplexObjects"].ShouldBe("TwoComplexObjects 2 0");
         }
 
         [TestMethod]
@@ -1546,6 +1619,143 @@ namespace PopcornNetStandardTest
             children.Count(c => c.ContainsKey("Title") && (string)c["Title"] == "Test").ShouldBe(3);
         }
 
+
+        // Blind expansion with a specific handler for a type
+        // This can be helpful in preparation for serializing 
+        [TestMethod]
+        public void BlindExpansionHandlerTopLevel()
+        {
+            var config = new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            config.BlindHandler<NonMappedType, string>((input, context) => "Hello World");
+
+            var entity = new NonMappedType
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[Name,Children[Title]]"));
+            result.ShouldNotBeNull();
+            result.ShouldBe("Hello World");
+        }
+
+        [TestMethod]
+        public void BlindExpansionHandlerInterface()
+        {
+            var config = new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            config.BlindHandler<INonMappedType, string>((input, context) => "Hello World");
+
+            var entity = new NonMappedType
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[Name,Children[Title]]"));
+            result.ShouldNotBeNull();
+            result.ShouldBe("Hello World");
+        }
+
+        [TestMethod]
+        public void BlindExpansionHandlerCollection()
+        {
+            var config = new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            config.BlindHandler<NonMappedType, string>((input, context) => "Hello World");
+
+            var entity = new 
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Children = new List<NonMappedType>
+                {
+                    new NonMappedType{
+                        Name = "First",
+                        Title = "Test",
+                    },
+                    new NonMappedType{
+                        Name = "Second",
+                        Title = "Test"
+                    },
+                    new NonMappedType{
+                        Name = "Third",
+                        Title = "Test"
+                    },
+                }
+            };
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[Name,Children[Title]]"));
+            result.ShouldNotBeNull();
+
+            var mappedEntity = result as Dictionary<string, object>;
+            mappedEntity.ShouldNotBeNull();
+
+            mappedEntity["Name"].ShouldBe(nameof(BlindExpansion));
+            mappedEntity.ContainsKey("Title").ShouldBeFalse();
+            mappedEntity["Children"].ShouldNotBeNull();
+            var children = (mappedEntity["Children"] as IList).Cast<object>();
+            children.All(child => child is string).ShouldBeTrue();
+            children.All(child => (string)child == "Hello World").ShouldBeTrue();
+            children.Count().ShouldBe(3);
+        }
+
+        [TestMethod]
+        public void BlindExpansionHandlerProperty()
+        {
+            var config = new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            config.BlindHandler<NonMappedType, string>((input, context) => "Hello World");
+
+            var entity = new
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test",
+                Child = new NonMappedType {
+                    Name = "First",
+                    Title = "Test",
+                }
+            };
+
+            var result = _expander.Expand(entity, null, PropertyReference.Parse($"[Name,Child]"));
+            result.ShouldNotBeNull();
+
+            var mappedEntity = result as Dictionary<string, object>;
+            mappedEntity.ShouldNotBeNull();
+
+            mappedEntity["Name"].ShouldBe(nameof(BlindExpansion));
+            mappedEntity.ContainsKey("Title").ShouldBeFalse();
+            mappedEntity["Child"].ShouldNotBeNull();
+            mappedEntity["Child"].ShouldBe("Hello World");
+        }
+
         // Blind expanding a string should fail
         [TestMethod]
         public void BlindExpansionString()
@@ -1581,6 +1791,47 @@ namespace PopcornNetStandardTest
             Dictionary<string, string> entity = new Dictionary<string, string>() { { "test", "test" }, { "test2", "test2" } };
             Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
         }
+
+
+        public class SelfReferencingType : IEnumerable<SelfReferencingType>
+        {
+            public IEnumerator<SelfReferencingType> GetEnumerator()
+            {
+                throw new NotImplementedException();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [TestMethod]
+        public void TypeCycle()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var entity = new SelfReferencingType();
+            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
+        }
+
+        // Generic blind expansion of a JObject should succeed
+        [TestMethod]
+        public void BlindExpansionJObject()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            var entity = JsonConvert.DeserializeObject<dynamic>(JsonConvert.SerializeObject(new 
+            {
+                Name = nameof(BlindExpansion),
+                Title = "Test"
+            }));
+
+            var expanded = _expander.Expand(entity, null, PropertyReference.Parse($"[]"));
+            var serialized = JsonConvert.SerializeObject(expanded);
+            var mappedEntity = expanded as Dictionary<string, object>;
+
+            mappedEntity["Name"].ToString().ShouldBe(nameof(BlindExpansion));
+        }
+
 
         // prove that sorting blindly expanded objects is not supported
         [TestMethod]

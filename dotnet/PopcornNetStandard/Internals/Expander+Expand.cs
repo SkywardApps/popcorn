@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +45,10 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         protected bool WillExpandCollection(Type sourceType)
         {
+            var blindAssignment = BlindHandlers.Where(kv => kv.Key.IsAssignableFrom(sourceType)).Select(kv => kv.Value).FirstOrDefault();
+            if (this.ExpandBlindObjects && blindAssignment != null)
+                return false;
+
             // figure out if this is an expandable list, instead
             // Is this a list of items we need to project?
             if (sourceType.GetTypeInfo().GetInterfaces()
@@ -74,6 +79,10 @@ namespace Skyward.Popcorn
         {
             if (!this.ExpandBlindObjects)
                 return false;
+
+            var blindAssignment = BlindHandlers.Where(kv => kv.Key.IsAssignableFrom(sourceType)).Select(kv => kv.Value).FirstOrDefault();
+            if (blindAssignment != null)
+                return true;
 
             return (!WillExpandDirect(sourceType) // False if will expand direct or collection
             && !WillExpandCollection(sourceType) 
@@ -123,8 +132,21 @@ namespace Skyward.Popcorn
                     }
                 }
             }
-            
+
             includes = ConstructIncludes(includes, sourceType, destType);
+
+            if (Mappings.ContainsKey(sourceType)
+                && Mappings[sourceType].Destinations.ContainsKey(destType)
+                && Mappings[sourceType].Destinations[destType].Handler != null)
+            {
+                return Mappings[sourceType].DestinationForType(destType).Handler(source, includes, context, Mappings[sourceType], Mappings[sourceType].DestinationForType(destType));
+            }
+
+
+            if (!includes.Any())
+            {
+                return null;
+            }
 
             // Attempt to create a projection object we'll map the data into
             object destinationObject = CreateObjectInContext(context, sourceType, destType);
@@ -254,12 +276,22 @@ namespace Skyward.Popcorn
         /// <param name="includes"></param>
         /// <param name="visited"></param>
         /// <returns></returns>
-        protected Dictionary<string, object> ExpandBlindObject(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
+        protected object ExpandBlindObject(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
         {
             visited = UniqueVisit(source, visited);
 
             Type sourceType = source.GetType();
+
+            var blindAssignment = BlindHandlers.Where(kv => kv.Key.IsAssignableFrom(sourceType)).Select(kv => kv.Value).FirstOrDefault();
+            if (blindAssignment != null)
+            {
+                return blindAssignment.Item2(source, context);
+            }
+
             includes = ConstructIncludes(includes, sourceType, null);
+
+            if (!includes.Any())
+                return null;
 
             // Attempt to create a projection object we'll map the data into
             var destinationObject = new Dictionary<string, object>();
@@ -305,7 +337,8 @@ namespace Skyward.Popcorn
                     valueToAssign = Expand(valueToAssign, context, propertyReference.Children, visited);
                 }
 
-                destinationObject[propertyName] = valueToAssign;
+                if(valueToAssign != null)
+                    destinationObject[propertyName] = valueToAssign;
             }
 
             // Allow any actions to run after the mapping
@@ -317,6 +350,41 @@ namespace Skyward.Popcorn
             return destinationObject;
         }
 
+
+
+
+        /// <summary>
+        /// Take a complex object, and transfer properties requested into a dictionary
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="context"></param>
+        /// <param name="includes"></param>
+        /// <param name="visited"></param>
+        /// <returns></returns>
+        protected Dictionary<string, object> ExpandJObject(JObject source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
+        {
+            visited = UniqueVisit(source, visited);
+
+            // Attempt to create a projection object we'll map the data into
+            var destinationObject = new Dictionary<string, object>();
+
+            var propertyNames = (includes?.Any() ?? false)
+                ? includes.Select(pr => pr.PropertyName)
+                : ((IEnumerable<KeyValuePair<string, JToken>>)source).Select(kv => kv.Key);
+
+            // Iterate over only the requested properties
+            foreach (var propertyName in propertyNames)
+            {
+                // Transform the input value as needed
+                object valueToAssign = source.Value<JToken>(propertyName);
+
+                destinationObject[propertyName] = valueToAssign;
+            }
+
+            return destinationObject;
+        }
+
+
         /// <summary>
         /// Retrieve a value to be assigned to a property on the projection.
         /// This may mean invoking a translator, retrieving a property, or executing a method.
@@ -326,7 +394,7 @@ namespace Skyward.Popcorn
         /// <param name="propertyName"></param>
         /// <param name="translators"></param>
         /// <returns></returns>
-        private static object GetSourceValue(object source, ContextType context, string propertyName, Dictionary<string, Func<object, ContextType, object>> translators = null)
+        private object GetSourceValue(object source, ContextType context, string propertyName, Dictionary<string, Func<object, ContextType, object>> translators = null)
         {
             object valueToAssign = null;
             Type sourceType = source.GetType();
@@ -371,18 +439,37 @@ namespace Skyward.Popcorn
             // If there's a simple method we can call, invoke it and assign the results
             else if (matchingMethod != null
                 && matchingMethod.ReturnType != null
-                && matchingMethod.ReturnType != typeof(void)
-                && !matchingMethod.GetParameters().Any())
+                && matchingMethod.ReturnType != typeof(void))
             {
-                valueToAssign = matchingMethod.Invoke(source, new object[] { });
+                var parameterList = matchingMethod.GetParameters();
+                if (!parameterList.Any())
+                    valueToAssign = matchingMethod.Invoke(source, new object[] { });
+                else
+                {
+                    List<object> parameterArray = new List<object>();
+                    foreach (var parameter in parameterList)
+                    {
+                        var parameterValue = ServiceProvider.GetService(parameter.ParameterType);
+                        if (parameterValue != null)
+                            parameterArray.Add(parameterValue);
+                    }
+
+                    if (parameterArray.Count() == parameterList.Count())
+                    {
+                        valueToAssign = matchingMethod.Invoke(source, parameterArray.ToArray());
+                    }
+                    else
+                    {
+                        // Couldn't map it, but it was explicitly requested, so throw an error
+                        throw new InvalidCastException(propertyName);
+                    }
+                }
             }
             else
             {
                 // Couldn't map it, but it was explicitly requested, so throw an error
                 throw new InvalidCastException(propertyName);
             }
-
-
 
             return valueToAssign;
         }
@@ -458,17 +545,25 @@ namespace Skyward.Popcorn
             {
                 // in the case of a blind object, default to source properties.  This is a bit dangerous!
                 includes = sourceType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.GetCustomAttributes<IncludeByDefault>().Any())
                     .Select(p => new PropertyReference() { PropertyName = p.Name });
+
+                // If nothing is marked as include by default, get all properties.
+                if (!includes.Any())
+                {
+                    includes = sourceType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                        .Select(p => new PropertyReference() { PropertyName = p.Name });
+                }
             }
 
             // if this doesn't have any includes specified, use the default
-            if (!includes.Any())
+            if (!includes.Any() && Mappings.ContainsKey(sourceType))
             {
                 includes = PropertyReference.Parse(Mappings[sourceType].DestinationForType(destType).DefaultIncludes);
             }
 
             // if this STILL doesn't have any includes, that means include everything
-            if (!includes.Any())
+            if (!includes.Any() && destType != null)
             {
                 includes = destType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
                     .Select(p => new PropertyReference() { PropertyName = p.Name });
@@ -539,11 +634,15 @@ namespace Skyward.Popcorn
 
 
             Type expandedType;
+            var blindAssignment = BlindHandlers.Where(kv => kv.Key.IsAssignableFrom(genericType)).Select(kv => kv.Value).FirstOrDefault();
+
             if (destInterfaceType != null)
                 expandedType = destInterfaceType.GenericTypeArguments[0];
             else if (this.Mappings.ContainsKey(genericType))
                 expandedType = this.Mappings[genericType].DefaultDestinationType;
-            else 
+            else if (this.ExpandBlindObjects && blindAssignment != null)
+                expandedType = blindAssignment.Item1;
+            else
                 expandedType = typeof(Dictionary<string, object>);
 
             // Ok, now we need to try and instantiate the destination type (if it is concrete) or take a guess 
