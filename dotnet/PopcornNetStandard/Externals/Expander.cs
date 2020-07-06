@@ -105,6 +105,8 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         private bool WillExpandTypeInner(Type sourceType)
         {
+            if (WillAssignDirect(sourceType))
+                return true;
 
             // Allow Dictionary<string, object> types without mapping
             if (WillExpandDictionary(sourceType))
@@ -121,6 +123,7 @@ namespace Skyward.Popcorn
 
             if (sourceType == typeof(JObject))
                 return true;
+
 
             return WillExpandBlind(sourceType);
         }
@@ -176,10 +179,22 @@ namespace Skyward.Popcorn
                 if (visited == null)
                     visited = new HashSet<int>();
 
-                // If this is a Dictionary<string,object> (Non-mapped)
-                if(WillExpandDictionary(sourceType) && destinationTypeHint != null)
+                if(WillAssignDirect(sourceType))
                 {
-                    return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
+                    return source;
+                }
+
+                // If this is a Dictionary<string,object> (Non-mapped)
+                if(WillExpandDictionary(sourceType))
+                {
+                    if (destinationTypeHint != null)
+                    {
+                        return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
+                    }
+                    else
+                    {
+                        return ExpandBlindDictionary(source, context, includes, visited);
+                    }
                 }
 
                 // See if this is a directly expandable type (Mapped Type)

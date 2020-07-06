@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -84,12 +85,55 @@ namespace Skyward.Popcorn
             if (blindAssignment != null)
                 return true;
 
-            return (!WillExpandDirect(sourceType) // False if will expand direct or collection
-            && !WillExpandCollection(sourceType) 
-            && sourceType.GetTypeInfo().IsClass // False if a simple type
-            && (!(sourceType.GetTypeInfo().GetInterfaces() // False if the object doesn't have an IEnumerable interface
+            // False if will expand direct or collection
+            if (WillExpandDirect(sourceType))
+                return false;
+
+            if (WillExpandCollection(sourceType))
+                return false;
+
+            if (!sourceType.GetTypeInfo().IsClass) // False if a simple type
+                return false;
+
+
+            if (!(sourceType.GetTypeInfo().GetInterfaces() // True if the object doesn't have an IEnumerable interface
                 .Any(t => t.IsConstructedGenericType
-                    && t.GetGenericTypeDefinition() == typeof(IEnumerable<>)))) );
+                    && t.GetGenericTypeDefinition() == typeof(IEnumerable<>))))
+                return true;
+
+            return false;
+        }
+
+        protected bool WillAssignDirect(Type sourceType)
+        {
+            // To be conservative, we'll only allow this if blind expansion is enabled, since the primary use here is to enable
+            // Collections and Dictionaries to be able to blind expand
+            if (!this.ExpandBlindObjects)
+                return false;
+
+            if (sourceType == typeof(string))
+                return true;
+
+            if (sourceType == typeof(bool))
+                return true;
+
+            switch (Type.GetTypeCode(sourceType))
+            {
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.Decimal:
+                case TypeCode.Double:
+                case TypeCode.Single:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>
@@ -266,6 +310,97 @@ namespace Skyward.Popcorn
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Take a dictionarhy, and transfer properties requested into a dictionary
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="context"></param>
+        /// <param name="includes"></param>
+        /// <param name="visited"></param>
+        /// <returns></returns>
+        protected object ExpandBlindDictionary(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
+        {
+            visited = UniqueVisit(source, visited);
+
+            Type sourceType = source.GetType();
+
+            var blindAssignment = BlindHandlers.Where(kv => kv.Key.IsAssignableFrom(sourceType)).Select(kv => kv.Value).FirstOrDefault();
+            if (blindAssignment != null)
+            {
+                return blindAssignment.Item2(source, context);
+            }
+
+            var input = (IDictionary)source;
+            if (!includes.Any())
+            {
+                var keys = input.Keys.Cast<string>();
+                includes = keys.Select(key => new PropertyReference { PropertyName = key });
+            }
+
+            // Attempt to create a projection object we'll map the data into
+            var destinationObject = new Dictionary<string, object>();
+
+            MappingDefinition mappingDefinition = null;
+
+            // Allow any actions to run ahead of mapping
+            if (Mappings.ContainsKey(sourceType))
+            {
+                foreach (var action in Mappings[sourceType].BeforeExpansion)
+                    action(destinationObject, source, context);
+
+                mappingDefinition = Mappings[source.GetType()];
+            }
+
+            // Iterate over only the requested properties
+            foreach (var propertyReference in includes)
+            {
+                string propertyName = propertyReference.PropertyName;
+
+                if (mappingDefinition != null)
+                {
+                    var preparers = mappingDefinition.PrepareProperties;
+
+                    // See if there's a propertyPreparer
+                    if (preparers.ContainsKey(propertyName))
+                    {
+                        preparers[propertyName](destinationObject, null, source, context);
+                    }
+                }
+
+                // Transform the input value as needed
+                object valueToAssign = input[propertyName];
+
+                var translators = mappingDefinition?.DefaultDestination()?.Translators;
+                // if there's a custom entry for this, it gets first crack
+                if (translators != null && translators.ContainsKey(propertyName))
+                {
+                    valueToAssign = translators[propertyName](source, context);
+                }
+
+                /// If authorization indicates this should not in fact be authorized, skip it
+                if (!AuthorizeValue(source, context, valueToAssign))
+                {
+                    continue;
+                }
+
+                if (WillExpand(valueToAssign))
+                {
+                    valueToAssign = Expand(valueToAssign, context, propertyReference.Children, visited);
+                }
+
+                if (valueToAssign != null)
+                    destinationObject[propertyName] = valueToAssign;
+            }
+
+            // Allow any actions to run after the mapping
+            /// @Todo should this be in reverse order so we have a nested stack style FILO?
+            if (Mappings.ContainsKey(sourceType))
+                foreach (var action in Mappings[sourceType].DefaultDestination().AfterExpansion)
+                    action(destinationObject, source, context);
+
+            return destinationObject;
         }
 
         /// <summary>

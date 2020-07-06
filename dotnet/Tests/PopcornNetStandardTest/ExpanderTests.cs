@@ -1762,7 +1762,8 @@ namespace PopcornNetStandardTest
         {
             new PopcornConfiguration(_expander).EnableBlindExpansion(true);
             string entity = "Test";
-            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
+            var expanded = _expander.Expand(entity, null, PropertyReference.Parse($"[]"));
+            expanded.ShouldBeOfType(typeof(String));
         }
 
         // Blind expanding an int should fail
@@ -1771,7 +1772,8 @@ namespace PopcornNetStandardTest
         {
             new PopcornConfiguration(_expander).EnableBlindExpansion(true);
             int entity = 12;
-            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
+            var expanded = _expander.Expand(entity, null, PropertyReference.Parse($"[]"));
+            expanded.ShouldBeOfType(typeof(int));
         }
 
         // Blind expanding a list should fail
@@ -1780,8 +1782,37 @@ namespace PopcornNetStandardTest
         {
             new PopcornConfiguration(_expander).EnableBlindExpansion(true);
             List<string> entity = new List<string> { "test1", "test2" };
-            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
+            var expanded = _expander.Expand(entity, null, PropertyReference.Parse($"[]"));
+            typeof(IEnumerable).IsAssignableFrom(expanded.GetType()).ShouldBeTrue();
+            var list = ((IEnumerable)expanded);
+            var enumerator = list.GetEnumerator();
+            enumerator.MoveNext().ShouldBeTrue();
+            enumerator.Current.ShouldBe("test1");
+            enumerator.MoveNext().ShouldBeTrue();
+            enumerator.Current.ShouldBe("test2");
+            enumerator.MoveNext().ShouldBeFalse();
         }
+
+
+        // Blind expanding a list should fail
+        [TestMethod]
+        public void BlindExpansionListOfObjects()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            List<object> entity = new List<object> { new { Text1 = "test1" }, new { Text2 = "test2" } };
+            var expanded = _expander.Expand(entity, null, PropertyReference.Parse($"[]"));
+            typeof(IEnumerable).IsAssignableFrom(expanded.GetType()).ShouldBeTrue();
+            var list = ((IEnumerable)expanded);
+            var enumerator = list.GetEnumerator();
+            enumerator.MoveNext().ShouldBeTrue();
+            enumerator.Current.ShouldBeOfType(typeof(Dictionary<string, object>));
+            ((Dictionary<string, object>)enumerator.Current)["Text1"].ShouldBe("test1");
+            enumerator.MoveNext().ShouldBeTrue();
+            enumerator.Current.ShouldBeOfType(typeof(Dictionary<string, object>));
+            ((Dictionary<string, object>)enumerator.Current)["Text2"].ShouldBe("test2");
+            enumerator.MoveNext().ShouldBeFalse();
+        }
+
 
         // Blind expanding a dictionary should fail
         [TestMethod]
@@ -1789,9 +1820,27 @@ namespace PopcornNetStandardTest
         {
             new PopcornConfiguration(_expander).EnableBlindExpansion(true);
             Dictionary<string, string> entity = new Dictionary<string, string>() { { "test", "test" }, { "test2", "test2" } };
-            Assert.ThrowsException<UnknownMappingException>(() => _expander.Expand(entity, null, PropertyReference.Parse($"[]")));
+            var expanded = _expander.Expand(entity, null, PropertyReference.Parse($"[]"));
+            expanded.ShouldBeOfType(typeof(Dictionary<string, object>));
+            var dict = (IDictionary)expanded;
+            dict["test"].ShouldBe("test");
+            dict["test2"].ShouldBe("test2");
         }
 
+        // Blind expanding a dictionary should fail
+        [TestMethod]
+        public void BlindExpansionDictionaryOfObjects()
+        {
+            new PopcornConfiguration(_expander).EnableBlindExpansion(true);
+            Dictionary<string, object> entity = new Dictionary<string, object>() { { "test", new { Text1 = "test" } }, { "test2", new { Text2 = "test2" } } };
+            var expanded = _expander.Expand(entity, null, PropertyReference.Parse($"[]"));
+            expanded.ShouldBeOfType(typeof(Dictionary<string, object>));
+            var dict = (IDictionary)expanded;
+            dict["test"].ShouldBeOfType(typeof(Dictionary<string, object>));
+            ((IDictionary)dict["test"])["Text1"].ShouldBe("test"); 
+            dict["test2"].ShouldBeOfType(typeof(Dictionary<string, object>));
+            ((IDictionary)dict["test2"])["Text2"].ShouldBe("test2");
+        }
 
         public class SelfReferencingType : IEnumerable<SelfReferencingType>
         {
