@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -485,41 +484,6 @@ namespace Skyward.Popcorn
             return destinationObject;
         }
 
-
-
-
-        /// <summary>
-        /// Take a complex object, and transfer properties requested into a dictionary
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="context"></param>
-        /// <param name="includes"></param>
-        /// <param name="visited"></param>
-        /// <returns></returns>
-        protected Dictionary<string, object> ExpandJObject(JObject source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited)
-        {
-            visited = UniqueVisit(source, visited);
-
-            // Attempt to create a projection object we'll map the data into
-            var destinationObject = new Dictionary<string, object>();
-
-            var propertyNames = (includes?.Any() ?? false)
-                ? includes.Select(pr => pr.PropertyName)
-                : ((IEnumerable<KeyValuePair<string, JToken>>)source).Select(kv => kv.Key);
-
-            // Iterate over only the requested properties
-            foreach (var propertyName in propertyNames)
-            {
-                // Transform the input value as needed
-                object valueToAssign = source.Value<JToken>(propertyName);
-
-                destinationObject[propertyName] = valueToAssign;
-            }
-
-            return destinationObject;
-        }
-
-
         /// <summary>
         /// Retrieve a value to be assigned to a property on the projection.
         /// This may mean invoking a translator, retrieving a property, or executing a method.
@@ -681,12 +645,14 @@ namespace Skyward.Popcorn
                 // in the case of a blind object, default to source properties.  This is a bit dangerous!
                 includes = sourceType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
                     .Where(p => p.GetCustomAttributes<IncludeByDefault>().Any())
+                    .Where(p => !p.GetCustomAttributes<InternalOnlyAttribute>().Any())
                     .Select(p => new PropertyReference() { PropertyName = p.Name });
 
                 // If nothing is marked as include by default, get all properties.
                 if (!includes.Any())
                 {
                     includes = sourceType.GetTypeInfo().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                        .Where(p => !p.GetCustomAttributes<InternalOnlyAttribute>().Any())
                         .Select(p => new PropertyReference() { PropertyName = p.Name });
                 }
             }

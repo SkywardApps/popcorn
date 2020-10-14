@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -20,7 +19,6 @@ namespace Skyward.Popcorn
 
         public bool ApplyToAllEndpoints { get; private set; } = true;
 
-        public JsonSerializerSettings JsonOptions { get; private set; }
         public IServiceProvider ServiceProvider { get; private set;}
 
         /// <summary>
@@ -70,12 +68,6 @@ namespace Skyward.Popcorn
         public PopcornConfiguration SetOptIn()
         {
             ApplyToAllEndpoints = false;
-            return this;
-        }
-
-        public PopcornConfiguration SetJsonOptions(JsonSerializerSettings settings)
-        {
-            JsonOptions = settings;
             return this;
         }
 

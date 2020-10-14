@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -82,19 +81,22 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public bool WillExpandType(Type sourceType)
         {
-            var name = sourceType.Name;
-            if (CachedWillExpand.ContainsKey(sourceType))
+            lock (CachedWillExpand)
             {
-                return CachedWillExpand[sourceType];
+                var name = sourceType.Name;
+                if (CachedWillExpand.ContainsKey(sourceType))
+                {
+                    return CachedWillExpand[sourceType];
+                }
+
+                CachedWillExpand[sourceType] = false;
+
+                var willExpand = WillExpandTypeInner(sourceType);
+
+                CachedWillExpand[sourceType] = willExpand;
+
+                return willExpand;
             }
-
-            CachedWillExpand[sourceType] = false;
-
-            var willExpand = WillExpandTypeInner(sourceType);
-
-            CachedWillExpand[sourceType] = willExpand;
-
-            return willExpand;
         }
 
         /// <summary>
@@ -119,9 +121,6 @@ namespace Skyward.Popcorn
                 return true;
 
             if (WillExpandCollection(sourceType))
-                return true;
-
-            if (sourceType == typeof(JObject))
                 return true;
 
 
@@ -207,11 +206,6 @@ namespace Skyward.Popcorn
                 if (WillExpandCollection(sourceType))
                 {
                     return ExpandCollection(source, destinationTypeHint ?? typeof(ArrayList), context, includes, visited);
-                }
-
-                if (sourceType == typeof(JObject))
-                {
-                    return ExpandJObject((JObject)source, context, includes, visited);
                 }
 
                 if (WillExpandBlind(sourceType))
