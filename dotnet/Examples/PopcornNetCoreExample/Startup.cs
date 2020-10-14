@@ -68,7 +68,6 @@ namespace PopcornNetCoreExample
                             ["defaultEmployment"] = EmploymentType.Employed,
                             ["activeUser"] = userContext.user
                         })
-                        .SetJsonOptions(services.BuildServiceProvider().GetService<IOptions<MvcJsonOptions>>().Value.SerializerSettings)
                         .Authorize<Car>((source, context, value) => {
                             return value.User == (string)context["activeUser"];
                         });

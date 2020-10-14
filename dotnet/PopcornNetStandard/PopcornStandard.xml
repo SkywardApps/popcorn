@@ -38,6 +38,15 @@
         <member name="M:Skyward.Popcorn.Expander.WillExpandType(System.Type)">
             <summary>
             Query whether or not a particular type is either a Mapped type or a collection of a Mapped type.
+            This references a cache for quicker answers.
+            </summary>
+            <param name="sourceType"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.WillExpandTypeInner(System.Type)">
+            <summary>
+            Query whether or not a particular type is either a Mapped type or a collection of a Mapped type.
+            This bypasses the cache, although inner lookups may still use the cache.
             </summary>
             <param name="sourceType"></param>
             <returns></returns>
@@ -140,6 +149,16 @@
             <param name="context"></param>
             <param name="valueToAssign"></param>
             <returns>True if authorized, false if rejected</returns>
+        </member>
+        <member name="M:Skyward.Popcorn.Expander.ExpandBlindDictionary(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
+            <summary>
+            Take a dictionarhy, and transfer properties requested into a dictionary
+            </summary>
+            <param name="source"></param>
+            <param name="context"></param>
+            <param name="includes"></param>
+            <param name="visited"></param>
+            <returns></returns>
         </member>
         <member name="M:Skyward.Popcorn.Expander.ExpandBlindObject(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
             <summary>
@@ -295,6 +314,15 @@
             <param name="config"></param>
             <returns></returns>
         </member>
+        <member name="M:Skyward.Popcorn.PopcornConfiguration.BlindHandler``2(System.Func{``0,System.Collections.Generic.Dictionary{System.String,System.Object},``1})">
+            <summary>
+            Register a handler to translate from an input type (or a type assignable to that) to an output type.
+            </summary>
+            <typeparam name="TInput">The type or interface to handle.</typeparam>
+            <typeparam name="TOutput">The output format. This is mainly used for collections to create the appropriate generic collection output type.</typeparam>
+            <param name="handler">The handler -- must take in the input object (which may be a subclass or concrete implementation) and return a form of the output type.</param>
+            <returns>The original configuration to continue chaining requests.</returns>
+        </member>
         <member name="M:Skyward.Popcorn.PopcornConfiguration.Authorize``1(System.Func{System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},``0,System.Boolean})">
             <summary>
             Attach a function that accepts the source object (if there is one), the context, and the target
@@ -391,6 +419,13 @@
             <param name="action"></param>
             <returns></returns>
         </member>
+        <member name="M:Skyward.Popcorn.ProjectionDefinitionConfiguration`2.Handle(System.Func{System.Object,System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.Dictionary{System.String,System.Object},Skyward.Popcorn.MappingDefinition,Skyward.Popcorn.ProjectionDefinition,System.Object})">
+            <summary>
+            Assign a function-equivalent that handles the entire projection
+            </summary>
+            <param name="handler"></param>
+            <returns></returns>
+        </member>
         <member name="M:Skyward.Popcorn.ProjectionDefinitionConfiguration`2.AlternativeMap``1(System.String,System.Action{Skyward.Popcorn.ProjectionDefinitionConfiguration{`0,``0}})">
             <summary>
             Add an alternative mapping destination type, and provide the opportunity to customize that.
@@ -465,6 +500,31 @@
             </summary>
         </member>
         <member name="P:Skyward.Popcorn.ApiResponse.ErrorDetails">
+            <summary>
+            If the method did not succeed, this may contain additional details for debugging or reporting purposes.
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.ApiResponse`1.Success">
+            <summary>
+                Whether or not the method succeeded.
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.ApiResponse`1.Data">
+            <summary>
+                The generic response object provided on success.
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.ApiResponse`1.ErrorCode">
+            <summary>
+                If the method did not succeed, the type name of the exception.
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.ApiResponse`1.ErrorMessage">
+            <summary>
+                If the method did not succeed, the human-readable message of the error returned.
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.ApiResponse`1.ErrorDetails">
             <summary>
             If the method did not succeed, this may contain additional details for debugging or reporting purposes.
             </summary>
@@ -559,6 +619,11 @@
         <member name="P:Skyward.Popcorn.ProjectionDefinition.DefaultIncludes">
             <summary>
             The list of includes to use if none are explicitly requested
+            </summary>
+        </member>
+        <member name="P:Skyward.Popcorn.ProjectionDefinition.Handler">
+            <summary>
+            A handler that simply executes the projection.  Useful if the result isn't a complex object.
             </summary>
         </member>
         <member name="T:Skyward.Popcorn.MultipleDefaultsException">

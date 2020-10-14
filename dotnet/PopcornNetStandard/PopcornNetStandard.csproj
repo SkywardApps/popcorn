@@ -7,7 +7,7 @@
     <Authors>Skyward App Company, LLC</Authors>
     <Description>Object dynamic filtering and expansion</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Expose an ApiResponse type with a generic Data property.</PackageReleaseNotes>
+    <PackageReleaseNotes>Support for .Net Core 3.1</PackageReleaseNotes>
     <Copyright>Copyright 2018 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
     <PackageTags>api rest</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -15,7 +15,7 @@
     <PackageLicenseUrl></PackageLicenseUrl>
     <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
-    <Version>5.0.0</Version>
+    <Version>6.0.0</Version>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
@@ -29,7 +29,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
     <PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
     <PackageReference Include="System.Reflection" Version="4.3.0" />
