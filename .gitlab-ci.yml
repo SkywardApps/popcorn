@@ -53,7 +53,7 @@ popcornstandard_integrationtest:
 # Running the standard library tests
 popcornstandard_unittest:
  stage: test
- image: microsoft/dotnet:3.1-sdk
+ image: mcr.microsoft.com/dotnet/core/sdk:3.1
  cache:
   key: linux-build
   paths:
