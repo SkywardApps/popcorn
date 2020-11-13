@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Skyward.Popcorn
 {
@@ -12,14 +14,16 @@ namespace Skyward.Popcorn
         private readonly Dictionary<string, object> _context;
         private readonly Func<object, object, Exception, object> _inspector;
         private readonly bool _expandAllEndpoints;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ExpandActionFilter(Expander expander, Dictionary<string, object> expandContext, Func<object, object, Exception, object> inspector, bool expandAll) :
+        public ExpandActionFilter(Expander expander, Dictionary<string, object> expandContext, Func<object, object, Exception, object> inspector, bool expandAll, IServiceProvider serviceProvider = null) :
             base()
         {
             _expander = expander;
             _context = expandContext;
             _inspector = inspector;
             _expandAllEndpoints = expandAll;
+            _serviceProvider = serviceProvider;
         }
 
         public void OnActionExecuted(ActionExecutedContext context)
@@ -200,12 +204,15 @@ namespace Skyward.Popcorn
             var configuration = new PopcornConfiguration(expander);
 
             // optionally configure this expander
-            configure?.Invoke(configuration);
+            if (configure != null)
+            {
+                configure(configuration);
+            }
 
             expander.ServiceProvider = configuration.ServiceProvider;
 
             // Assign a global expander that'll run on all endpoints
-            options.Filters.Add(new ExpandActionFilter(expander, configuration.Context, configuration.Inspector, configuration.ApplyToAllEndpoints));
+            options.Filters.Add(new ExpandActionFilter(expander, configuration.Context, configuration.Inspector, configuration.ApplyToAllEndpoints, configuration.ServiceProvider));
         }
     }
 }
