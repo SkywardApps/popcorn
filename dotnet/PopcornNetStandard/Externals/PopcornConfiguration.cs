@@ -11,11 +11,13 @@ namespace Skyward.Popcorn
     /// </summary>
     public class PopcornConfiguration
     {
-        Expander _expander;
+        private readonly Expander _expander;
+        public PopcornConfiguration() { _expander = new Expander(); }
         public PopcornConfiguration(Expander expander) { _expander = expander; }
 
         public ContextType Context { get; private set; }
         public Func<object, object, Exception, object> Inspector { get; private set; }
+        public Expander Expander => _expander;
 
         public bool ApplyToAllEndpoints { get; private set; } = true;
 

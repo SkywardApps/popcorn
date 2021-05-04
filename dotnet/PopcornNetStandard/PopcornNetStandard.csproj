@@ -7,7 +7,7 @@
     <Authors>Skyward App Company, LLC</Authors>
     <Description>Object dynamic filtering and expansion</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Support for .Net Core 3.1</PackageReleaseNotes>
+    <PackageReleaseNotes>Added scoped context for dependency injection to access the current request.</PackageReleaseNotes>
     <Copyright>Copyright 2018 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
     <PackageTags>api rest</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -15,7 +15,7 @@
     <PackageLicenseUrl></PackageLicenseUrl>
     <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
-    <Version>6.1.1</Version>
+    <Version>6.2.1</Version>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
