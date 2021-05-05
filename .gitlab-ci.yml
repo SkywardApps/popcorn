@@ -113,6 +113,7 @@ nugetInternal:
     allow_failure: true
     only:
         - master
+        - /^spike_/
     tags:
         - x86
     script:
