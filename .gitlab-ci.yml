@@ -80,6 +80,7 @@ package:
     - .nuget
  only:
   - master
+  - /^spike_/
  tags:
   - x86
  artifacts:
