@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -124,6 +125,9 @@ namespace Skyward.Popcorn
                 return true;
 
 
+            if (sourceType == typeof(JObject))
+                return true;
+
             return WillExpandBlind(sourceType);
         }
 
@@ -207,6 +211,12 @@ namespace Skyward.Popcorn
                 {
                     return ExpandCollection(source, destinationTypeHint ?? typeof(ArrayList), context, includes, visited);
                 }
+
+                if (sourceType == typeof(JObject))
+                {
+                    return ExpandJObject((JObject)source, context, includes, visited);
+                }
+
 
                 if (WillExpandBlind(sourceType))
                 {

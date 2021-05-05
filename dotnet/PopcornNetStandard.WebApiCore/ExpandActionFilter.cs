@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Skyward.Popcorn
 {
@@ -24,7 +25,7 @@ namespace Skyward.Popcorn
             _context = expandContext ?? throw new ArgumentNullException(nameof(expandContext));
             _inspector = inspector ?? throw new ArgumentNullException(nameof(inspector));
             _expandAllEndpoints = expandAll;
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _serviceProvider = serviceProvider;
         }
 
         public void OnActionExecuted(ActionExecutedContext context)
@@ -145,7 +146,10 @@ namespace Skyward.Popcorn
                 throw exceptionResult;
             }
 
-            context.Result = new JsonResult(resultObject);
+            context.Result = new JsonResult(resultObject, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
         }
 
         public void OnActionExecuting(ActionExecutingContext context)
