@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>PopcornNet5.WebApi</AssemblyName>
+    <RootNamespace>Popcorn</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>Skyward.Api.Popcorn.WebApi5</PackageId>
+    <Version>6.2.3</Version>
+    <Authors>Skyward App Company, LLC</Authors>
+    <Company>Skyward App Company, LLCSkyward App Company, LLC</Company>
+    <Product>Skyward.Api.Popcorn.WebApi5</Product>
+    <Description>.Net 5 WebApi extensions to Popcorn</Description>
+    <Copyright>Copyright 2021 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
+    <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <PackageTags>api rest</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>..\Build\Debug\</OutputPath>
+    <DocumentationFile>..\Build\Debug\PopcornNet5.WebApi.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>..\Build\Release\</OutputPath>
+    <DocumentationFile>..\Build\Release\PopcornNet5.WebApi.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PopcornNetStandard\PopcornNetStandard.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -170,6 +170,16 @@
             <param name="visited"></param>
             <returns></returns>
         </member>
+        <member name="M:Skyward.Popcorn.Expander.ExpandJObject(Newtonsoft.Json.Linq.JObject,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{Skyward.Popcorn.PropertyReference},System.Collections.Generic.HashSet{System.Int32})">
+            <summary>
+            Take a complex object, and transfer properties requested into a dictionary
+            </summary>
+            <param name="source"></param>
+            <param name="context"></param>
+            <param name="includes"></param>
+            <param name="visited"></param>
+            <returns></returns>
+        </member>
         <member name="M:Skyward.Popcorn.Expander.GetSourceValue(System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.String,System.Collections.Generic.Dictionary{System.String,System.Func{System.Object,System.Collections.Generic.Dictionary{System.String,System.Object},System.Object}})">
             <summary>
             Retrieve a value to be assigned to a property on the projection.

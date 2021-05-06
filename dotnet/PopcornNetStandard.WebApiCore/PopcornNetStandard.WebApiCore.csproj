@@ -4,10 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Popcorn</RootNamespace>
     <PackageId>Skyward.Api.Popcorn.WebApiCore</PackageId>
-    <Version>6.2.2</Version>
+    <Version>6.2.3</Version>
     <Authors>Skyward App Company, LLC</Authors>
     <Company>Skyward App Company, LLC</Company>
-    <Copyright>Copyright 2019 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
+    <Copyright>Copyright 2021 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
     <Description>WebApi extensions to Popcorn</Description>
     <PackageLicenseUrl>https://github.com/SkywardApps/popcorn/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SkywardApps/popcorn</PackageProjectUrl>
