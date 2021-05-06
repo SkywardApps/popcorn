@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace Skyward.Popcorn
 {
@@ -171,10 +172,10 @@ namespace Skyward.Popcorn
                 throw exceptionResult;
             }
 
-            if (resultObject != null)
+            context.Result = new JsonResult(resultObject, new JsonSerializerSettings
             {
-                originalResult.Value = resultObject;
-            }
+                NullValueHandling = NullValueHandling.Ignore
+            });
         }
     }
 }
