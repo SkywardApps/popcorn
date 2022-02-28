@@ -1,7 +1,7 @@
 ﻿# Conversion to .NET 6.0 TODO
 
 * Translators (handle properties)
-* Default includes
+* Default includes, InternalOnly, SubDefault includes, Conditional includes?
 * JObject expansion
 * web api interface
 * Custom Serializer interface?

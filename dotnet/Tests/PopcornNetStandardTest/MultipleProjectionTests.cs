@@ -83,7 +83,6 @@ namespace PopcornNetStandardTest
             public int Field2 { get; set; }
         }
 
-        [ExpandFrom(typeof(ExpandFromClass), "[Field1,Field2]")]
         class ExpandFromClassProjection
         {
             public string Field1 { get; set; }

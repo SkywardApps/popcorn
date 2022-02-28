@@ -115,9 +115,7 @@ namespace Skyward.Popcorn.Abstractions
 
                 if (!_factory._typeConfigurations.ContainsKey(sourceType))
                 {
-                    // Figure out things like default includes, etc
-                    var config = new TypeConfiguration(sourceType);
-
+                    TypeConfiguration config = BuildTypeDefaults(sourceType);
 
                     // Build and assign this type config
                     _factory._typeConfigurations.Add(sourceType, config);
@@ -173,6 +171,45 @@ namespace Skyward.Popcorn.Abstractions
 
                 typeConfiguration.AssignDirect = true;
                 return instance;
+            }
+
+            private static TypeConfiguration BuildTypeDefaults(Type sourceType)
+            {
+                // Figure out things like default includes, etc
+                var config = new TypeConfiguration(sourceType);
+
+                // Loop through each property on an entity to see if anything is declared to IncludeByDefault
+                foreach (PropertyInfo propertyInfo in sourceType.GetTypeInfo().DeclaredProperties)
+                {
+                    var customAttributesOriginal = (Array)propertyInfo.GetCustomAttributes();
+                    if (customAttributesOriginal.Length == 0)
+                    {
+                        // No custom attributes means the next steps can be ignored
+                        continue;
+                    }
+                    else
+                    {
+                        // Circle through the attributes to see if our IncludeByDefault is one of them
+                        foreach (Attribute customAttribute in customAttributesOriginal)
+                        {
+                            var type = customAttribute.GetType();
+                            if (type == typeof(IncludeByDefault))
+                            {
+                                config.DefaultInclude.Add(new PropertyReference { PropertyName = propertyInfo.Name });
+                            }
+                            else if (type == typeof(IncludeAlways))
+                            {
+                                config.AlwaysInclude.Add(propertyInfo.Name);
+                            }
+                            else if (type == typeof(InternalOnly))
+                            {
+                                config.NeverInclude.Add(propertyInfo.Name);
+                            }
+                        }
+                    }
+                }
+
+                return config;
             }
 
 
@@ -237,9 +274,9 @@ namespace Skyward.Popcorn.Abstractions
                 var matchingMethod = sourceType.GetTypeInfo().GetMethod(propertyName, BindingFlags.Instance | BindingFlags.Public);
 
                 // Check if the value is marked as InternalOnly
-                InternalOnlyAttribute[] attributes = new InternalOnlyAttribute[2];
-                attributes[0] = matchingProperty?.GetCustomAttribute<InternalOnlyAttribute>();
-                attributes[1] = matchingMethod?.GetCustomAttribute<InternalOnlyAttribute>();
+                InternalOnly[] attributes = new InternalOnly[2];
+                attributes[0] = matchingProperty?.GetCustomAttribute<InternalOnly>();
+                attributes[1] = matchingMethod?.GetCustomAttribute<InternalOnly>();
 
                 string[] names = new string[2];
                 names[0] = matchingProperty?.Name + " property";

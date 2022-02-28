@@ -8,16 +8,16 @@ namespace Skyward.Popcorn
     /// This attribute is used to mark methods, classes, or properties as unable to be passed to any client by Popcorn
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method |AttributeTargets.Property,AllowMultiple = false, Inherited = true )]
-    public class InternalOnlyAttribute : Attribute
+    public class InternalOnly : Attribute
     {
-        private bool throwException;
+        private readonly bool _throwException;
 
-        public InternalOnlyAttribute(bool throwException = true)
+        public InternalOnly(bool throwException = true)
         {
-            this.throwException = throwException;
+            this._throwException = throwException;
         }
 
-        public bool ThrowException { get { return throwException; } }
+        public bool ThrowException { get { return _throwException; } }
 
     }
 
