@@ -6,8 +6,14 @@
     <members>
         <member name="T:Skyward.Popcorn.ExpandResultAttribute">
             <summary>
-            Apply this attribute to ensure a result is always expanded
+            Apply this attribute to ensure a result is always expanded or optionally pass a boolean specifying behaviour
             </summary>
+        </member>
+        <member name="M:Skyward.Popcorn.ExpandResultAttribute.#ctor(System.Boolean)">
+            <summary>
+            Apply this attribute to specify whether a result is to always expand or never expand
+            </summary>
+            <param name="shouldExpand">Defaults to <c>true</c>. If set to false, result will not be expanded. If passing <c>false</c>, you can also use <seealso cref="T:Skyward.Popcorn.DoNotExpandResultAttribute"/></param>
         </member>
         <member name="T:Skyward.Popcorn.DoNotExpandResultAttribute">
             <summary>
@@ -19,12 +25,10 @@
             Some useful extensions for Web App style configuration
             </summary>
         </member>
-        <member name="M:Skyward.Popcorn.PopcornExtensions.UsePopcorn(Microsoft.AspNetCore.Mvc.MvcOptions,System.Action{Skyward.Popcorn.PopcornConfiguration})">
+        <member name="M:Skyward.Popcorn.PopcornExtensions.UsePopcorn(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{Skyward.Popcorn.Abstractions.PopcornFactory})">
             <summary>
             Configure the AspNet Core MVC options to include an Api Expander.  Allow the caller to configure it with an action.
             </summary>
-            <param name="options"></param>
-            <param name="configure"></param>
         </member>
     </members>
 </doc>

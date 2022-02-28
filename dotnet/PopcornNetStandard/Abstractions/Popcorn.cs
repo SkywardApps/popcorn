@@ -108,11 +108,19 @@ namespace Skyward.Popcorn.Abstractions
 
             public object Expand(Type sourceType, object instance, IReadOnlyList<PropertyReference> includes = null)
             {
+                if (instance == null)
+                {
+                    return null;
+                }
+
                 if (!_factory._typeConfigurations.ContainsKey(sourceType))
                 {
                     // Figure out things like default includes, etc
+                    var config = new TypeConfiguration(sourceType);
+
+
                     // Build and assign this type config
-                    _factory._typeConfigurations.Add(sourceType, new TypeConfiguration(sourceType));
+                    _factory._typeConfigurations.Add(sourceType, config);
                 }
 
                 var typeConfiguration = _factory._typeConfigurations[sourceType];
@@ -122,7 +130,7 @@ namespace Skyward.Popcorn.Abstractions
                 }
 
                 // Figure out the include list
-                Dictionary<string, PropertyReference> includeMap = (includes == null)
+                Dictionary<string, PropertyReference> includeMap = (includes == null || !includes.Any())
                     ? typeConfiguration.DefaultInclude.ToDictionary(kv => kv.PropertyName)
                     : includes.ToDictionary(kv => kv.PropertyName);
 

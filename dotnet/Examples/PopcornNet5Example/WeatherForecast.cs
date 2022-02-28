@@ -14,5 +14,12 @@ namespace PopcornNet5Example
         public string Summary { get; set; }
 
         public IEnumerable<int> Hourly { get; set; }
+
+        public IEnumerable<SubElement?> Elements { get; set; }
+    }
+
+    public class SubElement
+    {
+        public string Name { get; set; }
     }
 }

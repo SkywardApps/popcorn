@@ -37,7 +37,12 @@ namespace PopcornNet5Example.Controllers
                 Summary = Summaries[rng.Next(Summaries.Length)],
                 Hourly = (_popcornAccessor.PropertyReferences == null || _popcornAccessor.PropertyReferences.Any(pr => pr.PropertyName == "Hourly")) 
                     ? Enumerable.Range(1,24).Select(hour => rng.Next(-20, 55))
-                    : null
+                    : null,
+                Elements = rng.Next(3) > 1 ? null : new List<SubElement> {
+                    new SubElement { Name = "first" },
+                    new SubElement { Name = null },
+                    rng.Next(3) > 1 ? new SubElement { Name = "third" } : null
+                }
             })
             .ToArray();
             return range;

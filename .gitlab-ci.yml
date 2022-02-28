@@ -31,7 +31,7 @@ build:
   - x86
 
 # Running the example test integration tests
-popcornstandard_integrationtest:
+.popcornstandard_integrationtest:
  stage: test
  image: mcr.microsoft.com/dotnet/sdk:6.0
  cache:
@@ -48,7 +48,7 @@ popcornstandard_integrationtest:
   - x86
 
 # Running the standard library tests
-popcornstandard_unittest:
+.popcornstandard_unittest:
  stage: test
  image: mcr.microsoft.com/dotnet/sdk:6.0
  cache:
@@ -77,13 +77,13 @@ package:
     - .nuget
  only:
   - master
-  - /^spike_/
+  - /^spike/
  tags:
   - x86
  artifacts:
   when: always
   paths:
-   - dotnet/publish
+   - publish
  script:
   # This assumes that Debug is the correct build to publish
   - cd dotnet
@@ -109,11 +109,10 @@ nugetInternal:
     allow_failure: true
     only:
         - master
-        - /^spike_/
+        - /^spike/
     tags:
         - x86
     script:
-    - cd dotnet
     - cd publish
     - for fileName in *.nupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
     - for fileName in *.snupkg; do dotnet nuget push -s https://nuget.skywardapps.us/v3/index.json ${fileName}; done
@@ -137,7 +136,6 @@ nugetExternal:
     tags:
         - x86
     script:
-    - cd dotnet
     - cd publish
     - for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
     - for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
