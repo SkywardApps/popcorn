@@ -43,17 +43,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tutorials", "Tutorials", "{
 		..\docs\dotnet\DotNetTutorialWildcardIncludes.md = ..\docs\dotnet\DotNetTutorialWildcardIncludes.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExample", "Examples\PopcornNetCoreExample\PopcornNetCoreExample.csproj", "{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}"
-	ProjectSection(ProjectDependencies) = postProject
-		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandard", "PopcornNetStandard\PopcornNetStandard.csproj", "{66944808-E409-4BD8-9ADC-0D0011BB3D73}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreExampleIntegrationTest", "Tests\PopcornNetCoreExampleIntegrationTest\PopcornNetCoreExampleIntegrationTest.csproj", "{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}
-		{07D125F0-3081-4E1A-84EF-E74FED737F55} = {07D125F0-3081-4E1A-84EF-E74FED737F55}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandardTest", "Tests\PopcornNetStandardTest\PopcornNetStandardTest.csproj", "{174D074E-0B02-4CCD-99D1-32377624625A}"
@@ -63,19 +57,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandardTest", "T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandard.WebApiCore", "PopcornNetStandard.WebApiCore\PopcornNetStandard.WebApiCore.csproj", "{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetStandard.EntityFrameworkCore", "PopcornNetStandard.EntityFrameworkCore\PopcornNetStandard.EntityFrameworkCore.csproj", "{07D125F0-3081-4E1A-84EF-E74FED737F55}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Popcorn", "Popcorn", "{9323797C-D1AC-4778-9941-241B7298A0A3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommonIntegrationTest", "Tests\CommonIntegrationTest\CommonIntegrationTest.csproj", "{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExampleModel", "Examples\ExampleModel\ExampleModel.csproj", "{3876002E-5A0A-481E-8DC4-4E65873E4FCA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNetCoreEntityFrameworkCoreTests", "Tests\PopcornNetCoreEntityFrameworkCoreTests\PopcornNetCoreEntityFrameworkCoreTests.csproj", "{A3DD3D19-459B-43A1-9BC3-6D2A8819DC9A}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNet5Example", "Examples\PopcornNet5Example\PopcornNet5Example.csproj", "{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNet5.WebApp", "PopcornNet5.WebApp\PopcornNet5.WebApp.csproj", "{5E867B2D-ECFE-4761-AF80-0F8CD242004B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,10 +71,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{66944808-E409-4BD8-9ADC-0D0011BB3D73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{66944808-E409-4BD8-9ADC-0D0011BB3D73}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66944808-E409-4BD8-9ADC-0D0011BB3D73}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -103,10 +87,6 @@ Global
 		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{07D125F0-3081-4E1A-84EF-E74FED737F55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{07D125F0-3081-4E1A-84EF-E74FED737F55}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{07D125F0-3081-4E1A-84EF-E74FED737F55}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{07D125F0-3081-4E1A-84EF-E74FED737F55}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -115,35 +95,23 @@ Global
 		{3876002E-5A0A-481E-8DC4-4E65873E4FCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3876002E-5A0A-481E-8DC4-4E65873E4FCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3876002E-5A0A-481E-8DC4-4E65873E4FCA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A3DD3D19-459B-43A1-9BC3-6D2A8819DC9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A3DD3D19-459B-43A1-9BC3-6D2A8819DC9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A3DD3D19-459B-43A1-9BC3-6D2A8819DC9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A3DD3D19-459B-43A1-9BC3-6D2A8819DC9A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5E867B2D-ECFE-4761-AF80-0F8CD242004B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5E867B2D-ECFE-4761-AF80-0F8CD242004B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5E867B2D-ECFE-4761-AF80-0F8CD242004B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5E867B2D-ECFE-4761-AF80-0F8CD242004B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1E83E1EE-8F81-4825-92E1-0B905200428D} = {A7EEB6B5-2616-4E2A-BFAA-FE87FF7AD77B}
-		{935DB3E4-ABD0-4E45-9EF7-AAC5714F09C1} = {6927209F-F97B-4039-9702-1544DF636EFB}
 		{66944808-E409-4BD8-9ADC-0D0011BB3D73} = {9323797C-D1AC-4778-9941-241B7298A0A3}
 		{0BA9E4EF-E42C-41DB-8F97-8BCF3A0C7EB0} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
 		{174D074E-0B02-4CCD-99D1-32377624625A} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
 		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {9323797C-D1AC-4778-9941-241B7298A0A3}
-		{07D125F0-3081-4E1A-84EF-E74FED737F55} = {9323797C-D1AC-4778-9941-241B7298A0A3}
 		{3D1DCFCF-DA84-4E6B-B97F-184C0AB31B63} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
 		{3876002E-5A0A-481E-8DC4-4E65873E4FCA} = {6927209F-F97B-4039-9702-1544DF636EFB}
-		{A3DD3D19-459B-43A1-9BC3-6D2A8819DC9A} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
 		{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0} = {6927209F-F97B-4039-9702-1544DF636EFB}
-		{5E867B2D-ECFE-4761-AF80-0F8CD242004B} = {9323797C-D1AC-4778-9941-241B7298A0A3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {667890E8-370A-4157-82AE-C1F63EA834AF}

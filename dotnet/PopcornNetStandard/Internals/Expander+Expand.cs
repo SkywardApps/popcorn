@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,22 +9,12 @@ using System.Runtime.CompilerServices;
 namespace Skyward.Popcorn
 {
     using ContextType = System.Collections.Generic.Dictionary<string, object>;
-
+    /*
     /// <summary>
     /// The expansions algorithms
     /// </summary>
     public partial class Expander
     {
-        /// <summary>
-        /// Query if this is a mapped type
-        /// </summary>
-        /// <param name="sourceType"></param>
-        /// <returns></returns>
-        protected bool WillExpandDirect(Type sourceType)
-        {
-            return (Mappings.ContainsKey(sourceType) && Mappings[sourceType] != null);
-        }
-
         /// <summary>
         /// Query if this is a Dictionary<string, object>
         /// </summary>
@@ -47,7 +36,7 @@ namespace Skyward.Popcorn
         protected bool WillExpandCollection(Type sourceType)
         {
             var blindAssignment = BlindHandlers.Where(kv => kv.Key.IsAssignableFrom(sourceType)).Select(kv => kv.Value).FirstOrDefault();
-            if (this.ExpandBlindObjects && blindAssignment != null)
+            if (blindAssignment != null)
                 return false;
 
             // figure out if this is an expandable list, instead
@@ -78,16 +67,9 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         protected bool WillExpandBlind(Type sourceType)
         {
-            if (!this.ExpandBlindObjects)
-                return false;
-
             var blindAssignment = BlindHandlers.Where(kv => kv.Key.IsAssignableFrom(sourceType)).Select(kv => kv.Value).FirstOrDefault();
             if (blindAssignment != null)
                 return true;
-
-            // False if will expand direct or collection
-            if (WillExpandDirect(sourceType))
-                return false;
 
             if (WillExpandCollection(sourceType))
                 return false;
@@ -106,11 +88,6 @@ namespace Skyward.Popcorn
 
         protected bool WillAssignDirect(Type sourceType)
         {
-            // To be conservative, we'll only allow this if blind expansion is enabled, since the primary use here is to enable
-            // Collections and Dictionaries to be able to blind expand
-            if (!this.ExpandBlindObjects)
-                return false;
-
             if (sourceType == typeof(string))
                 return true;
 
@@ -134,155 +111,6 @@ namespace Skyward.Popcorn
                 default:
                     return false;
             }
-        }
-
-        /// <summary>
-        /// Expand a mapped type
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="context"></param>
-        /// <param name="includes"></param>
-        /// <param name="visited">todo: describe visited parameter on ExpandDirectObject</param>
-        /// <returns></returns>
-        protected object ExpandDirectObject(object source, ContextType context, IEnumerable<PropertyReference> includes, HashSet<int> visited, Type destinationTypeHint)
-        {
-            visited = UniqueVisit(source, visited);
-
-            Type sourceType = source.GetType();
-
-            // Figure out our destination type -- either one was passed in, we get the default, or try blind expansion.
-            // The more complicated scenario is when we do get a type hint, but really we want to project to a derived version
-            Type destType = destinationTypeHint;
-             
-            if(Mappings.ContainsKey(sourceType))
-            {
-                // If we do have a mapping but no type hint was provided, use the default target type
-                if (destType == null)
-                {
-                    destType = Mappings[sourceType].DefaultDestinationType;
-                }
-                // If we have a type hint but it doesn't exist as an explicit destination type, then
-                // we may need to create a derived class that can be assigned to that type instead.
-                // This occurs if for example you use interfaces as your destination properties, or 
-                // polymorphism.  
-                else if(!Mappings[sourceType].Destinations.ContainsKey(destType))
-                {
-                    // Try to find a valid destination type that is something we can actually assign to the 
-                    // requested type hint.
-                    destType = Mappings[sourceType].Destinations.Keys.FirstOrDefault(k => destType.GetTypeInfo().IsAssignableFrom(k));
-                    if(destType == null)
-                    {
-                        throw new InvalidCastException($"Cannot find a mapper from {sourceType} to {destinationTypeHint}");
-                    }
-                }
-            }
-
-            includes = ConstructIncludes(includes, sourceType, destType);
-
-            if (Mappings.ContainsKey(sourceType)
-                && Mappings[sourceType].Destinations.ContainsKey(destType)
-                && Mappings[sourceType].Destinations[destType].Handler != null)
-            {
-                return Mappings[sourceType].DestinationForType(destType).Handler(source, includes, context, Mappings[sourceType], Mappings[sourceType].DestinationForType(destType));
-            }
-
-
-            if (!includes.Any())
-            {
-                return null;
-            }
-
-            // Attempt to create a projection object we'll map the data into
-            object destinationObject = CreateObjectInContext(context, sourceType, destType);
-
-            // If the source is a dictionary we need to go through the keys to match the properties
-            // TODO: Add Recursion for dictionaries that may contain lists of the object within
-            if (sourceType.IsConstructedGenericType && sourceType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-            {
-                var sourceDict = (Dictionary<string, object>)source;
-                PropertyInfo[] properties = destinationObject.GetType().GetTypeInfo().GetProperties();
-
-                foreach (PropertyInfo property in properties)
-                {
-                    if (!sourceDict.Any(x => x.Key.Equals(property.Name, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        continue;
-                    }
-
-                    KeyValuePair<string, object> item = sourceDict.First(x => x.Key.Equals(property.Name, StringComparison.OrdinalIgnoreCase));
-
-                    // Find which property type (int, string, double? etc) the CURRENT property is...
-                    Type propertyType = destinationObject.GetType().GetTypeInfo().GetProperty(property.Name).PropertyType;
-
-                    if (item.Value == null && Nullable.GetUnderlyingType(propertyType) != null)
-                    {
-                        destinationObject.GetType().GetTypeInfo().GetProperty(property.Name).SetValue(destinationObject, null, null);
-                    }
-                    else
-                    {
-                        // Fix nullables...
-                        Type newType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
-
-                        // ...and change the type
-                        object newA = Convert.ChangeType(item.Value, newType);
-                        destinationObject.GetType().GetTypeInfo().GetProperty(property.Name).SetValue(destinationObject, newA, null);
-                    }
-                }
-
-                return destinationObject;
-            }
-
-            // Allow any actions to run ahead of mapping
-            foreach (var action in Mappings[sourceType].BeforeExpansion)
-                action(destinationObject, source, context);
-
-            // Ok, we gots ourselves a conflict.
-            // we try to match the source type to a mapped type
-            var projectionConfiguration = Mappings[sourceType].DestinationForType(destType);
-
-            // Iterate over only the requested properties
-            foreach (var propertyReference in includes)
-            {
-                string propertyName = propertyReference.PropertyName;
-                var translators = projectionConfiguration.Translators;
-                var preparers = Mappings[sourceType].PrepareProperties;
-
-                // if this property doesn't even exist on the destination object, cry about it
-                var destinationProperty = projectionConfiguration.DestinationType.GetTypeInfo().GetProperty(propertyName);
-                if (destinationProperty == null)
-                    throw new ArgumentOutOfRangeException(propertyName);
-
-                // See if there's a propertyPreparer
-                if (preparers.ContainsKey(propertyName))
-                {
-                    preparers[propertyName](destinationObject, destinationProperty, source, context);
-                }
-
-                // Transform the input value as needed
-                var valueToAssign = GetSourceValue(source, context, propertyReference.PropertyName, translators);
-
-
-                /// If authorization indicates this should not in fact be authorized, skip it
-                if (!AuthorizeValue(source, context, valueToAssign))
-                {
-                    continue;
-                }
-                
-                
-                // Attempt to assign the property - this will expand the item if needed
-                if (!SetValueToProperty(valueToAssign, destinationProperty, destinationObject, context, propertyReference, visited))
-                {
-                    // Couldn't map it, but it was explicitly requested, so throw an error
-                    throw new InvalidCastException(propertyReference.PropertyName);
-                }
-            }
-
-            // Allow any actions to run after the mapping
-            /// @Todo should this be in reverse order so we have a nested stack style FILO?
-            foreach (var action in projectionConfiguration.AfterExpansion)
-                action(destinationObject, source, context);
-
-            return destinationObject;
         }
 
         /// <summary>
@@ -342,7 +170,7 @@ namespace Skyward.Popcorn
             // Attempt to create a projection object we'll map the data into
             var destinationObject = new Dictionary<string, object>();
 
-            MappingDefinition mappingDefinition = null;
+            PopcornEntityDefinition mappingDefinition = null;
 
             // Allow any actions to run ahead of mapping
             if (Mappings.ContainsKey(sourceType))
@@ -431,7 +259,7 @@ namespace Skyward.Popcorn
             // Attempt to create a projection object we'll map the data into
             var destinationObject = new Dictionary<string, object>();
 
-            MappingDefinition mappingDefinition = null;
+            PopcornEntityDefinition mappingDefinition = null;
 
             // Allow any actions to run ahead of mapping
             if (Mappings.ContainsKey(sourceType))
@@ -621,7 +449,7 @@ namespace Skyward.Popcorn
             if ((includes.Count() == 1) && (includes.Any(i => i.PropertyName == "*")))
             {
                 var wildCardIncludes = new List<PropertyReference> { };
-                var mapDef = new MappingDefinition();
+                var mapDef = new PopcornEngityDefinition();
 
                 // Check to see if the object is to be blind expanded and make the destination the same as the source if it is
                 if (destType == null)
@@ -871,5 +699,5 @@ namespace Skyward.Popcorn
 
             return propertySubReferences;
         }
-    }
+    }*/
 }

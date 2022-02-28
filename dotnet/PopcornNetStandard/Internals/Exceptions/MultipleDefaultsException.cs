@@ -1,11 +1,10 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace Skyward.Popcorn
 {
-    /// <summary>
-    /// This exception is for defaults being declared in the mapping function and at the attribute level on a projection
-    /// </summary>
-    public class MultipleDefaultsException : Exception
+    [Serializable]
+    internal class MultipleDefaultsException : Exception
     {
         public MultipleDefaultsException()
         {
@@ -16,6 +15,10 @@ namespace Skyward.Popcorn
         }
 
         public MultipleDefaultsException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected MultipleDefaultsException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

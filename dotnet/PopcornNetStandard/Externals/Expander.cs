@@ -1,12 +1,15 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+
+
+
 namespace Skyward.Popcorn
 {
+    /*
     using ContextType = System.Collections.Generic.Dictionary<string, object>;
 
     public enum SortDirection { Unknown, Ascending, Descending }
@@ -15,7 +18,6 @@ namespace Skyward.Popcorn
     {
         Dictionary<Type, MappingDefinition> Mappings { get; }
         Dictionary<Type, Func<ContextType, object>> Factories { get; }
-        bool ExpandBlindObjects { get; set; }
 
     }
 
@@ -42,7 +44,6 @@ namespace Skyward.Popcorn
         internal Dictionary<Type, MappingDefinition> Mappings => ((IExpanderInternalConfiguration)this).Mappings;
         Dictionary<Type, Func<ContextType, object>> IExpanderInternalConfiguration.Factories { get; } = new Dictionary<Type, Func<ContextType, object>>();
         internal Dictionary<Type, Func<ContextType, object>> Factories => ((IExpanderInternalConfiguration)this).Factories;
-        bool IExpanderInternalConfiguration.ExpandBlindObjects { get; set; } = false;
 
         public Dictionary<Type, Tuple<Type, Func<object, ContextType, object>>> BlindHandlers { get; } = new Dictionary<Type, Tuple<Type, Func<object, ContextType, object>>>();
 
@@ -50,11 +51,6 @@ namespace Skyward.Popcorn
         private static Dictionary<Type, bool> CachedWillExpand = new Dictionary<Type, bool>();
 
         public IServiceProvider ServiceProvider { get; set; }
-
-        internal bool ExpandBlindObjects {
-            get => ((IExpanderInternalConfiguration)this).ExpandBlindObjects;
-            set => ((IExpanderInternalConfiguration)this).ExpandBlindObjects = value;
-        }
 
         internal HashSet<Type> BlacklistExpansion = new HashSet<Type>
         {
@@ -118,9 +114,6 @@ namespace Skyward.Popcorn
             if (BlacklistExpansion.Contains(sourceType))
                 return false;
 
-            if (WillExpandDirect(sourceType))
-                return true;
-
             if (WillExpandCollection(sourceType))
                 return true;
 
@@ -136,9 +129,9 @@ namespace Skyward.Popcorn
         /// This will work on either a Mapped Type or a collection of a Mapped Type.
         /// This version allows specification of the includes in string format
         /// </summary>
-        public object Expand(object source, ContextType context, string includes, HashSet<int> visited = null, Type destinationTypeHint = null)
+        public object Expand(object source, ContextType context, string includes, HashSet<int> visited = null)
         {
-            return Expand(source, context, PropertyReference.Parse(includes), visited, destinationTypeHint);
+            return Expand(source, context, PropertyReference.Parse(includes), visited);
         }
 
         /// <summary>
@@ -190,20 +183,7 @@ namespace Skyward.Popcorn
                 // If this is a Dictionary<string,object> (Non-mapped)
                 if(WillExpandDictionary(sourceType))
                 {
-                    if (destinationTypeHint != null)
-                    {
-                        return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
-                    }
-                    else
-                    {
-                        return ExpandBlindDictionary(source, context, includes, visited);
-                    }
-                }
-
-                // See if this is a directly expandable type (Mapped Type)
-                if (WillExpandDirect(sourceType))
-                {
-                    return ExpandDirectObject(source, context, includes, visited, destinationTypeHint);
+                    return ExpandBlindDictionary(source, context, includes, visited);
                 }
 
                 // Otherwise, see if this is a collection of an expandable type
@@ -227,91 +207,5 @@ namespace Skyward.Popcorn
             // Otherwise, the caller requested that we expand a type we have no knowledge of.
             throw new UnknownMappingException(sourceType.ToString());
         }
-
-        /// <summary>
-        /// A generic overload that automatically provides the type hint.
-        /// This accepts a string include list of the form "[Prop1,Prop2[SubProp1]]"
-        /// </summary>
-        /// <typeparam name="TDestType"></typeparam>
-        /// <param name="source"></param>
-        /// <param name="includes"></param>
-        /// <param name="context"></param>
-        /// <param name="visited"></param>
-        /// <returns></returns>
-        public TDestType Expand<TDestType>(object source, string includes, ContextType context = null, HashSet<int> visited = null)
-        {
-            return (TDestType)Expand(source, context, PropertyReference.Parse(includes), visited, typeof(TDestType));
-        }
-
-        /// <summary>
-        /// A generic overload that automatically provides the type hint.
-        /// This optionally accepts a list of PropertyReferences
-        /// </summary>
-        /// <typeparam name="TDestType"></typeparam>
-        /// <param name="source"></param>
-        /// <param name="includes"></param>
-        /// <param name="context"></param>
-        /// <param name="visited"></param>
-        /// <returns></returns>
-        public TDestType Expand<TDestType>(object source, IEnumerable<PropertyReference> includes = null, ContextType context = null, HashSet<int> visited = null)
-        {
-            return (TDestType)Expand(source, context, includes, visited, typeof(TDestType));
-        }
-
-
-        /// <summary>
-        /// The entry point method for sorting an unknown object.
-        /// This will work on either a Mapped Simple Type only.
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="sortTarget">The parameter desired to be sorted on.</param>
-        /// <param name="sortDirection">An enumeration of possible options</param>
-        /// <returns></returns>
-        public object Sort(object source, string sortTarget, SortDirection sortDirection)
-        {
-            if (!(source is IEnumerable))
-                throw new ArgumentException("'source' is not of a type that can be converted to an IEnumerable");
-
-            IEnumerable<object> originalList = (source as IEnumerable).Cast<object>();
-
-            // Make sure that there is more than 1 result so we actually have something to sort
-            if (originalList.Count() <= 1)
-                return source;
-
-            // Start by finding all of the properties on the entity in question
-            TypeInfo typeInfo = originalList.First().GetType().GetTypeInfo();
-            if (typeInfo.DeclaredProperties.FirstOrDefault(values => values.Name.Equals(sortTarget)) == null)
-            {
-                // TODO: Consider making an "invalidSort" error
-                throw new InvalidCastException(sortTarget);
-            }
-
-            // Get the property we actually want to target for sorting
-            var sortProperty = typeInfo.GetProperty(sortTarget);
-
-            // Instantiate a list that allows for easier sorting
-            var sortingList = new List<object> { };
-            foreach (object holder in originalList)
-            {
-                sortingList.Add(holder);
-            }
-
-            switch (sortDirection)
-            {
-                case SortDirection.Unknown:
-                    throw new ArgumentException("Unknown sortDirection");
-                case SortDirection.Ascending:
-                    sortingList = sortingList.OrderBy(i => sortProperty.GetValue(i)).ToList();
-                    break;
-                case SortDirection.Descending:
-                    sortingList = sortingList.OrderByDescending(i => sortProperty.GetValue(i)).ToList();
-                    break;
-            }
-
-            // Reset the original object
-            originalList = sortingList;
-
-            return originalList;
-        }
-    }
+    }*/
 }

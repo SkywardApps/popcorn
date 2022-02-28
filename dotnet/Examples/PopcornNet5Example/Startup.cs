@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Skyward.Popcorn;
+using Skyward.Popcorn.Expanders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,16 +36,11 @@ namespace PopcornNet5Example
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "PopcornNet5Example", Version = "v1" });
             });
 
-            var expander = new Expander();
-
-            services.AddScoped<IPopcornContextAccessor, PopcornContextAccessor>();
-            services.Configure<PopcornConfiguration>((config) =>
-            {
-                config.SetDefaultApiResponseInspector();
-                config.EnableBlindExpansion(true);
-                config.SetOptIn();
+            services.UsePopcorn((config) => {
+                config
+                    .UseDefaultConfiguration();
             });
-            services.AddSingleton<IExpanderService, ExpanderService>();
+
             services.AddControllers(c => c.Filters.Add<ExpandServiceFilter>());
         }
 

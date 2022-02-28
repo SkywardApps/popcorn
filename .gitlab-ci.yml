@@ -13,7 +13,7 @@ stages:
 # Build all three projects, minus the Net Framework project as it is windows/mono dependent.
 build:
  stage: build
- image: microsoft/dotnet:2.2-sdk
+ image: mcr.microsoft.com/dotnet/sdk:6.0
  cache:
   key: linux-build
   paths:
@@ -27,16 +27,13 @@ build:
   - cd ../PopcornNetStandard.WebApiCore
   - dotnet restore
   - dotnet build
-  - cd ../PopcornNetStandard.EntityFrameworkCore
-  - dotnet restore
-  - dotnet build
  tags:
   - x86
 
 # Running the example test integration tests
 popcornstandard_integrationtest:
  stage: test
- image: microsoft/dotnet:2.2-sdk
+ image: mcr.microsoft.com/dotnet/sdk:6.0
  cache:
   key: linux-build
   paths:
@@ -53,7 +50,7 @@ popcornstandard_integrationtest:
 # Running the standard library tests
 popcornstandard_unittest:
  stage: test
- image: mcr.microsoft.com/dotnet/core/sdk:3.1
+ image: mcr.microsoft.com/dotnet/sdk:6.0
  cache:
   key: linux-build
   paths:
@@ -71,7 +68,7 @@ popcornstandard_unittest:
 # Create internal nuget package
 package:
  stage: build
- image: microsoft/dotnet:2.2-sdk
+ image: mcr.microsoft.com/dotnet/sdk:6.0
  cache:
   key: linux-build
   paths:
@@ -91,13 +88,9 @@ package:
   # This assumes that Debug is the correct build to publish
   - cd dotnet
   - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard/PopcornNetStandard.csproj
-  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
   - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
-  - dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNet5.WebApp/PopcornNet5.WebApp.csproj
   - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
-  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.EntityFrameworkCore/PopcornNetStandard.EntityFrameworkCore.csproj
   - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
-  - dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNet5.WebApp/PopcornNet5.WebApp.csproj
 
 #Publish internal nuget package
 nugetInternal:
@@ -105,7 +98,7 @@ nugetInternal:
     environment:
         name: internal_popcorn_nuget
         url: https://nuget.skywardapps.us/packages/Skyward.Api.Popcorn
-    image: microsoft/dotnet:2.1-sdk
+    image: mcr.microsoft.com/dotnet/sdk:6.0
     cache:
       key: linux-build
       paths:
@@ -130,7 +123,7 @@ nugetExternal:
     environment:
         name: public_popcorn_nuget
         url: https://www.nuget.org/packages/Skyward.Api.Popcorn
-    image: microsoft/dotnet:2.1-sdk
+    image: mcr.microsoft.com/dotnet/sdk:6.0
     cache:
       key: linux-build
       paths:

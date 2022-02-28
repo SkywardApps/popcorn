@@ -5,7 +5,7 @@ using System.Reflection;
 namespace Skyward.Popcorn
 {
     using ContextType = System.Collections.Generic.Dictionary<string, object>;
-
+    /*
     /// <summary>
     /// A fluent-api style configuration object for the ApiExpander
     /// </summary>
@@ -89,7 +89,7 @@ namespace Skyward.Popcorn
         /// <returns></returns>
         public PopcornConfiguration Map<TSourceType, TDestType>(
             string defaultIncludes = null, 
-            Action<MappingDefinitionConfiguration<TSourceType, TDestType>> config = null)
+            Action<PopcornEntityConfigurations<TSourceType, TDestType>> config = null)
         {
             var sourceType = typeof(TSourceType);
             var destType = typeof(TDestType);
@@ -98,7 +98,7 @@ namespace Skyward.Popcorn
             var destTypeInfo = typeof(TDestType).GetTypeInfo();
             var parsedDefaultIncludes = (defaultIncludes == null) ? new List<PropertyReference> { } : (List<PropertyReference>)PropertyReference.Parse(defaultIncludes);
             defaultIncludes = PropertyReference.CompareAndConstructDefaultIncludes(parsedDefaultIncludes, destTypeInfo);
-            var mappingConfiguration = new MappingDefinitionConfiguration<TSourceType, TDestType> { };
+            var mappingConfiguration = new PopcornEntityConfigurations<TSourceType, TDestType> { };
 
             // Assign the existing mapping to be configured should it already exist
             if (_expander.Mappings.ContainsKey(sourceType))
@@ -249,5 +249,5 @@ namespace Skyward.Popcorn
 
             return this;
         }
-    }
+    }*/
 }

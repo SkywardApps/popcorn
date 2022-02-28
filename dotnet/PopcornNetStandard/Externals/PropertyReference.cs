@@ -19,7 +19,7 @@ namespace Skyward.Popcorn
         /// <summary>
         /// Any properties to reference on this property's value
         /// </summary>
-        public List<PropertyReference> Children { get; } = new List<PropertyReference>();
+        public List<PropertyReference> Children { get; set;  } = new List<PropertyReference>();
 
         /// <summary>
         /// Helper method to take a string in the format "[name[subname1, subname2, ...],...]" and create a PropertyReference tree out of it.

@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Skyward.Popcorn
-{
+{/*
     using ContextType = Dictionary<string, object>;
 
     /// <summary>
@@ -13,7 +13,7 @@ namespace Skyward.Popcorn
     /// </summary>
     /// <typeparam name="TSourceType"></typeparam>
     /// <typeparam name="TDestType"></typeparam>
-    public class ProjectionDefinitionConfiguration<TSourceType, TDestType>
+    public class ProjectionDefinitionConfiguration<TSourceType>
     {
         internal MappingDefinition InternalMappingDefinition { get; set; }
         internal ProjectionDefinition InternalProjectionDefinition { get; set; }
@@ -26,8 +26,8 @@ namespace Skyward.Popcorn
         /// <param name="memberExpression"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public ProjectionDefinitionConfiguration<TSourceType, TDestType> Translate<TProperty>(
-            Expression<Func<TDestType, TProperty>> memberExpression,
+        public ProjectionDefinitionConfiguration<TSourceType> Translate<TProperty>(
+            Expression<Func<TSourceType, TProperty>> memberExpression,
             Func<TSourceType, ContextType, TProperty> func)
         {
             var member = (memberExpression.Body as MemberExpression);
@@ -35,8 +35,8 @@ namespace Skyward.Popcorn
             return TranslateByName(propertyName, (source, context) => func((TSourceType)source, context));
         }
 
-        public ProjectionDefinitionConfiguration<TSourceType, TDestType> Translate<TProperty>(
-            Expression<Func<TDestType, TProperty>> memberExpression,
+        public ProjectionDefinitionConfiguration<TSourceType> Translate<TProperty>(
+            Expression<Func<TSourceType, TProperty>> memberExpression,
             Func<TSourceType, ContextType, object> func)
         {
             var member = (memberExpression.Body as MemberExpression);
@@ -52,8 +52,8 @@ namespace Skyward.Popcorn
         /// <param name="memberExpression"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public ProjectionDefinitionConfiguration<TSourceType, TDestType> Translate<TProperty>(
-            Expression<Func<TDestType, TProperty>> memberExpression,
+        public ProjectionDefinitionConfiguration<TSourceType> Translate<TProperty>(
+            Expression<Func<TSourceType, TProperty>> memberExpression,
             Func<ContextType, object> func)
         {
             var member = (memberExpression.Body as MemberExpression);
@@ -69,8 +69,8 @@ namespace Skyward.Popcorn
         /// <param name="memberExpression"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public ProjectionDefinitionConfiguration<TSourceType, TDestType> Translate<TProperty>(
-            Expression<Func<TDestType, TProperty>> memberExpression,
+        public ProjectionDefinitionConfiguration<TSourceType> Translate<TProperty>(
+            Expression<Func<TSourceType, TProperty>> memberExpression,
             Func<TSourceType, object> func)
         {
             var member = (memberExpression.Body as MemberExpression);
@@ -86,8 +86,8 @@ namespace Skyward.Popcorn
         /// <param name="memberExpression"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public ProjectionDefinitionConfiguration<TSourceType, TDestType> Translate<TProperty>(
-            Expression<Func<TDestType, TProperty>> memberExpression,
+        public ProjectionDefinitionConfiguration<TSourceType> Translate<TProperty>(
+            Expression<Func<TSourceType, TProperty>> memberExpression,
             Func<object> func)
         {
             var member = (memberExpression.Body as MemberExpression);
@@ -115,7 +115,7 @@ namespace Skyward.Popcorn
         /// </summary>
         /// <param name="action"></param>
         /// <returns></returns>
-        public ProjectionDefinitionConfiguration<TSourceType, TDestType> AfterExpansion(Action<object, object, ContextType> action)
+        public ProjectionDefinitionConfiguration<TSourceType> AfterExpansion(Action<object, object, ContextType> action)
         {
             InternalProjectionDefinition.AfterExpansion.Add(action);
             return this;
@@ -126,42 +126,10 @@ namespace Skyward.Popcorn
         /// </summary>
         /// <param name="handler"></param>
         /// <returns></returns>
-        public ProjectionDefinitionConfiguration<TSourceType, TDestType> Handle(Func<object, IEnumerable<PropertyReference>, ContextType, MappingDefinition, ProjectionDefinition, object> handler)
+        public ProjectionDefinitionConfiguration<TSourceType> Handle(Func<object, IEnumerable<PropertyReference>, ContextType, MappingDefinition, ProjectionDefinition, object> handler)
         {
             InternalProjectionDefinition.Handler = handler;
             return this;
         }
-
-        /// <summary>
-        /// Add an alternative mapping destination type, and provide the opportunity to customize that.
-        /// </summary>
-        /// <typeparam name="TNewDestType"></typeparam>
-        /// <param name="defaultIncludes"></param>
-        /// <param name="config"></param>
-        /// <returns></returns>
-        public ProjectionDefinitionConfiguration<TSourceType, TNewDestType> AlternativeMap<TNewDestType>(
-            string defaultIncludes = null,
-            Action<ProjectionDefinitionConfiguration<TSourceType, TNewDestType>> config = null)
-        {
-            var parsedDefaultIncludes = (defaultIncludes == null) ? new List<PropertyReference> { } : (List<PropertyReference>)PropertyReference.Parse(defaultIncludes);
-            defaultIncludes = PropertyReference.CompareAndConstructDefaultIncludes(parsedDefaultIncludes, typeof(TNewDestType).GetTypeInfo());
-
-            var newMapping = new ProjectionDefinitionConfiguration<TSourceType, TNewDestType>
-            {
-                InternalMappingDefinition = InternalMappingDefinition,
-                InternalProjectionDefinition = new ProjectionDefinition
-                {
-                    DefaultIncludes = defaultIncludes,
-                    DestinationType = typeof(TNewDestType),
-                }
-            };
-
-            InternalMappingDefinition.Destinations.Add(typeof(TNewDestType), newMapping.InternalProjectionDefinition);
-
-            if (config != null)
-                config(newMapping);
-
-            return newMapping;
-        }
-    }
+    }*/
 }
