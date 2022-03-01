@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Skyward.Popcorn.Abstractions
 {
+    #nullable enable
     public class TypeConfiguration
     {
         public TypeConfiguration(Type type)
@@ -17,6 +18,7 @@ namespace Skyward.Popcorn.Abstractions
             AlwaysInclude = new List<string>();
             NeverInclude = new List<string>();
             ConditionalInclude = new List<Func<Type, object, IReadOnlyList<PropertyReference>, List<PropertyReference>>>();
+            EnumeratedProperties = new List<string>();
         }
 
         public Type Type { get; }
@@ -26,6 +28,7 @@ namespace Skyward.Popcorn.Abstractions
         public List<string> AlwaysInclude { get; set; }
         public List<string> NeverInclude { get; set; }
         public bool AssignDirect { get; set; }
+        public List<string> EnumeratedProperties { get; set; }
         internal List<Func<Type, object, IReadOnlyList<PropertyReference>, List<PropertyReference>>> ConditionalInclude {get;set;}
     }
 
@@ -94,19 +97,19 @@ namespace Skyward.Popcorn.Abstractions
         private class Popcorn : IPopcorn
         {
             readonly PopcornFactory _factory;
-            readonly HashSet<int> _visited = new HashSet<int>();
+            readonly HashSet<object> _visited = new HashSet<object>();
 
             public Popcorn(PopcornFactory factory)
             {
                 _factory = factory ?? throw new ArgumentNullException(nameof(factory));
             }
 
-            public object Expand<T>(T instance, IReadOnlyList<PropertyReference> includes = null)
+            public object? Expand<T>(T? instance, IReadOnlyList<PropertyReference>? includes = null) where T : class
             {
                 return Expand(typeof(T), instance, includes);
             }
 
-            public object Expand(Type sourceType, object instance, IReadOnlyList<PropertyReference> includes = null)
+            public object? Expand(Type sourceType, object? instance, IReadOnlyList<PropertyReference>? includes = null)
             {
                 if (instance == null)
                 {
@@ -115,22 +118,73 @@ namespace Skyward.Popcorn.Abstractions
 
                 if (!_factory._typeConfigurations.ContainsKey(sourceType))
                 {
-                    TypeConfiguration config = BuildTypeDefaults(sourceType);
-
                     // Build and assign this type config
+                    TypeConfiguration config = BuildTypeDefaults(sourceType);
                     _factory._typeConfigurations.Add(sourceType, config);
                 }
-
+                
+                // Check if we can bail out early
                 var typeConfiguration = _factory._typeConfigurations[sourceType];
                 if (typeConfiguration.AssignDirect == true)
                 {
                     return instance;
                 }
 
-                // Figure out the include list
+                // find the appropriate expander
+                foreach (var expander in _factory._expanders)
+                {
+                    if (expander.WillHandle(sourceType, instance, this))
+                    {
+                        var finalIncludes = includes;
+                        if (expander.ShouldApplyIncludes)
+                        {
+                            Dictionary<string, PropertyReference> includeMap = DeterminePropertyReferences(sourceType, instance, includes, typeConfiguration);
+                            finalIncludes = new List<PropertyReference>(includeMap.Values);
+                        }
+
+                        EnforceUniqueVisit(instance);
+                        return expander.Expand(sourceType, instance, new List<PropertyReference>(finalIncludes), this);
+                    }
+                }
+
+                typeConfiguration.AssignDirect = true;
+                return instance;
+            }
+
+            private Dictionary<string, PropertyReference> DeterminePropertyReferences(Type sourceType, object? instance, IReadOnlyList<PropertyReference>? includes, TypeConfiguration typeConfiguration)
+            {
+                // Figure out the include list now we know we need it
                 Dictionary<string, PropertyReference> includeMap = (includes == null || !includes.Any())
                     ? typeConfiguration.DefaultInclude.ToDictionary(kv => kv.PropertyName)
                     : includes.ToDictionary(kv => kv.PropertyName);
+
+                // Handle wildcard expansion
+                if (includes.Any(i => i.PropertyName == "!default"))
+                {
+                    foreach (var defaultInclude in typeConfiguration.DefaultInclude)
+                    {
+                        if (!includeMap.ContainsKey(defaultInclude.PropertyName))
+                        {
+                            includeMap.Add(defaultInclude.PropertyName, defaultInclude);
+                        }
+                    }
+                }
+
+                if (includes.Any(i => i.PropertyName == "!all"))
+                {
+                    if (!typeConfiguration.EnumeratedProperties.Any())
+                    {
+                        CacheEnumeratedProperties(typeConfiguration);
+                    }
+
+                    foreach (var property in typeConfiguration.EnumeratedProperties)
+                    {
+                        if (!includeMap.ContainsKey(property))
+                        {
+                            includeMap.Add(property, new PropertyReference { PropertyName = property });
+                        }
+                    }
+                }
 
                 // Add Always includes
                 foreach (var include in typeConfiguration.AlwaysInclude)
@@ -159,18 +213,18 @@ namespace Skyward.Popcorn.Abstractions
                     }
                 }
 
-                // find the appropriate expander
-                foreach (var expander in _factory._expanders)
-                {
-                    if (expander.WillHandle(sourceType, instance, this))
-                    {
-                        EnforceUniqueVisit(instance);
-                        return expander.Expand(sourceType, instance, new List<PropertyReference>(includeMap.Values), this);
-                    }
-                }
+                return includeMap;
+            }
 
-                typeConfiguration.AssignDirect = true;
-                return instance;
+            private void CacheEnumeratedProperties(TypeConfiguration config)
+            {
+                var sourceType = config.Type;
+                config.EnumeratedProperties.Clear();
+                // Loop through each property on an entity to see if anything is declared to IncludeByDefault
+                foreach (PropertyInfo propertyInfo in sourceType.GetTypeInfo().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                {
+                    config.EnumeratedProperties.Add(propertyInfo.Name);
+                }
             }
 
             private static TypeConfiguration BuildTypeDefaults(Type sourceType)
@@ -179,8 +233,9 @@ namespace Skyward.Popcorn.Abstractions
                 var config = new TypeConfiguration(sourceType);
 
                 // Loop through each property on an entity to see if anything is declared to IncludeByDefault
-                foreach (PropertyInfo propertyInfo in sourceType.GetTypeInfo().DeclaredProperties)
+                foreach (PropertyInfo propertyInfo in sourceType.GetTypeInfo().GetProperties(BindingFlags.Instance | BindingFlags.Public))
                 {
+                    config.EnumeratedProperties.Add(propertyInfo.Name);
                     var customAttributesOriginal = (Array)propertyInfo.GetCustomAttributes();
                     if (customAttributesOriginal.Length == 0)
                     {
@@ -221,12 +276,11 @@ namespace Skyward.Popcorn.Abstractions
             /// <returns></returns>
             private void EnforceUniqueVisit(object source)
             {
-                var key = RuntimeHelpers.GetHashCode(source);
-                if (_visited.Contains(key))
+                if (_visited.Contains(source))
                 {
                     throw new SelfReferencingLoopException();
                 }
-                _visited.Add(key);
+                _visited.Add(source);
             }
 
             /// <summary>
@@ -266,15 +320,14 @@ namespace Skyward.Popcorn.Abstractions
             /// <param name="propertyName"></param>
             /// <param name="translators"></param>
             /// <returns></returns>
-            public object GetSourceValue(object source, string propertyName)
+            public object? GetSourceValue(object source, string propertyName)
             {
-                object valueToAssign = null;
                 Type sourceType = source.GetType();
                 var matchingProperty = sourceType.GetTypeInfo().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
                 var matchingMethod = sourceType.GetTypeInfo().GetMethod(propertyName, BindingFlags.Instance | BindingFlags.Public);
 
                 // Check if the value is marked as InternalOnly
-                InternalOnly[] attributes = new InternalOnly[2];
+                InternalOnly?[] attributes = new InternalOnly?[2];
                 attributes[0] = matchingProperty?.GetCustomAttribute<InternalOnly>();
                 attributes[1] = matchingMethod?.GetCustomAttribute<InternalOnly>();
 
@@ -299,6 +352,8 @@ namespace Skyward.Popcorn.Abstractions
 
                     return null;
                 }
+
+                object? valueToAssign = null;
 
                 if (matchingProperty != null)
                 {

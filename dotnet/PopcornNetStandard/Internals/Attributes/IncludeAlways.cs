@@ -2,6 +2,7 @@
 
 namespace Skyward.Popcorn
 {
+#nullable enable
     /// <summary>
     /// This attribute is used to mark properties to always be included
     /// </summary>

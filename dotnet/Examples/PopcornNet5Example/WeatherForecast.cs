@@ -1,14 +1,22 @@
+using Skyward.Popcorn;
 using System;
 using System.Collections.Generic;
 
 namespace PopcornNet5Example
 {
-    public class WeatherForecast
+#nullable enable
+    public class WeatherForecastBase
     {
+        [IncludeByDefault]
+        public int TemperatureC { get; set; }
+    }
+
+    public class WeatherForecast : WeatherForecastBase
+    {
+        [IncludeByDefault]
         public DateTime Date { get; set; }
 
-        public int TemperatureC { get; set; }
-
+        [IncludeByDefault]
         public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 
         public string Summary { get; set; }

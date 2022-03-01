@@ -5,6 +5,7 @@ using System.Reflection;
 
 namespace Skyward.Popcorn
 {
+#nullable enable
     /// <summary>
     /// This describes a property to be referenced (by name) and an optional (recursive) list of properties to be referenced on the 
     /// property's value if it is a complex type.

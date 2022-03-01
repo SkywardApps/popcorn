@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Skyward.Popcorn
 {
+#nullable enable
     /// <summary>
     /// This attribute is used to mark methods, classes, or properties as unable to be passed to any client by Popcorn
     /// </summary>

@@ -8,8 +8,11 @@ using System.Text;
 
 namespace Skyward.Popcorn.Expanders
 {
+#nullable enable
     public class PopcornCollectionExpander : IPopcornExpander
     {
+        public bool ShouldApplyIncludes { get => false; }
+
         public bool WillHandle(Type sourceType, object instance, IPopcorn popcorn)
         {
             // figure out if this is an expandable list, instead
@@ -40,13 +43,23 @@ namespace Skyward.Popcorn.Expanders
             foreach (var item in (IEnumerable)originalValue)
             {
                 /// If authorization indicates this should not in fact be authorized, skip it
-                if (!popcorn.AuthorizeValue(originalValue, item))
+                if (!popcorn.AuthorizeValue(originalValue, "", item))
                 {
                     continue;
                 }
 
+                if (item == null)
+                {
+                    // Just assign the null
+                    instantiatedDestinationType.Add(item);
+                    continue;
+                }
+
                 var expandedItem = popcorn.Expand(genericType, item, includes);
-                instantiatedDestinationType.Add(expandedItem);
+                if (expandedItem != null)
+                {
+                    instantiatedDestinationType.Add(expandedItem);
+                }
             }
 
             return instantiatedDestinationType;

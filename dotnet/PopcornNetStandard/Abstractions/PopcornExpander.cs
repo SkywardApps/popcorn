@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace Skyward.Popcorn.Abstractions
 {
+    #nullable enable
     public class PopcornExpander : IPopcornExpander
     {
         private readonly Func<Type, object, IPopcorn, bool> _test;

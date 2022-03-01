@@ -2,6 +2,7 @@
 
 namespace Skyward.Popcorn
 {
+#nullable enable
     /// <summary>
     /// This attribute is used to mark properties of a subordinate entity to be included by default
     /// Applying this attribute will overwrite any default includes at the main entity projection level

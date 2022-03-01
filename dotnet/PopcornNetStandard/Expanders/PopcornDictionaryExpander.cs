@@ -2,14 +2,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 
+#nullable enable
 namespace Skyward.Popcorn.Expanders
 {
+    #nullable enable
     public class PopcornDictionaryExpander : IPopcornExpander
     {
+        public bool ShouldApplyIncludes { get => false; }
+
         public bool WillHandle(Type sourceType, object instance, IPopcorn popcorn)
         {
             if (sourceType.IsConstructedGenericType)
