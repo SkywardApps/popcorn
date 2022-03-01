@@ -35,7 +35,7 @@ namespace Skyward.Popcorn.Expanders
                 object valueToAssign = input[propertyName];
 
                 /// If authorization indicates this should not in fact be authorized, skip it
-                if (!popcorn.AuthorizeValue(source, valueToAssign))
+                if (!popcorn.AuthorizeValue(source, propertyName, valueToAssign))
                 {
                     continue;
                 }

@@ -292,7 +292,7 @@ namespace Skyward.Popcorn.Abstractions
             /// <param name="context"></param>
             /// <param name="valueToAssign"></param>
             /// <returns>True if authorized, false if rejected</returns>
-            public bool AuthorizeValue(object source, object valueToAssign)
+            public bool AuthorizeValue(object source, string propertyName, object valueToAssign)
             {
                 if (valueToAssign == null)
                     return true;
