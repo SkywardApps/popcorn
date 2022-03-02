@@ -40,7 +40,7 @@ namespace Skyward.Popcorn.Expanders
                     continue;
                 }
 
-                var expandedValue = popcorn.Expand(valueToAssign?.GetType(), valueToAssign, propertyReference.Children);
+                var expandedValue = popcorn.Expand(valueToAssign.GetType(), valueToAssign, propertyReference.Children);
 
                 if (expandedValue != null)
                     destinationObject[propertyName] = expandedValue;

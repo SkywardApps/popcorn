@@ -37,7 +37,7 @@ namespace Skyward.Popcorn.Expanders
             var genericType = interfaceType.GenericTypeArguments[0];
 
             // Construct a list of dictionaries
-            var instantiatedDestinationType = new List<object>();
+            var instantiatedDestinationType = new List<object?>();
 
             // try to assign the data item by item
             foreach (var item in (IEnumerable)originalValue)

@@ -10,7 +10,6 @@
     <Company>Skyward App Company, LLC</Company>
     <Copyright>Copyright 2022 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
     <Description>WebApi extensions to Popcorn</Description>
-    <PackageLicenseUrl>https://github.com/SkywardApps/popcorn/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SkywardApps/popcorn</PackageProjectUrl>
     <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
@@ -20,7 +19,15 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Link="LICENSE">
+      <PackagePath></PackagePath>
+      <Pack>True</Pack>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />

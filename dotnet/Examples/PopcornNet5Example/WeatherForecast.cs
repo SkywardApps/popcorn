@@ -19,15 +19,15 @@ namespace PopcornNet5Example
         [IncludeByDefault]
         public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 
-        public string Summary { get; set; }
+        public string? Summary { get; set; }
 
-        public IEnumerable<int> Hourly { get; set; }
+        public IEnumerable<int>? Hourly { get; set; }
 
-        public IEnumerable<SubElement?> Elements { get; set; }
+        public IEnumerable<SubElement?>? Elements { get; set; }
     }
 
     public class SubElement
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
     }
 }

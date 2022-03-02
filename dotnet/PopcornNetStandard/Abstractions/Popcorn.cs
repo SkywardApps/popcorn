@@ -151,7 +151,7 @@ namespace Skyward.Popcorn.Abstractions
                 return instance;
             }
 
-            private Dictionary<string, PropertyReference> DeterminePropertyReferences(Type sourceType, object? instance, IReadOnlyList<PropertyReference>? includes, TypeConfiguration typeConfiguration)
+            private Dictionary<string, PropertyReference> DeterminePropertyReferences(Type sourceType, object instance, IReadOnlyList<PropertyReference>? includes, TypeConfiguration typeConfiguration)
             {
                 // Figure out the include list now we know we need it
                 Dictionary<string, PropertyReference> includeMap = (includes == null || !includes.Any())
@@ -181,7 +181,7 @@ namespace Skyward.Popcorn.Abstractions
                     {
                         if (!includeMap.ContainsKey(property))
                         {
-                            includeMap.Add(property, new PropertyReference { PropertyName = property });
+                            includeMap.Add(property, new PropertyReference(property));
                         }
                     }
                 }
@@ -189,10 +189,7 @@ namespace Skyward.Popcorn.Abstractions
                 // Add Always includes
                 foreach (var include in typeConfiguration.AlwaysInclude)
                 {
-                    includeMap.Add(include, new PropertyReference
-                    {
-                        PropertyName = include
-                    });
+                    includeMap.Add(include, new PropertyReference(include));
                 }
 
                 foreach (var test in typeConfiguration.ConditionalInclude)
@@ -250,7 +247,7 @@ namespace Skyward.Popcorn.Abstractions
                             var type = customAttribute.GetType();
                             if (type == typeof(IncludeByDefault))
                             {
-                                config.DefaultInclude.Add(new PropertyReference { PropertyName = propertyInfo.Name });
+                                config.DefaultInclude.Add(new PropertyReference(propertyInfo.Name));
                             }
                             else if (type == typeof(IncludeAlways))
                             {
@@ -292,7 +289,7 @@ namespace Skyward.Popcorn.Abstractions
             /// <param name="context"></param>
             /// <param name="valueToAssign"></param>
             /// <returns>True if authorized, false if rejected</returns>
-            public bool AuthorizeValue(object source, string propertyName, object valueToAssign)
+            public bool AuthorizeValue(object source, string propertyName, object? valueToAssign)
             {
                 if (valueToAssign == null)
                     return true;

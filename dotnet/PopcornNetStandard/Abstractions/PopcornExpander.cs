@@ -30,7 +30,7 @@ namespace Skyward.Popcorn.Abstractions
             return new PopcornExpander((type) => type == typeof(T), expand);
         }
 
-        public static PopcornExpander ExpanderForType<T>(Func<T, bool> test,  Func<Type, object, IReadOnlyList<PropertyReference>, IPopcorn, object> expand) where T : class
+        public static PopcornExpander ExpanderForType<T>(Func<T?, bool> test,  Func<Type, object, IReadOnlyList<PropertyReference>, IPopcorn, object> expand) where T : class
         {
             return new PopcornExpander((type, source, popcorn) => type == typeof(T) && test(source as T), expand);
         }
