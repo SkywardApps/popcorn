@@ -116,15 +116,7 @@ namespace Skyward.Popcorn.Abstractions
                     return null;
                 }
 
-                if (!_factory._typeConfigurations.ContainsKey(sourceType))
-                {
-                    // Build and assign this type config
-                    TypeConfiguration config = BuildTypeDefaults(sourceType);
-                    _factory._typeConfigurations.Add(sourceType, config);
-                }
-                
-                // Check if we can bail out early
-                var typeConfiguration = _factory._typeConfigurations[sourceType];
+                TypeConfiguration typeConfiguration = GetOrBuildDefaultTypeConfig(sourceType);
                 if (typeConfiguration.AssignDirect == true)
                 {
                     return instance;
@@ -151,7 +143,27 @@ namespace Skyward.Popcorn.Abstractions
                 return instance;
             }
 
-            private Dictionary<string, PropertyReference> DeterminePropertyReferences(Type sourceType, object instance, IReadOnlyList<PropertyReference>? includes, TypeConfiguration typeConfiguration)
+            private TypeConfiguration GetOrBuildDefaultTypeConfig(Type sourceType)
+            {
+                if (!_factory._typeConfigurations.ContainsKey(sourceType))
+                {
+                    // Build and assign this type config
+                    TypeConfiguration config = BuildTypeDefaults(sourceType);
+                    _factory._typeConfigurations.Add(sourceType, config);
+                }
+
+                // Check if we can bail out early
+                var typeConfiguration = _factory._typeConfigurations[sourceType];
+                return typeConfiguration;
+            }
+
+            public Dictionary<string, PropertyReference> DeterminePropertyReferences<T>(IReadOnlyList<PropertyReference> includes)
+            {
+                TypeConfiguration typeConfiguration = GetOrBuildDefaultTypeConfig(typeof(T));
+                return DeterminePropertyReferences(typeof(T), null, includes, typeConfiguration);
+            }
+
+            private Dictionary<string, PropertyReference> DeterminePropertyReferences(Type sourceType, object? instance, IReadOnlyList<PropertyReference>? includes, TypeConfiguration typeConfiguration)
             {
                 // Figure out the include list now we know we need it
                 Dictionary<string, PropertyReference> includeMap = (includes == null || !includes.Any())
@@ -159,7 +171,7 @@ namespace Skyward.Popcorn.Abstractions
                     : includes.ToDictionary(kv => kv.PropertyName);
 
                 // Handle wildcard expansion
-                if (includes.Any(i => i.PropertyName == "!default"))
+                if (includes != null && includes.Any(i => i.PropertyName == "!default"))
                 {
                     foreach (var defaultInclude in typeConfiguration.DefaultInclude)
                     {
@@ -170,7 +182,7 @@ namespace Skyward.Popcorn.Abstractions
                     }
                 }
 
-                if (includes.Any(i => i.PropertyName == "!all"))
+                if (includes != null && includes.Any(i => i.PropertyName == "!all"))
                 {
                     if (!typeConfiguration.EnumeratedProperties.Any())
                     {
@@ -192,12 +204,15 @@ namespace Skyward.Popcorn.Abstractions
                     includeMap.Add(include, new PropertyReference(include));
                 }
 
-                foreach (var test in typeConfiguration.ConditionalInclude)
+                if (instance != null)
                 {
-                    var revisedMap = test(sourceType, instance, new List<PropertyReference>(includeMap.Values));
-                    if (revisedMap != null)
+                    foreach (var test in typeConfiguration.ConditionalInclude)
                     {
-                        includeMap = revisedMap.ToDictionary(kv => kv.PropertyName);
+                        var revisedMap = test(sourceType, instance, new List<PropertyReference>(includeMap.Values));
+                        if (revisedMap != null)
+                        {
+                            includeMap = revisedMap.ToDictionary(kv => kv.PropertyName);
+                        }
                     }
                 }
 
@@ -259,6 +274,12 @@ namespace Skyward.Popcorn.Abstractions
                             }
                         }
                     }
+                }
+
+                // If there were no explicit defaults, everything is default
+                if (!config.DefaultInclude.Any())
+                {
+                    config.DefaultInclude = config.EnumeratedProperties.Select(val => new PropertyReference(val)).ToList();
                 }
 
                 return config;

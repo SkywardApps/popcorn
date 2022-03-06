@@ -51,6 +51,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Popcorn", "Popcorn", "{9323
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PopcornNet5Example", "Examples\PopcornNet5Example\PopcornNet5Example.csproj", "{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PopcornSpecTests", "Tests\PopcornSpecTests\PopcornSpecTests.csproj", "{185E7968-2D85-425B-8893-D31825105EF0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,10 @@ Global
 		{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{185E7968-2D85-425B-8893-D31825105EF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{185E7968-2D85-425B-8893-D31825105EF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{185E7968-2D85-425B-8893-D31825105EF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{185E7968-2D85-425B-8893-D31825105EF0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -78,6 +84,7 @@ Global
 		{66944808-E409-4BD8-9ADC-0D0011BB3D73} = {9323797C-D1AC-4778-9941-241B7298A0A3}
 		{4D53D3B4-3F12-4004-99C7-A44AF4E42CC2} = {9323797C-D1AC-4778-9941-241B7298A0A3}
 		{7B5B04D5-B523-4CAA-9F19-6C2B3295BBC0} = {6927209F-F97B-4039-9702-1544DF636EFB}
+		{185E7968-2D85-425B-8893-D31825105EF0} = {E9AE8CC1-4EAE-4859-B33D-7BFFDA6174DF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {667890E8-370A-4157-82AE-C1F63EA834AF}

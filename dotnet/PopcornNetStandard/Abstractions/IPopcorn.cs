@@ -10,5 +10,6 @@ namespace Skyward.Popcorn.Abstractions
         bool AuthorizeValue(object originalValue, string propertyName, object? valueToAssign);
         object? GetSourceValue(object source, string propertyName);
         object? Expand(Type sourceType, object? instance, IReadOnlyList<PropertyReference>? includes);
+        Dictionary<string, PropertyReference> DeterminePropertyReferences<T>(IReadOnlyList<PropertyReference> includes);
     }
 }

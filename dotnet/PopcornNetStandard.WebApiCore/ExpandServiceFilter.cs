@@ -67,7 +67,8 @@ namespace Skyward.Popcorn
             {
                 includes = context.HttpContext.Request.Headers["API-INCLUDE"];
             }
-           
+
+            _popcornContext.Popcorn = _popcorn;
             _popcornContext.PropertyReferences = PropertyReference.Parse(includes);
             _isExpanding = true;
         }

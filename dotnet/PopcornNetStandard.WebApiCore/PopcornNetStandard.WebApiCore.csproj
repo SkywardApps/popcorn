@@ -5,7 +5,7 @@
     <LangVersion>8.0</LangVersion>
     <RootNamespace>Popcorn</RootNamespace>
     <PackageId>Skyward.Api.Popcorn.WebApiCore</PackageId>
-    <Version>7.1.1</Version>
+    <Version>7.2.0</Version>
     <Authors>Skyward App Company, LLC</Authors>
     <Company>Skyward App Company, LLC</Company>
     <Copyright>Copyright 2022 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
