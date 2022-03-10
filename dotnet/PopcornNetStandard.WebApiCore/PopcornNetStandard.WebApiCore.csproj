@@ -14,7 +14,7 @@
     <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>api rest</PackageTags>
-    <PackageReleaseNotes>Address items not serializing correctly as ObjectResult</PackageReleaseNotes>
+    <PackageReleaseNotes>Handle exceptions in the popcorn middleware better.</PackageReleaseNotes>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>

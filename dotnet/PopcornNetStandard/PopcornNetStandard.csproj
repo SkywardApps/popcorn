@@ -7,7 +7,7 @@
     <Authors>Skyward App Company, LLC</Authors>
     <Description>Object dynamic filtering and expansion</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Added scoped context for dependency injection to access the current request.</PackageReleaseNotes>
+    <PackageReleaseNotes>Provide an option for optional property references</PackageReleaseNotes>
     <Copyright>Copyright 2022 (c) Skyward App Company, LLC. All rights reserved.</Copyright>
     <PackageTags>api rest</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
