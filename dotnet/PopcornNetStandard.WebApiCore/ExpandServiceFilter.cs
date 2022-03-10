@@ -10,7 +10,6 @@ using System.Collections.Generic;
 
 namespace Skyward.Popcorn
 {
-
     public class ExpandServiceFilter : IActionFilter
     {
         private readonly IPopcorn _popcorn;
@@ -30,24 +29,10 @@ namespace Skyward.Popcorn
         {
             _isExpanding = false;
 
-
             var filterDescriptor = context
                 .ActionDescriptor
                 .FilterDescriptors
                 .SingleOrDefault(d => d.Filter.GetType() == typeof(ExpandResultAttribute));
-
-            /*
-            if (!_config.ApplyToAllEndpoints)
-            {
-                //Cast the filter property to ExpandResultAttribute
-                var attributeInstance = filterDescriptor?.Filter as ExpandResultAttribute;
-
-                //If the attribute is null, i.e. not present, or false, it shouldn't expand and we return here
-                if (!(attributeInstance?.ShouldExpand ?? false))
-                {
-                    return;
-                }
-            }*/
 
             var doNotExpandAttribute = context
                 .ActionDescriptor
@@ -83,18 +68,27 @@ namespace Skyward.Popcorn
             // Set the error out of the gate should something have gone wrong coming into Popcorn
             if (context.Exception != null)
             {
-                if (context.HttpContext.Response.StatusCode == 200)
-                {
-                    context.HttpContext.Response.StatusCode = 500;
-                }
                 return;
             }
             else if (context.Result is ObjectResult) // Disect the response if there is something to unfold and no exception
             {
-                var originalResult = (ObjectResult)context.Result;
-                var resultObject = originalResult.Value;
-                var expandedObject = _popcorn.Expand(resultObject?.GetType(), resultObject, new List<PropertyReference>(_popcornContext.PropertyReferences));
-                context.Result = new JsonResult(expandedObject);
+                try
+                {
+                    var originalResult = (ObjectResult)context.Result;
+                    var resultObject = originalResult.Value;
+                    var expandedObject = _popcorn.Expand(resultObject?.GetType(), resultObject, new List<PropertyReference>(_popcornContext.PropertyReferences));
+                    context.Result = new JsonResult(expandedObject);
+                }
+                catch (Exception ex)
+                {
+                    // Report back the error because it's something related to the API request
+                    context.HttpContext.Response.StatusCode = 500;
+                    context.Result = new JsonResult(new
+                    {
+                        ErrorCode = ex.GetType().Name,
+                        ErrorMessage = ex.Message
+                    });
+                }
             }
 
         }

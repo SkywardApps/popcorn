@@ -193,7 +193,7 @@ namespace Skyward.Popcorn.Abstractions
                     {
                         if (!includeMap.ContainsKey(property))
                         {
-                            includeMap.Add(property, new PropertyReference(property));
+                            includeMap.Add(property, new PropertyReference(property, false));
                         }
                     }
                 }
@@ -201,7 +201,7 @@ namespace Skyward.Popcorn.Abstractions
                 // Add Always includes
                 foreach (var include in typeConfiguration.AlwaysInclude)
                 {
-                    includeMap.Add(include, new PropertyReference(include));
+                    includeMap.Add(include, new PropertyReference(include, false));
                 }
 
                 if (instance != null)
@@ -262,7 +262,7 @@ namespace Skyward.Popcorn.Abstractions
                             var type = customAttribute.GetType();
                             if (type == typeof(IncludeByDefault))
                             {
-                                config.DefaultInclude.Add(new PropertyReference(propertyInfo.Name));
+                                config.DefaultInclude.Add(new PropertyReference(propertyInfo.Name, false));
                             }
                             else if (type == typeof(IncludeAlways))
                             {
@@ -279,7 +279,7 @@ namespace Skyward.Popcorn.Abstractions
                 // If there were no explicit defaults, everything is default
                 if (!config.DefaultInclude.Any())
                 {
-                    config.DefaultInclude = config.EnumeratedProperties.Select(val => new PropertyReference(val)).ToList();
+                    config.DefaultInclude = config.EnumeratedProperties.Select(val => new PropertyReference(val, false)).ToList();
                 }
 
                 return config;
@@ -389,13 +389,13 @@ namespace Skyward.Popcorn.Abstractions
                     else
                     {
                         // Couldn't map it, but it was explicitly requested, so throw an error
-                        throw new InvalidCastException(propertyName);
+                        throw new UnknownMappingException(propertyName);
                     }
                 }
                 else
                 {
                     // Couldn't map it, but it was explicitly requested, so throw an error
-                    throw new InvalidCastException(propertyName);
+                    throw new UnknownMappingException(propertyName);
                 }
 
                 return valueToAssign;

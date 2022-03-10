@@ -12,15 +12,18 @@ namespace Skyward.Popcorn
     /// </summary>
     public class PropertyReference
     {
-        public PropertyReference(string propertyName)
+        public PropertyReference(string propertyName, bool optional)
         {
             PropertyName = propertyName;
+            Optional = optional;
         }
 
         /// <summary>
         /// The name of the property
         /// </summary>
         public string PropertyName { get; set; }
+
+        public bool Optional { get; set; } = false;
 
         /// <summary>
         /// Any properties to reference on this property's value
@@ -35,7 +38,7 @@ namespace Skyward.Popcorn
         public static IEnumerable<PropertyReference> Parse(string includes)
         {
             var stack = new Stack<PropertyReference>();
-            stack.Push(new PropertyReference("")); // the root
+            stack.Push(new PropertyReference("", false)); // the root
 
             // A very simple state machine for parsing the include string format.
             // It is not terribly error-tolerant at the moment, but does work if the format provided
@@ -47,25 +50,36 @@ namespace Skyward.Popcorn
                 {
                     // Starting a child list, so add a new item on the stack
                     case '[':
-                        stack.Push(new PropertyReference(""));
+                        stack.Push(new PropertyReference("", false));
                         break;
                     // finished a reference, so add it as a child and start a peer
                     case ',':
                         child = stack.Pop();
-                        child.PropertyName = child.PropertyName.TrimStart(' ').TrimEnd(' ');
-                        stack.Peek().Children.Add(child);
-                        stack.Push(new PropertyReference(""));
+                        if (!String.IsNullOrWhiteSpace(child.PropertyName))
+                        {
+                            var propName = child.PropertyName.TrimStart(' ').TrimEnd(' ');
+                            if (propName.StartsWith("?"))
+                            {
+                                child.Optional = true;
+                                propName = propName.Substring(1);
+                            }
+                            child.PropertyName = propName;
+                            stack.Peek().Children.Add(child);
+                        }
+                        stack.Push(new PropertyReference("", false));
                         break;
                     // Completed a child list, so add the last item as a child and pop up the stack
                     case ']':
                         child = stack.Pop();
                         if (!String.IsNullOrWhiteSpace(child.PropertyName))
                         {
-                            child.PropertyName = child.PropertyName.TrimStart(' ').TrimEnd(' ');
-                            if (child.PropertyName == "*" && stack.Peek().PropertyName == "*")
+                            var propName = child.PropertyName.TrimStart(' ').TrimEnd(' ');
+                            if (propName.StartsWith("?"))
                             {
-                                throw new InvalidCastException("A wildcard was cast on a wildcard as such [*[*]]");
+                                child.Optional = true;
+                                propName = propName.Substring(1);
                             }
+                            child.PropertyName = propName;
                             stack.Peek().Children.Add(child);
                         }
                         break;

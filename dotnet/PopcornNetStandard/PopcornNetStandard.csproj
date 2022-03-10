@@ -15,8 +15,9 @@
     <PackageLicenseUrl></PackageLicenseUrl>
     <RepositoryUrl>https://github.com/SkywardApps/popcorn</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
-    <Version>7.2.0</Version>
+    <Version>7.3.0</Version>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -38,6 +39,10 @@
     <None Include="..\..\LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
+    </None>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 

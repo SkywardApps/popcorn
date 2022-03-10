@@ -4,16 +4,20 @@ namespace Skyward.Popcorn
 {
     public class UnknownMappingException : Exception
     {
+        public string PropertyName { get; set; }
+
         public UnknownMappingException()
         {
         }
 
-        public UnknownMappingException(string message) : base(message)
+        public UnknownMappingException(string name) : base($"Unrecognized property reference: {name}")
         {
+            PropertyName = name;
         }
 
-        public UnknownMappingException(string message, Exception innerException) : base(message, innerException)
+        public UnknownMappingException(string name, Exception innerException) : base($"Unrecognized property reference: {name}", innerException)
         {
+            PropertyName = name;
         }
     }
 }
