@@ -135,7 +135,14 @@ namespace Skyward.Popcorn.Abstractions
                         }
 
                         EnforceUniqueVisit(instance);
-                        return expander.Expand(sourceType, instance, new List<PropertyReference>(finalIncludes), this);
+                        try
+                        {
+                            return expander.Expand(sourceType, instance, new List<PropertyReference>(finalIncludes), this);
+                        }
+                        finally
+                        {
+                            ExitUniqueVisit(instance);
+                        }
                     }
                 }
 
@@ -299,6 +306,11 @@ namespace Skyward.Popcorn.Abstractions
                     throw new SelfReferencingLoopException();
                 }
                 _visited.Add(source);
+            }
+
+            private void ExitUniqueVisit(object source)
+            {
+                _visited.Remove(source);
             }
 
             /// <summary>
