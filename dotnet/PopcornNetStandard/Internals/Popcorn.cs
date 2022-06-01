@@ -1,5 +1,6 @@
 ﻿using Skyward.Popcorn.Expanders;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -36,7 +37,7 @@ namespace Skyward.Popcorn.Abstractions
     public class PopcornFactory
     {
         readonly List<IPopcornExpander> _expanders = new List<IPopcornExpander>();
-        readonly Dictionary<Type, TypeConfiguration> _typeConfigurations = new Dictionary<Type, TypeConfiguration>();
+        readonly ConcurrentDictionary<Type, TypeConfiguration> _typeConfigurations = new ConcurrentDictionary<Type, TypeConfiguration>();
 
         public IPopcorn CreatePopcorn()
         {
@@ -59,13 +60,13 @@ namespace Skyward.Popcorn.Abstractions
         {
             var config = new TypeConfiguration(typeof(Type));
             configure(config);
-            _typeConfigurations.Add(typeof(Type), config);
+            _typeConfigurations.TryAdd(typeof(Type), config);
             return this;
         }
 
         public PopcornFactory AssignDirect<Type>()
         {
-            _typeConfigurations.Add(typeof(Type), new TypeConfiguration(typeof(Type)) { 
+            _typeConfigurations.TryAdd(typeof(Type), new TypeConfiguration(typeof(Type)) { 
                 AssignDirect = true
             });
             return this;
@@ -152,12 +153,8 @@ namespace Skyward.Popcorn.Abstractions
 
             private TypeConfiguration GetOrBuildDefaultTypeConfig(Type sourceType)
             {
-                if (!_factory._typeConfigurations.ContainsKey(sourceType))
-                {
-                    // Build and assign this type config
-                    TypeConfiguration config = BuildTypeDefaults(sourceType);
-                    _factory._typeConfigurations.Add(sourceType, config);
-                }
+                // Build and assign this type config if its not already.
+                _factory._typeConfigurations.GetOrAdd(sourceType, BuildTypeDefaults(sourceType));
 
                 // Check if we can bail out early
                 var typeConfiguration = _factory._typeConfigurations[sourceType];
