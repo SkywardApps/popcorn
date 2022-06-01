@@ -60,15 +60,21 @@ namespace Skyward.Popcorn.Abstractions
         {
             var config = new TypeConfiguration(typeof(Type));
             configure(config);
-            _typeConfigurations.TryAdd(typeof(Type), config);
+            bool added = _typeConfigurations.TryAdd(typeof(Type), config);
+            if(!added)
+                throw new InvalidOperationException($"Type configuration had already been added. Type: {typeof(Type)}");
+
             return this;
         }
 
         public PopcornFactory AssignDirect<Type>()
         {
-            _typeConfigurations.TryAdd(typeof(Type), new TypeConfiguration(typeof(Type)) { 
+            bool added = _typeConfigurations.TryAdd(typeof(Type), new TypeConfiguration(typeof(Type)) {
                 AssignDirect = true
             });
+            if(!added)
+                throw new InvalidOperationException($"Type configuration had already been added. Type: {typeof(Type)}");
+
             return this;
         }
 
@@ -154,11 +160,7 @@ namespace Skyward.Popcorn.Abstractions
             private TypeConfiguration GetOrBuildDefaultTypeConfig(Type sourceType)
             {
                 // Build and assign this type config if its not already.
-                _factory._typeConfigurations.GetOrAdd(sourceType, BuildTypeDefaults(sourceType));
-
-                // Check if we can bail out early
-                var typeConfiguration = _factory._typeConfigurations[sourceType];
-                return typeConfiguration;
+                return _factory._typeConfigurations.GetOrAdd(sourceType, BuildTypeDefaults);
             }
 
             public Dictionary<string, PropertyReference> DeterminePropertyReferences<T>(IReadOnlyList<PropertyReference> includes)
