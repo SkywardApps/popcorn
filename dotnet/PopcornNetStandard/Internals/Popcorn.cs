@@ -1,5 +1,6 @@
 ﻿using Skyward.Popcorn.Expanders;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -36,7 +37,7 @@ namespace Skyward.Popcorn.Abstractions
     public class PopcornFactory
     {
         readonly List<IPopcornExpander> _expanders = new List<IPopcornExpander>();
-        readonly Dictionary<Type, TypeConfiguration> _typeConfigurations = new Dictionary<Type, TypeConfiguration>();
+        readonly ConcurrentDictionary<Type, TypeConfiguration> _typeConfigurations = new ConcurrentDictionary<Type, TypeConfiguration>();
 
         public IPopcorn CreatePopcorn()
         {
@@ -59,15 +60,21 @@ namespace Skyward.Popcorn.Abstractions
         {
             var config = new TypeConfiguration(typeof(Type));
             configure(config);
-            _typeConfigurations.Add(typeof(Type), config);
+            bool added = _typeConfigurations.TryAdd(typeof(Type), config);
+            if(!added)
+                throw new InvalidOperationException($"Type configuration had already been added. Type: {typeof(Type)}");
+
             return this;
         }
 
         public PopcornFactory AssignDirect<Type>()
         {
-            _typeConfigurations.Add(typeof(Type), new TypeConfiguration(typeof(Type)) { 
+            bool added = _typeConfigurations.TryAdd(typeof(Type), new TypeConfiguration(typeof(Type)) {
                 AssignDirect = true
             });
+            if(!added)
+                throw new InvalidOperationException($"Type configuration had already been added. Type: {typeof(Type)}");
+
             return this;
         }
 
@@ -152,16 +159,8 @@ namespace Skyward.Popcorn.Abstractions
 
             private TypeConfiguration GetOrBuildDefaultTypeConfig(Type sourceType)
             {
-                if (!_factory._typeConfigurations.ContainsKey(sourceType))
-                {
-                    // Build and assign this type config
-                    TypeConfiguration config = BuildTypeDefaults(sourceType);
-                    _factory._typeConfigurations.Add(sourceType, config);
-                }
-
-                // Check if we can bail out early
-                var typeConfiguration = _factory._typeConfigurations[sourceType];
-                return typeConfiguration;
+                // Build and assign this type config if its not already.
+                return _factory._typeConfigurations.GetOrAdd(sourceType, BuildTypeDefaults);
             }
 
             public Dictionary<string, PropertyReference> DeterminePropertyReferences<T>(IReadOnlyList<PropertyReference> includes)
