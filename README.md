@@ -9,15 +9,15 @@
 ## Jump straight in
 + **.NET Core** - We have a [.net core middleware](docs/dotnet/DotNetDocumentation.md) that you can drop in to enable Popcorn on Web Apis. 
 Feel free to grab it on [nuget](https://www.nuget.org/packages/Skyward.Api.Popcorn.DotNetCore).
+
++ [![nodejs](https://img.shields.io/badge/-new-success?style=for-the-badge&logo=npm)![npm](https://img.shields.io/npm/v/@skywardapps/popcorn-api.svg?style=for-the-badge)](https://www.npmjs.com/package/@skywardapps/popcorn-api)
+**NodeJS** - We have a brand new nodejs + express + inversify implementation, now available on [npm](https://www.npmjs.com/package/@skywardapps/popcorn-api).
 + **Other implementations** - See our [Roadmap](docs/Roadmap.md) or issues on GitHub for coming work
 
 ## What is Popcorn?
-Popcorn is a communication protocol on top of a RESTful API that allows requesting clients to 
-identify individual fields of resources to include when retrieving the resource or resource
-collection.
+Popcorn is a communication protocol on top of a RESTful API that allows requesting clients to identify individual fields of resources to include when retrieving the resource or resource collection.
 
-It allows for a recursive selection of fields, allowing multiple calls to be condensed 
-into one.  
+It allows for a recursive selection of fields, allowing multiple calls to be condensed into one.  
 
 ### Features
 + Selective inclusion from a RESTful API

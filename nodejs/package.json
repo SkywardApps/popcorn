@@ -1,0 +1,41 @@
+{
+  "name": "@skywardapps/popcorn-api",
+  "version": "0.9.0",
+  "description": "Popcorn is a communication protocol on top of a RESTful API that allows requesting clients to identify individual fields of resources to include when retrieving the resource or resource collection.",
+  "main": "./dist/index.js", 
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/SkywardApps/popcorn"
+  },
+  "bugs": {
+    "url": "https://github.com/SkywardApps/popcorn/issues"
+  },
+  "scripts": {
+    "build": "tsc --declaration --declarationMap --sourceMap"
+  },
+  "homepage": "https://github.com/SkywardApps/popcorn#readme",
+  "author": "Skyward App Company, LLC",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/express": "^4.17.14",
+    "@types/express-serve-static-core": "^4.17.31",
+    "@types/node": "^18.7.18",
+    "@types/reflect-metadata": "^0.1.0",
+    "@typescript-eslint/eslint-plugin": "^5.38.0",
+    "@typescript-eslint/parser": "^5.38.0",
+    "eslint": "^8.23.1",
+    "typescript": "^4.8.3"
+  },
+  "keywords": [
+    "express",
+    "inversify",
+    "typescript",
+    "ts",
+    "rest",
+    "restful"
+  ],
+  "dependencies": {
+    "inversify-express-utils": "^6.4.3"
+  }
+}
