@@ -29,7 +29,6 @@ namespace PopcornNet5Example.Controllers
         [HttpGet, ExpandResult]
         public IEnumerable<WeatherForecast> Get()
         {
-            throw new ArgumentOutOfRangeException("Hello Error");
             var rng = new Random();
             var range = Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
