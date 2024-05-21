@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Skyward.Popcorn.Abstractions;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http2.HPack;
 
 namespace Skyward.Popcorn
 {
@@ -70,19 +71,18 @@ namespace Skyward.Popcorn
             {
                 return;
             }
-            // If there response is not OK(200) it should be an error code.
-            else if (!(context.Result is OkObjectResult))
-            {
-                return;
-            }
-            else if (context.Result is ObjectResult) // Disect the response if there is something to unfold and no exception
+            else if (context.Result is ObjectResult) // Dissect the response if there is something to unfold and no exception
             {
                 try
                 {
                     var originalResult = (ObjectResult)context.Result;
                     var resultObject = originalResult.Value;
                     var expandedObject = _popcorn.Expand(resultObject?.GetType(), resultObject, new List<PropertyReference>(_popcornContext.PropertyReferences));
-                    context.Result = new JsonResult(expandedObject);
+                    
+                    var newResult = new JsonResult(expandedObject);
+                    newResult.StatusCode = originalResult.StatusCode;   //Keep the same status code otherwise it will default to 200 OK
+                    
+                    context.Result = newResult;
                 }
                 catch (Exception ex)
                 {
