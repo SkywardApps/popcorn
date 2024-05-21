@@ -70,6 +70,11 @@ namespace Skyward.Popcorn
             {
                 return;
             }
+            // If there response is not OK(200) it should be an error code.
+            else if (!(context.Result is OkObjectResult))
+            {
+                return;
+            }
             else if (context.Result is ObjectResult) // Disect the response if there is something to unfold and no exception
             {
                 try
@@ -90,7 +95,6 @@ namespace Skyward.Popcorn
                     });
                 }
             }
-
         }
     }
 }
