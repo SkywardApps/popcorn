@@ -1,0 +1,49 @@
+name: Build and Publish Package
+
+on:
+  # run it on push to the default repository branch
+  push:
+    tags:
+      - /^release/
+
+jobs:
+  # define job to build and publish 
+  build-and-push-package:
+    name: Build Docker image and push to repositories
+    
+    # run only when code is compiling and tests are passing
+    runs-on: ubuntu-latest
+
+    # steps to perform in job
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4.0.0
+        with:
+          dotnet-version: 8
+          
+      # Build
+      - name: Change Directory
+        run: cd dotnet
+ 
+      - name: Build Core
+        run: dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard/PopcornNetStandard.csproj
+      - name: Package Core
+        run: dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
+
+
+      - name: Build WebApi
+        run: dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+      - name: Package WebApi
+        run: dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+
+  
+      # Publish
+      - name: Change Directory
+        run: cd ../publish
+      - name: Publish Packages
+        run: for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
+      - name: Public Source Mapping
+        run: for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
