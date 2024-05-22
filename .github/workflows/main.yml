@@ -26,10 +26,7 @@ jobs:
         with:
           dotnet-version: 8
           
-      # Build
-      - name: Change Directory
-        run: cd dotnet
- 
+      # Build 
       - name: Build Core
         run: cd dotnet && dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard/PopcornNetStandard.csproj
       - name: Package Core
@@ -43,9 +40,7 @@ jobs:
 
   
       # Publish
-      - name: Change Directory
-        run: cd ../publish
       - name: Publish Packages
-        run: for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
+        run: cd publish && for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
       - name: Public Source Mapping
-        run: for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
+        run: cd publish && for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
