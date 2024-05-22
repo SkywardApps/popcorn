@@ -31,15 +31,15 @@ jobs:
         run: cd dotnet
  
       - name: Build Core
-        run: dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard/PopcornNetStandard.csproj
+        run: cd dotnet && dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard/PopcornNetStandard.csproj
       - name: Package Core
-        run: dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
+        run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
 
 
       - name: Build WebApi
-        run: dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+        run: cd dotnet && dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
       - name: Package WebApi
-        run: dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+        run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
 
   
       # Publish
