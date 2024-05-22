@@ -40,7 +40,9 @@ jobs:
 
   
       # Publish
+      - name: Echo Key
+        run: echo $SKYWARDNUGETAPIKEY
       - name: Publish Packages
-        run: cd publish && for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
+        run: cd publish && for fileName in *.nupkg; do echo ${fileName}; dotnet nuget push -k $SKYWARDNUGETAPIKEY -s https://api.nuget.org/v3/index.json ${fileName} || :; done
       - name: Public Source Mapping
-        run: cd publish && for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
+        run: cd publish && for fileName in *.snupkg; do echo ${fileName}; dotnet nuget push -k $SKYWARDNUGETAPIKEY -s https://api.nuget.org/v3/index.json ${fileName} || :; done
