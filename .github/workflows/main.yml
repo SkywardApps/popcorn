@@ -3,8 +3,6 @@ name: Build and Publish Package
 on:
   # run it on push to the default repository branch
   push:
-    branches:
-      - ci
     tags:
       - /^release/
 
