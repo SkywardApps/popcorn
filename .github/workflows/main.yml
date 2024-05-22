@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # steps to perform in job
-    steps:
+    steps:        
       - name: Checkout code
         uses: actions/checkout@v2
         
@@ -24,26 +24,19 @@ jobs:
         with:
           dotnet-version: 8
           
-      # Build
-      - name: Change Directory
-        run: cd dotnet
- 
+      # Build 
       - name: Build Core
-        run: dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard/PopcornNetStandard.csproj
+        run: cd dotnet && dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard/PopcornNetStandard.csproj
       - name: Package Core
-        run: dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
-
+        run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
 
       - name: Build WebApi
-        run: dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
+        run: cd dotnet && dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
       - name: Package WebApi
-        run: dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
-
+        run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
   
       # Publish
-      - name: Change Directory
-        run: cd ../publish
       - name: Publish Packages
-        run: for fileName in *.nupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
-      - name: Public Source Mapping
-        run: for fileName in *.snupkg; do dotnet nuget push -k $NugetApiKey -s https://api.nuget.org/v3/index.json ${fileName} || :; done
+        env:
+          SKYWARDNUGETAPIKEY: ${{ secrets.SKYWARDNUGETAPIKEY }}
+        run: cd publish && for fileName in *.nupkg; do echo ${fileName}; dotnet nuget push -k "$SKYWARDNUGETAPIKEY" -s https://api.nuget.org/v3/index.json ${fileName} || :; done
