@@ -32,23 +32,13 @@ jobs:
       - name: Package Core
         run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
 
-
       - name: Build WebApi
         run: cd dotnet && dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
       - name: Package WebApi
         run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
-
   
       # Publish
-      - name: Echo Key
-        env:
-          SKYWARDNUGETAPIKEY: ${{ secrets.SKYWARDNUGETAPIKEY }}
-        run: echo "$SKYWARDNUGETAPIKEY"
       - name: Publish Packages
         env:
           SKYWARDNUGETAPIKEY: ${{ secrets.SKYWARDNUGETAPIKEY }}
         run: cd publish && for fileName in *.nupkg; do echo ${fileName}; dotnet nuget push -k "$SKYWARDNUGETAPIKEY" -s https://api.nuget.org/v3/index.json ${fileName} || :; done
-      - name: Public Source Mapping
-        env:
-          SKYWARDNUGETAPIKEY: ${{ secrets.SKYWARDNUGETAPIKEY }}
-        run: cd publish && for fileName in *.snupkg; do echo ${fileName}; dotnet nuget push -k "$SKYWARDNUGETAPIKEY" -s https://api.nuget.org/v3/index.json ${fileName} || :; done
