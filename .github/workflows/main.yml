@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # steps to perform in job
-    steps:
+    steps:        
       - name: Checkout code
         uses: actions/checkout@v2
         
@@ -41,8 +41,14 @@ jobs:
   
       # Publish
       - name: Echo Key
+        env:
+          SUPER_SECRET: ${{ secrets.SKYWARDNUGETAPIKEY }}
         run: echo $SKYWARDNUGETAPIKEY
       - name: Publish Packages
+        env:
+          SUPER_SECRET: ${{ secrets.SKYWARDNUGETAPIKEY }}
         run: cd publish && for fileName in *.nupkg; do echo ${fileName}; dotnet nuget push -k $SKYWARDNUGETAPIKEY -s https://api.nuget.org/v3/index.json ${fileName} || :; done
       - name: Public Source Mapping
+        env:
+          SUPER_SECRET: ${{ secrets.SKYWARDNUGETAPIKEY }}
         run: cd publish && for fileName in *.snupkg; do echo ${fileName}; dotnet nuget push -k $SKYWARDNUGETAPIKEY -s https://api.nuget.org/v3/index.json ${fileName} || :; done
