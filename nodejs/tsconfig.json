@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "strict": true,
+		"target": "es2019",
+		"module": "commonjs",
+		"outDir": "dist",
+		"types": ["reflect-metadata", "node"],
+		"sourceMap": true,
+		"moduleResolution": "node",
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"lib":["ES2019", "dom"],
+		"resolveJsonModule": true,
+		"allowSyntheticDefaultImports": true,    
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames":true
+  },
+  "include": [
+		"src/**/*.ts"
+	],
+	"exclude": [
+		".yarn",
+		"**/*.test.*"
+	]
+}
