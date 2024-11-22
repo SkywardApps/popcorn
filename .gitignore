@@ -290,3 +290,10 @@ log-markdownup-*.txt
 _site/
 Gemfile*
 .jekyll-metadata
+
+
+# Exclude Verify items
+*.received.*
+
+# Exclude Source Generated output
+Generated/

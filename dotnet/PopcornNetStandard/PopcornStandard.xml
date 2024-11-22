@@ -12,7 +12,7 @@
             <param name="visited"></param>
             <returns></returns>
         </member>
-        <member name="M:Skyward.Popcorn.Abstractions.PopcornFactory.Popcorn.AuthorizeValue(System.Object,System.Object)">
+        <member name="M:Skyward.Popcorn.Abstractions.PopcornFactory.Popcorn.AuthorizeValue(System.Object,System.String,System.Object)">
             <summary>
             Test if an object is authorized in a given context, from the given source.
             Source may be an object (if value was from a property) or the collection 
@@ -57,28 +57,17 @@
             <param name="includes"></param>
             <returns></returns>
         </member>
-        <member name="M:Skyward.Popcorn.PropertyReference.CompareAndConstructDefaultIncludes(System.Collections.Generic.List{Skyward.Popcorn.PropertyReference},System.Reflection.TypeInfo)">
+        <member name="T:Skyward.Popcorn.IncludeAlways">
             <summary>
-            A function to validate and apply the attribute level or mapping level defaults for a projected entity
+            This attribute is used to mark properties to always be included
             </summary>
-            <param name="parsedDefaultIncludes"></param>
-            <param name="destTypeInfo"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Skyward.Popcorn.PropertyReference.DeconstructDefaultIncludes(System.Collections.Generic.List{Skyward.Popcorn.PropertyReference},System.Reflection.TypeInfo,System.Collections.Generic.List{Skyward.Popcorn.PropertyReference})">
-            <summary>
-            A function to specifically deconstruct the default includes off of a type info
-            </summary>
-            <param name="parsedDefaultIncludes"></param>
-            <param name="destTypeInfo"></param>
-            <returns></returns>
         </member>
         <member name="T:Skyward.Popcorn.IncludeByDefault">
             <summary>
             This attribute is used to mark properties to be included by default at the main entity level
             </summary>
         </member>
-        <member name="T:Skyward.Popcorn.InternalOnlyAttribute">
+        <member name="T:Skyward.Popcorn.InternalOnly">
             <summary>
             This attribute is used to mark methods, classes, or properties as unable to be passed to any client by Popcorn
             </summary>
@@ -88,46 +77,6 @@
             This attribute is used to mark properties of a subordinate entity to be included by default
             Applying this attribute will overwrite any default includes at the main entity projection level
             </summary>
-        </member>
-        <member name="T:Skyward.Popcorn.PropertyInfoExtensions">
-            <summary>
-            Provides utility extensions for the PropertyInfo type.
-            </summary>
-        </member>
-        <member name="M:Skyward.Popcorn.PropertyInfoExtensions.TrySetValueHandleConvert(System.Reflection.PropertyInfo,System.Object,System.Object)">
-            <summary>
-            Set a value to a property on an object.  This will handle: converting types (eg int -> double) and nullable properties (int -> int?)
-            </summary>
-            <param name="propertyInfo"></param>
-            <param name="inputObject"></param>
-            <param name="propertyVal"></param>
-            <returns></returns>
-        </member>
-        <member name="T:Skyward.Popcorn.TypeExtensions">
-            <summary>
-            Provides extensions to 'Type' for the expander to use
-            </summary>
-        </member>
-        <member name="M:Skyward.Popcorn.TypeExtensions.IsNullableType(System.Type)">
-            <summary>
-            Is this type a Nullable instance?
-            </summary>
-            <param name="type"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Skyward.Popcorn.TypeExtensions.CreateDefaultObject(System.Type)">
-            <summary>
-            Do our best to construct an object of the given type.
-            This will look for public constructors:
-                That take an source type and Context Type
-                That take a Context Type
-                That take an source type Type
-                That take no parameters
-            </summary>
-            <param name="destinationType"></param>
-            <param name="source"></param>
-            <param name="context"></param>
-            <returns></returns>
         </member>
     </members>
 </doc>

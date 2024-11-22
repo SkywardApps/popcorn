@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <LangVersion>latest</LangVersion>
+    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+    <PublishTrimmed>True</PublishTrimmed>
+    <PublishAot>True</PublishAot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Generated\**" />
+    <Content Remove="Generated\**" />
+    <EmbeddedResource Remove="Generated\**" />
+    <None Remove="Generated\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference OutputItemType="Analyzer" ReferenceOutputAssembly="false" Include="..\Popcorn.SourceGenerator\Popcorn.SourceGenerator.csproj" />
+    <ProjectReference OutputItemType="Analyzer" ReferenceOutputAssembly="true" Include="..\Popcorn.Shared\Popcorn.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

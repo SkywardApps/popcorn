@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Source generators must target netstandard 2.0 -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- We don't want to reference the source generator dll directly in consuming projects -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>true</ImplicitUsings>
+    <LangVersion>Latest</LangVersion>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="bin\Debug\netstandard2.0\\Popcorn.SourceGenerator.dll" />
+  </ItemGroup>
+
+  <!-- Reference the attributes from the generator to compile against them -->
+  <!-- Ensure we specify PrivateAssets so the NuGet doesn't have any dependencies -->
+  <ItemGroup>
+    <ProjectReference Include="..\Popcorn.Shared\Popcorn.Shared.csproj" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Pack the generator dll in the analyzers/dotnet/cs path -->
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+
+
+    <!-- Pack the attributes dll in the analyzers/dotnet/cs path -->
+    <None Include="$(OutputPath)\Popcorn.Shared.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+
+    <!-- Pack the attributes dll in the lib\netstandard2.0 path -->
+    <None Include="$(OutputPath)\Popcorn.Shared.dll" Pack="true" PackagePath="lib\netstandard2.0" Visible="true" />
+
+  </ItemGroup>
+
+</Project>
