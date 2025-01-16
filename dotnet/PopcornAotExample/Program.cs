@@ -6,6 +6,8 @@ using System.Collections.Immutable;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
+//Console.WriteLine(typeof(JsonSerializableAttribute).FullName);
+
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
@@ -14,7 +16,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 var app = builder.Build();
 
-app.MapGet("/todos", () => new Bundle<over.Todo> { Data = new over.Todo(1, null, "Hello World", DateTimeOffset.Now, false), PropertyReferences = PropertyReference.ParseIncludeStatement("[!default,DueDate]") });
+app.MapGet("/todos", () => new Pop<over.Todo> { Data = new over.Todo(1, null, "Hello World", DateTimeOffset.Now, false), PropertyReferences = PropertyReference.ParseIncludeStatement("[!default,DueDate]") });
 
 app.Run();
 
@@ -29,13 +31,6 @@ namespace over
     public record Todo([property: Always] int Id, under.Todo ToDo, [property: Default] string? Title, [property: JsonPropertyName("DueDate")] DateTimeOffset? DueBy = null, [property: Never] bool IsComplete = false);
 }
 
-
-[Pop(typeof(over.Todo))]
-[Pop(typeof(under.Todo))]
-[JsonSerializable(typeof(Todo))]
-[JsonSerializable(typeof(Bundle<Todo>))]
-[JsonSerializable(typeof(under.Todo), TypeInfoPropertyName="UnderTodo")]
-[JsonSerializable(typeof(Bundle<under.Todo>), TypeInfoPropertyName="BundleUnderTodo")]
 [JsonSerializable(typeof(Todo[]))]
 [JsonSerializable(typeof(List<Todo>))]
 [JsonSerializable(typeof(IList<Todo>))]
@@ -44,6 +39,9 @@ namespace over
 [JsonSerializable(typeof(IDictionary<string, Todo>))]
 [JsonSerializable(typeof(System.Collections.Generic.IEnumerable<KeyValuePair<string, Todo>>))]
 [JsonSerializable(typeof(HashSet<Todo>))]
+[JsonSerializable(typeof(under.Todo), TypeInfoPropertyName = "UnderDoTodo")]
+[JsonSerializable(typeof(Pop<Todo>), TypeInfoPropertyName = "UnderTodo")]
+[JsonSerializable(typeof(Pop<under.Todo>), TypeInfoPropertyName = "BundleUnderTodo")]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {
 

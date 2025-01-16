@@ -13,6 +13,8 @@ namespace Popcorn.SourceGenerator
     [Generator(LanguageNames.CSharp)]
     public class ExpanderGenerator : IIncrementalGenerator
     {
+        private const string JsonSerializableAttributeTypeName = "System.Text.Json.Serialization.JsonSerializableAttribute";
+        private const string JsonSerializerContextTypeName = "System.Text.Json.Serialization.JsonSerializerContext";
         private static readonly HashSet<string> NumberTypes = new HashSet<string>([
             typeof(Single).FullName,
             typeof(Double).FullName,
@@ -54,9 +56,7 @@ namespace Popcorn.SourceGenerator
         {
             // Step 1: Find all classes that inherit from JsonSerializerContext
             var jsonSerializerContextClasses = context.SyntaxProvider
-                .ForAttributeWithMetadataName(typeof(PopAttribute).FullName,
-                //)
-                //.CreateSyntaxProvider(
+                .ForAttributeWithMetadataName(JsonSerializableAttributeTypeName,
                     predicate: (node, _) => node is ClassDeclarationSyntax classDecl && classDecl.AttributeLists.Count > 0,
                     transform: (ctx, _) => GetJsonSerializerContextClass(ctx))
                 .Where(symbol => symbol != null);
@@ -69,7 +69,13 @@ namespace Popcorn.SourceGenerator
             // Step 3: Generate the JsonConverter class for each target type
             context.RegisterSourceOutput(jsonSerializableAttributes, (spc, data) =>
             {
-                var targetTypes = new HashSet<INamedTypeSymbol>((data.Attributes.Select(attribute => attribute.ConstructorArguments[0].Value as INamedTypeSymbol)).Where(a => a != null)!, SymbolEqualityComparer.Default);
+                var targetTypes = new HashSet<INamedTypeSymbol>(
+                    data.Attributes
+                        .Select(attribute => attribute.ConstructorArguments[0].Value as INamedTypeSymbol)
+                        .Where(a => a != null && a.TypeArguments.Length > 0)
+                        .Select(a => a.TypeArguments[0] as INamedTypeSymbol)
+                        .Where(a => a != null)!,
+                    SymbolEqualityComparer.Default);
                 foreach (var targetType in targetTypes)
                 {
                     try
@@ -132,15 +138,16 @@ public static class PopcornJsonOptionsExtension
             // Check if the class is a subclass of JsonSerializerContext
             var baseType = classSymbol?.BaseType;
             var typeName = baseType?.ToDisplayString();
-            return typeName == "System.Text.Json.Serialization.JsonSerializerContext" ? classSymbol : null;
+            return typeName == JsonSerializerContextTypeName ? classSymbol : null;
         }
 
         private static IEnumerable<AttributeData> GetJsonSerializableTypes(INamedTypeSymbol classSymbol)
         {
             return classSymbol.GetAttributes()
-                .Where(attr => attr.AttributeClass?.ToDisplayString() == typeof(PopAttribute).FullName &&
+                .Where(attr => attr.AttributeClass?.ToDisplayString() == JsonSerializableAttributeTypeName &&
                     attr.ConstructorArguments.Length > 0
-                    && attr.ConstructorArguments[0].Value is INamedTypeSymbol);
+                    && attr.ConstructorArguments[0].Value is INamedTypeSymbol typeSymbol
+                    && typeSymbol.OriginalDefinition.ToDisplayString() == "Popcorn.Shared.Pop<T>");
         }
 
         private static string GenerateJsonConverter(INamedTypeSymbol targetType, INamedTypeSymbol? classSymbol, HashSet<INamedTypeSymbol> allTypes)
@@ -181,14 +188,14 @@ public static class PopcornJsonOptionsExtension
                 var serializeLine = $"JsonSerializer.Serialize(writer, value.Data.{originalName}, options);";
                 if (allTypeNames.Contains(propertyType))
                 {
-                    // if this were supported for Popping, then wrap in another bundle
+                    // if this were supported for Popping, then wrap in another Pop
                     serializeLine = $@"if(value == null) 
                     {{ writer.WriteNullValue(); }} 
                     else 
                     {{ 
                         Pop{NameType(property.Type as INamedTypeSymbol)}(
                             writer, 
-                            new global::Popcorn.Shared.Bundle<{propertyType}> 
+                            new global::Popcorn.Shared.Pop<{propertyType}> 
                             {{ 
                                 Data = value.Data.{originalName}, 
                                 PropertyReferences = propertyReference?.Children ?? global::System.Collections.Immutable.ImmutableArray<global::Popcorn.Shared.PropertyReference>.Empty
@@ -259,15 +266,15 @@ using System.Text.Json.Serialization;
 #nullable enable
 namespace Popcorn.Generated.Converters
 {{
-    public class {converterName} : global::System.Text.Json.Serialization.JsonConverter<global::Popcorn.Shared.Bundle<{typeName}>>
+    public class {converterName} : global::System.Text.Json.Serialization.JsonConverter<global::Popcorn.Shared.Pop<{typeName}>>
     {{
 
-        public override global::Popcorn.Shared.Bundle<{typeName}> Read(ref Utf8JsonReader reader, Type typeToConvert, global::System.Text.Json.JsonSerializerOptions options)
+        public override global::Popcorn.Shared.Pop<{typeName}> Read(ref Utf8JsonReader reader, Type typeToConvert, global::System.Text.Json.JsonSerializerOptions options)
         {{
             throw new NotImplementedException();
         }}
 
-        public override void Write(Utf8JsonWriter writer, global::Popcorn.Shared.Bundle<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
         {{
             AppJsonSerializerContext.Pop{NameType(targetType)}(writer, value, options);
         }}
@@ -275,9 +282,10 @@ namespace Popcorn.Generated.Converters
 }}
 
 {(classSymbol.ContainingNamespace.IsGlobalNamespace ? "" : $"namespace {classSymbol.ContainingNamespace} {{")}
+    [System.Text.Json.Serialization.JsonSerializable(typeof(Popcorn.Shared.Pop<{typeName}>))]
     {classSymbol.DeclaredAccessibility.ToString().ToLower()} partial class {classSymbol.Name}
     {{
-        public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Bundle<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
+        public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
         {{
                 var properties = value.PropertyReferences;
                 var useAll = properties.Any(p => ""!all"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));
