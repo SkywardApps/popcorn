@@ -5,21 +5,27 @@ namespace Popcorn.Shared
 #nullable enable
     public record PropertyReference
     {
+        private static ImmutableArray<PropertyReference> Default = new List<PropertyReference> { new PropertyReference { Name = "!default".AsMemory() } }.ToImmutableArray();
+
         public ReadOnlyMemory<char> Name { get; init; }
         public bool Negated { get; set; }
 
-        public ImmutableArray<PropertyReference> Children { get; set; }
+        public IReadOnlyList<PropertyReference> Children { get; set; }
 
-        public static ImmutableArray<PropertyReference> ParseIncludeStatement(string input)
+        public static IReadOnlyList<PropertyReference> ParseIncludeStatement(string? input)
         {
-            var builder = ImmutableArray.CreateBuilder<PropertyReference>();
+            if(input == null || input.Length < 3)
+            {
+                return Default;
+            }
+
             PropertyReference root = new PropertyReference { };
             PropertyReference cursor = root;
 
             int position = 0;
-            ImmutableArray<PropertyReference> ParseList()
+            IReadOnlyList<PropertyReference> ParseList()
             {
-                var builder = ImmutableArray.CreateBuilder<PropertyReference>();
+                var builder = new List<PropertyReference>();
 
                 while (position < input.Length)
                 {
@@ -32,7 +38,7 @@ namespace Popcorn.Shared
                     else if (c == ']')
                     {
                         position++;
-                        return builder.ToImmutable();
+                        return builder;
                     }
                     else if (c == ',')
                     {
@@ -58,12 +64,12 @@ namespace Popcorn.Shared
                         {
                             Name = input.AsMemory().Slice(start, position - start),
                             Negated = isNegated,
-                            Children = ImmutableArray<PropertyReference>.Empty,
+                            Children = PropertyReference.Default,
                         };
                         builder.Add(cursor);
                     }
                 }
-                return builder.ToImmutable();
+                return builder;
             }
 
             ParseList();

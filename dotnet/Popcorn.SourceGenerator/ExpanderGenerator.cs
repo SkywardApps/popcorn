@@ -1,10 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using System;
-using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
 
 #nullable enable
@@ -102,11 +98,11 @@ namespace Popcorn.SourceGenerator
                 {
                     // Now add the top-level extension method for registering all our converters to the WebApi pipeline
                     spc.AddSource("RegisterConverters.g.cs", SourceText.From($@"
-namespace Popcorn;
+namespace Popcorn.Shared;
 
-public static class PopcornJsonOptionsExtension
+public static partial class PopcornJsonOptionsExtension
 {{
-    public static void AddPopcorn(this global::System.Text.Json.JsonSerializerOptions options)
+    public static void AddPopcornOptions(this global::System.Text.Json.JsonSerializerOptions options)
     {{
         {String.Join("", targetTypes.Select(targetType => $@"
         options.Converters.Add(new global::Popcorn.Generated.Converters.{NameType(targetType)}JsonConverter());")
@@ -147,12 +143,53 @@ public static class PopcornJsonOptionsExtension
                 .Where(attr => attr.AttributeClass?.ToDisplayString() == JsonSerializableAttributeTypeName &&
                     attr.ConstructorArguments.Length > 0
                     && attr.ConstructorArguments[0].Value is INamedTypeSymbol typeSymbol
-                    && typeSymbol.OriginalDefinition.ToDisplayString() == "Popcorn.Shared.Pop<T>");
+                    && InheritsOrImplements(typeSymbol, "Popcorn.Shared.ApiResponse<T>"));
+        }
+
+        private static bool InheritsOrImplements(INamedTypeSymbol typeSymbol, string baseTypeName)
+        {
+            while (typeSymbol != null)
+            {
+                if (typeSymbol.OriginalDefinition.ToDisplayString() == baseTypeName)
+                {
+                    return true;
+                }
+                typeSymbol = typeSymbol.BaseType;
+            }
+            return false;
         }
 
         private static string GenerateJsonConverter(INamedTypeSymbol targetType, INamedTypeSymbol? classSymbol, HashSet<INamedTypeSymbol> allTypes)
         {
-            var allTypeNames = allTypes.Select(t => t.ToDisplayString()).ToImmutableHashSet();
+            // We need to build out the recursive references here
+            // Visit each type and find each property that could be serialized and ensure that its type is added to the list.
+            var visitedTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            var typesToVisit = new Queue<INamedTypeSymbol>(allTypes);
+
+            while (typesToVisit.Count > 0)
+            {
+                var currentType = typesToVisit.Dequeue();
+                if (!visitedTypes.Add(currentType))
+                {
+                    continue;
+                }
+
+                foreach (var member in currentType.GetMembers().OfType<IPropertySymbol>())
+                {
+                    if (member.DeclaredAccessibility == Accessibility.Public && member.GetMethod != null && !member.IsIndexer)
+                    {
+                        var memberType = member.Type as INamedTypeSymbol;
+                        if (memberType != null && !visitedTypes.Contains(memberType) && !typesToVisit.Contains(memberType))
+                        {
+                            typesToVisit.Enqueue(memberType);
+                        }
+                    }
+                }
+            }
+
+            
+            var allTypeNames = new HashSet<string>(allTypes.Union(allTypes, SymbolEqualityComparer.Default).Where(t => t!=null).Select(t => t!.ToDisplayString()));
+
 
             var typeName = targetType.ToDisplayString();
             var converterName = $"{NameType(targetType)}JsonConverter";

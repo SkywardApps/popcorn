@@ -3,45 +3,39 @@ using System.Text.Json.Serialization;
 using over;
 using Popcorn.Shared;
 using System.Collections.Immutable;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
 //Console.WriteLine(typeof(JsonSerializableAttribute).FullName);
-
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddPopcorn();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
-    options.SerializerOptions.AddPopcorn();
+    options.SerializerOptions.AddPopcornOptions();
 });
 
 var app = builder.Build();
 
-app.MapGet("/todos", () => new Pop<over.Todo> { Data = new over.Todo(1, null, "Hello World", DateTimeOffset.Now, false), PropertyReferences = PropertyReference.ParseIncludeStatement("[!default,DueDate]") });
+app.MapGet("/todos", ([FromServices] IHttpContextAccessor contextAccess) => contextAccess.HttpContext.Respond(new over.Todo(1, null, "Hello World", DateTimeOffset.Now, false)));
+app.MapGet("/todo2", ([FromServices] IHttpContextAccessor contextAccess) => contextAccess.HttpContext.Respond(new over.Todo(1, new under.Todo(1, 2, 3), "Hello World", DateTimeOffset.Now, false)));
 
 app.Run();
 
 
 namespace under
 {
-    public record Todo(int i);
+    public record Todo(int i, int j, int k);
 }
 
 namespace over
 {
-    public record Todo([property: Always] int Id, under.Todo ToDo, [property: Default] string? Title, [property: JsonPropertyName("DueDate")] DateTimeOffset? DueBy = null, [property: Never] bool IsComplete = false);
+    public record Todo([property: Always] int Id, under.Todo? ToDo, [property: Default] string? Title, [property: JsonPropertyName("DueDate")] DateTimeOffset? DueBy = null, [property: Never] bool IsComplete = false);
 }
 
-[JsonSerializable(typeof(Todo[]))]
-[JsonSerializable(typeof(List<Todo>))]
-[JsonSerializable(typeof(IList<Todo>))]
-[JsonSerializable(typeof(ICollection<Todo>))]
-[JsonSerializable(typeof(IEnumerable<Todo>))]
-[JsonSerializable(typeof(IDictionary<string, Todo>))]
-[JsonSerializable(typeof(System.Collections.Generic.IEnumerable<KeyValuePair<string, Todo>>))]
-[JsonSerializable(typeof(HashSet<Todo>))]
-[JsonSerializable(typeof(under.Todo), TypeInfoPropertyName = "UnderDoTodo")]
-[JsonSerializable(typeof(Pop<Todo>), TypeInfoPropertyName = "UnderTodo")]
-[JsonSerializable(typeof(Pop<under.Todo>), TypeInfoPropertyName = "BundleUnderTodo")]
+[JsonSerializable(typeof(ApiResponse<Todo>))]
+[JsonSerializable(typeof(Todo), TypeInfoPropertyName = "MyTodo")]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {
 
