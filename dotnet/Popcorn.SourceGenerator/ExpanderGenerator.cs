@@ -34,18 +34,23 @@ namespace Popcorn.SourceGenerator
         ]);
 
         private static readonly HashSet<string> StringTypes = new HashSet<string>([
+            "string",
             typeof(string).FullName,
             typeof(Span<char>).FullName,
             typeof(ReadOnlySpan<char>).FullName,
             typeof(Memory<char>).FullName,
-            typeof(Guid).FullName,
-            typeof(DateTime).FullName,
-            typeof(DateTimeOffset).FullName,
             typeof(ReadOnlyMemory<char>).FullName
         ]);
 
         private static readonly HashSet<string> BoolTypes = new HashSet<string>([
+            "bool",
             typeof(bool).FullName,
+        ]);
+
+        private static readonly HashSet<string> IgnoreTypes = new HashSet<string>([
+            typeof(Guid).FullName,
+            typeof(DateTime).FullName,
+            typeof(DateTimeOffset).FullName, // We need a way to say "opt out of expanding these"
         ]);
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -62,21 +67,37 @@ namespace Popcorn.SourceGenerator
                 .Select((classSymbol, _) => new GeneratorClassReference(classSymbol, GetJsonSerializableTypes(classSymbol!)))
                 .Where(data => data.Attributes.Any());
 
+
+            // Step 3: Devolve to the actual types referenced.
             // Step 3: Generate the JsonConverter class for each target type
             context.RegisterSourceOutput(jsonSerializableAttributes, (spc, data) =>
             {
+                if (data.ClassSymbol == null)
+                {
+                    return;
+                }
+
                 var targetTypes = new HashSet<INamedTypeSymbol>(
                     data.Attributes
                         .Select(attribute => attribute.ConstructorArguments[0].Value as INamedTypeSymbol)
                         .Where(a => a != null && a.TypeArguments.Length > 0)
-                        .Select(a => a.TypeArguments[0] as INamedTypeSymbol)
+                        .Select(a => a?.TypeArguments[0] as INamedTypeSymbol)
                         .Where(a => a != null)!,
                     SymbolEqualityComparer.Default);
+
+                foreach (var targetType in targetTypes.ToList())
+                {
+                    foreach (var t in GetReferencedTypes(targetType, data.ClassSymbol, spc))
+                    {
+                        targetTypes.Add(t);
+                    }
+                }
+
                 foreach (var targetType in targetTypes)
                 {
                     try
                     {
-                        var source = GenerateJsonConverter(targetType, data.ClassSymbol, targetTypes);
+                        var source = GenerateJsonConverter(targetType, data.ClassSymbol, targetTypes, spc);
                         spc.AddSource($"{NameType(targetType)}JsonConverter.g.cs", SourceText.From(source, Encoding.UTF8));
                     }
                     catch (Exception ex)
@@ -148,27 +169,58 @@ public static class PopcornJsonOptionsExtension
 
         private static bool InheritsOrImplements(INamedTypeSymbol typeSymbol, string baseTypeName)
         {
-            while (typeSymbol != null)
+            var visitedTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            var typesToVisit = new Queue<INamedTypeSymbol>();
+            typesToVisit.Enqueue(typeSymbol);
+
+            while (typesToVisit.Any())
             {
-                if (typeSymbol.OriginalDefinition.ToDisplayString() == baseTypeName)
+                var cursorSymbol = typesToVisit.Dequeue();
+                if (!visitedTypes.Add(cursorSymbol))
+                {
+                    continue;
+                }
+
+                if (cursorSymbol.OriginalDefinition.ToDisplayString() == baseTypeName)
                 {
                     return true;
                 }
-                typeSymbol = typeSymbol.BaseType;
+
+                if (cursorSymbol.BaseType != null && !visitedTypes.Contains(cursorSymbol.BaseType))
+                {
+                    typesToVisit.Enqueue(cursorSymbol.BaseType);
+                }
+                foreach (var interfaceType in cursorSymbol.AllInterfaces)
+                {
+                    if (!visitedTypes.Contains(interfaceType))
+                    {
+                        typesToVisit.Enqueue(interfaceType);
+                    }
+                }
             }
             return false;
         }
 
-        private static string GenerateJsonConverter(INamedTypeSymbol targetType, INamedTypeSymbol? classSymbol, HashSet<INamedTypeSymbol> allTypes)
+        private static HashSet<INamedTypeSymbol> GetReferencedTypes(INamedTypeSymbol targetType, INamedTypeSymbol classSymbol, SourceProductionContext context)
         {
             // We need to build out the recursive references here
             // Visit each type and find each property that could be serialized and ensure that its type is added to the list.
             var visitedTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-            var typesToVisit = new Queue<INamedTypeSymbol>(allTypes);
+            var typesToVisit = new Queue<INamedTypeSymbol>();
+            typesToVisit.Enqueue(targetType);
 
             while (typesToVisit.Count > 0)
             {
                 var currentType = typesToVisit.Dequeue();
+                var propertyTypeName = currentType.ToDisplayString().Replace("?", "");
+                if (IgnoreTypes.Contains(propertyTypeName) 
+                    || NumberTypes.Contains(propertyTypeName)
+                    || StringTypes.Contains(propertyTypeName)
+                    || BoolTypes.Contains(propertyTypeName))
+                {
+                    continue;
+                }
+
                 if (!visitedTypes.Add(currentType))
                 {
                     continue;
@@ -187,12 +239,95 @@ public static class PopcornJsonOptionsExtension
                 }
             }
 
-            
-            var allTypeNames = new HashSet<string>(allTypes.Union(allTypes, SymbolEqualityComparer.Default).Where(t => t!=null).Select(t => t!.ToDisplayString()));
+            return visitedTypes;
+        }
 
-
+        private static string GenerateJsonConverter(INamedTypeSymbol targetType, INamedTypeSymbol classSymbol, HashSet<INamedTypeSymbol> allTypes, SourceProductionContext context)
+        {
+            var allTypeNames = new HashSet<string>(allTypes.Where(t => t != null).Select(t => t!.ToDisplayString().Replace("?", "")));
             var typeName = targetType.ToDisplayString();
             var converterName = $"{NameType(targetType)}JsonConverter";
+
+            // Logging statement for allTypeNames
+            Show($"{targetType.ToDisplayString()}: All registered type names: {string.Join(", ", allTypeNames)}", context);
+
+            string internalSerializationCode = "";
+            // If this targetType implement IEnumerable, write out as an array and use the item type as target type instead for each element.
+            if (InheritsOrImplements(targetType, "System.Collections.Generic.IEnumerable<T>"))
+            {
+                var itemType = targetType.TypeArguments[0] as INamedTypeSymbol;
+                Show($"{targetType} Is an IEnumerable of {itemType?.ToDisplayString()}", context);
+                var propertyTypeName = itemType.ToDisplayString().Replace("?", "");
+                if (allTypeNames.Contains(propertyTypeName))
+                {
+                    // We need to recurse into this type, and treat it as an array of bundles
+                    // This is... a wee bit ugly since each item needs to get bundled independently
+                    internalSerializationCode = $@"
+                        writer.WriteStartArray();
+                        foreach(var item in value.Data)
+                        {{
+                            //writer.WriteNullValue();
+                            Pop{NameType(itemType)}(writer, new global::Popcorn.Shared.Pop<{itemType.ToDisplayString()}> {{ Data = item, PropertyReferences = value.PropertyReferences }}, options);
+                        }}  
+                        writer.WriteEndArray();
+";
+                }
+                else
+                {
+                    // We just do a normal json serialize of the array
+                    internalSerializationCode = @"
+                        JsonSerializer.Serialize(writer, value.Data, options);
+";
+                }
+            }
+            else
+            {
+                internalSerializationCode = CreateComplexObjectSerialization(targetType, context, allTypeNames);
+            }
+
+            return $@"// <auto-generated/>
+        using System;
+        using System.Text.Json;
+        using System.Text.Json.Serialization;
+
+        #nullable enable
+        namespace Popcorn.Generated.Converters
+        {{
+        public class {converterName} : global::System.Text.Json.Serialization.JsonConverter<global::Popcorn.Shared.Pop<{typeName}>>
+        {{
+
+        public override global::Popcorn.Shared.Pop<{typeName}> Read(ref Utf8JsonReader reader, Type typeToConvert, global::System.Text.Json.JsonSerializerOptions options)
+        {{
+            throw new NotImplementedException();
+        }}
+
+        public override void Write(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
+        {{
+            AppJsonSerializerContext.Pop{NameType(targetType)}(writer, value, options);
+        }}
+        }}
+        }}
+
+        {(classSymbol.ContainingNamespace.IsGlobalNamespace ? "" : $"namespace {classSymbol.ContainingNamespace} {{")}
+        {classSymbol.DeclaredAccessibility.ToString().ToLower()} partial class {classSymbol.Name}
+        {{
+        public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
+        {{
+                if(value.Data == null)
+                {{
+                    writer.WriteNullValue();
+                    return;
+                }}
+
+                {internalSerializationCode}
+        }}
+        }}
+        {(classSymbol.ContainingNamespace.IsGlobalNamespace ? "" : "}}")}
+        ";
+        }
+
+        private static string CreateComplexObjectSerialization(INamedTypeSymbol targetType, SourceProductionContext context, HashSet<string> allTypeNames)
+        {
             var properties = targetType
                 .GetMembers()
                 .OfType<IPropertySymbol>()
@@ -208,7 +343,7 @@ public static class PopcornJsonOptionsExtension
                 var subAttrs = property.GetAttributes();
                 if (subAttrs.Any(a => a.AttributeClass?.ToString() == typeof(Popcorn.NeverAttribute).FullName))
                 {
-                        continue;
+                    continue;
                 }
 
                 var propertyName = property.Name;
@@ -220,51 +355,56 @@ public static class PopcornJsonOptionsExtension
                     propertyName = nameAttr.ConstructorArguments[0].Value?.ToString() ?? originalName;
                 }
 
-                var propertyType = property.Type.ToDisplayString();
+                var propertyType = (INamedTypeSymbol)property.Type;
+                var referenceName = $"value.Data.{originalName}";
 
-                var serializeLine = $"JsonSerializer.Serialize(writer, value.Data.{originalName}, options);";
-                if (allTypeNames.Contains(propertyType))
+                var serializeLine = $"JsonSerializer.Serialize(writer, {referenceName}, options);";
+
+                var propertyTypeName = property.Type.ToDisplayString().Replace("?", "");
+                Show($"Will Render {propertyTypeName}", context);
+                if (IgnoreTypes.Contains(propertyTypeName))
+                {
+                    // No  change; just defer to the serializer.
+                }
+                else if (NumberTypes.Contains(propertyTypeName))
+                {
+                    serializeLine = $"writer.WriteNumberValue({referenceName});";
+                }
+                else if (StringTypes.Contains(propertyTypeName))
+                {
+                    serializeLine = $"writer.WriteStringValue({referenceName});";
+                }
+                else if (BoolTypes.Contains(propertyTypeName))
+                {
+                    serializeLine = $"writer.WriteBooleanValue({referenceName});";
+                }
+                else if (allTypeNames.Contains(propertyTypeName))
                 {
                     // if this were supported for Popping, then wrap in another Pop
-                    serializeLine = $@"if(value == null) 
+                    serializeLine = $@"if({referenceName} == null) 
                     {{ writer.WriteNullValue(); }} 
                     else 
                     {{ 
                         Pop{NameType(property.Type as INamedTypeSymbol)}(
                             writer, 
-                            new global::Popcorn.Shared.Pop<{propertyType}> 
+                            new global::Popcorn.Shared.Pop<{propertyTypeName}> 
                             {{ 
-                                Data = value.Data.{originalName}, 
-                                PropertyReferences = propertyReference?.Children ?? PropertyReferences.Default;
+                                Data = {referenceName}, 
+                                PropertyReferences = propertyReference?.Children ?? global::Popcorn.Shared.PropertyReference.Default
                             }}, 
                             options); 
                     }}";
                 }
-                else if (NumberTypes.Contains(propertyType))
-                {
-                    serializeLine = $"writer.WriteNumberValue(value.Data.{originalName});";
-                }
-                else if (StringTypes.Contains(propertyType))
-                {
-                    serializeLine = $"writer.WriteStringValue(value.Data.{originalName});";
-                }
-                else if (BoolTypes.Contains(propertyType))
-                {
-                    serializeLine = $"writer.WriteBooleanValue(value.Data.{originalName});";
-                }
 
-                propertySerializationCode.AppendLine($@"
-            {{
-                // Find if this specific property is requested
-                var propertyReference = properties.FirstOrDefault(p => ""{propertyName}"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));");
+                var serializeGroup = "";
 
                 // Is this _Always_ included? Then include it.
                 if (subAttrs.Any(a => a.AttributeClass?.ToString() == typeof(Popcorn.AlwaysAttribute).FullName))
                 {
-                    propertySerializationCode.AppendLine($@"
+                    serializeGroup = ($@"
                 if(propertyReference == null || propertyReference.Negated == false)
                 {{
-                    // {propertyType} {originalName}
+                    // {propertyTypeName} {originalName}
                     writer.WritePropertyName(naming(""{propertyName}""));
                     {serializeLine}
                 }}");
@@ -272,64 +412,34 @@ public static class PopcornJsonOptionsExtension
                 // Is this included by !default Then include it unless excluded
                 else if (subAttrs.Any(a => a.AttributeClass?.ToString() == typeof(Popcorn.DefaultAttribute).FullName))
                 {
-                    propertySerializationCode.AppendLine($@"
+                    serializeGroup = ($@"
                 if((useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference.Negated == false))
                 {{
-                    // {propertyType} {originalName}
+                    // {propertyTypeName} {originalName}
                     writer.WritePropertyName(naming(""{propertyName}""));
                     {serializeLine}
                 }}");
                 }
                 else
                 {
-                    propertySerializationCode.AppendLine($@"
+                    serializeGroup = ($@"
                 if((useAll || propertyReference != null) && (propertyReference == null || propertyReference.Negated == false))
                 {{
-                    // {propertyType} {originalName}
+                    // {propertyTypeName} {originalName}
                     writer.WritePropertyName(naming(""{propertyName}""));
                     {serializeLine}
                 }}");
                 }
 
                 propertySerializationCode.AppendLine($@"
+            {{
+                // Find if this specific property is requested
+                var propertyReference = properties.FirstOrDefault(p => ""{propertyName}"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));
+                {serializeGroup}
             }}");
             }
 
-            return $@"// <auto-generated/>
-using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
-#nullable enable
-namespace Popcorn.Generated.Converters
-{{
-    public class {converterName} : global::System.Text.Json.Serialization.JsonConverter<global::Popcorn.Shared.Pop<{typeName}>>
-    {{
-
-        public override global::Popcorn.Shared.Pop<{typeName}> Read(ref Utf8JsonReader reader, Type typeToConvert, global::System.Text.Json.JsonSerializerOptions options)
-        {{
-            throw new NotImplementedException();
-        }}
-
-        public override void Write(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
-        {{
-            AppJsonSerializerContext.Pop{NameType(targetType)}(writer, value, options);
-        }}
-    }}
-}}
-
-{(classSymbol.ContainingNamespace.IsGlobalNamespace ? "" : $"namespace {classSymbol.ContainingNamespace} {{")}
-    [System.Text.Json.Serialization.JsonSerializable(typeof(Popcorn.Shared.Pop<{typeName}>))]
-    {classSymbol.DeclaredAccessibility.ToString().ToLower()} partial class {classSymbol.Name}
-    {{
-        public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
-        {{
-                if(value.Data == null)
-                {{
-                    writer.WriteNullValue();
-                    return;
-                }}
-
+            var internalSerializationCode = $@"
                 Func<string, string> naming = options.PropertyNamingPolicy != null ? options.PropertyNamingPolicy.ConvertName : (a) => a;
                 var properties = value.PropertyReferences;
                 var useAll = properties.Any(p => ""!all"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));
@@ -341,10 +451,8 @@ namespace Popcorn.Generated.Converters
                 {propertySerializationCode}
 
                 writer.WriteEndObject();
-        }}
-    }}
-{(classSymbol.ContainingNamespace.IsGlobalNamespace ? "" : "}}")}
 ";
+            return internalSerializationCode;
         }
 
         private static string? NameType(INamedTypeSymbol? type)
@@ -365,20 +473,17 @@ namespace Popcorn.Generated.Converters
         }
 
 
-        private static string? GetNamedArgument(AttributeData attributeData, string argName)
+        public static void Show(string message, SourceProductionContext context)
         {
-            // This is the attribute, check all of the named arguments
-            foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
-            {
-                // Is this the ExtensionClassName argument?
-                if (namedArgument.Key == argName
-                    && namedArgument.Value.Value?.ToString() is { } n)
-                {
-                    return n;
-                }
-            }
-
-            return null;
+            context.ReportDiagnostic(Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    id: "JSG002",
+                    title: "Output",
+                    messageFormat: message,
+                    category: "SourceGenerator",
+                    DiagnosticSeverity.Warning,
+                    isEnabledByDefault: true),
+                Location.None));
         }
     }
 

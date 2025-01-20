@@ -5,12 +5,12 @@ namespace Popcorn.Shared
 #nullable enable
     public record PropertyReference
     {
-        private static IReadOnlyList<PropertyReference> Default = new List<PropertyReference> { new PropertyReference { Name = "!default".AsMemory() } };
+        public static IReadOnlyList<PropertyReference> Default = new List<PropertyReference> { new PropertyReference { Name = "!default".AsMemory() } };
 
         public ReadOnlyMemory<char> Name { get; init; }
         public bool Negated { get; set; }
 
-        public IReadOnlyList<PropertyReference> Children { get; set; }
+        public IReadOnlyList<PropertyReference>? Children { get; set; }
 
         public static IReadOnlyList<PropertyReference> ParseIncludeStatement(string? input)
         {
@@ -73,7 +73,7 @@ namespace Popcorn.Shared
             }
 
             ParseList();
-            return root.Children;
+            return root.Children ?? PropertyReference.Default;
         }
     }
 }
