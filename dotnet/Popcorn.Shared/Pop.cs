@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-#nullable enable
+﻿#nullable enable
 namespace Popcorn.Shared
 {
     public record struct Pop<T>

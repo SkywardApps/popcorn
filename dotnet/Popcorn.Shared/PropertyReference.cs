@@ -1,11 +1,11 @@
-﻿using System.Collections.Immutable;
+﻿
 
 namespace Popcorn.Shared
 {
 #nullable enable
     public record PropertyReference
     {
-        private static ImmutableArray<PropertyReference> Default = new List<PropertyReference> { new PropertyReference { Name = "!default".AsMemory() } }.ToImmutableArray();
+        private static IReadOnlyList<PropertyReference> Default = new List<PropertyReference> { new PropertyReference { Name = "!default".AsMemory() } };
 
         public ReadOnlyMemory<char> Name { get; init; }
         public bool Negated { get; set; }

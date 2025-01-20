@@ -18,6 +18,8 @@ namespace Popcorn.Shared
             Data = new Pop<T> { Data = data, PropertyReferences = props };
         }
 
+        public bool Success => true;
+
         public Pop<T> Data { get; init; }
     }
 }

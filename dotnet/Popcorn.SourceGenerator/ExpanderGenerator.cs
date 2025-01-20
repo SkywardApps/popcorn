@@ -100,7 +100,7 @@ namespace Popcorn.SourceGenerator
                     spc.AddSource("RegisterConverters.g.cs", SourceText.From($@"
 namespace Popcorn.Shared;
 
-public static partial class PopcornJsonOptionsExtension
+public static class PopcornJsonOptionsExtension
 {{
     public static void AddPopcornOptions(this global::System.Text.Json.JsonSerializerOptions options)
     {{
@@ -235,7 +235,7 @@ public static partial class PopcornJsonOptionsExtension
                             new global::Popcorn.Shared.Pop<{propertyType}> 
                             {{ 
                                 Data = value.Data.{originalName}, 
-                                PropertyReferences = propertyReference?.Children ?? global::System.Collections.Immutable.ImmutableArray<global::Popcorn.Shared.PropertyReference>.Empty
+                                PropertyReferences = propertyReference?.Children ?? PropertyReferences.Default;
                             }}, 
                             options); 
                     }}";
@@ -265,7 +265,7 @@ public static partial class PopcornJsonOptionsExtension
                 if(propertyReference == null || propertyReference.Negated == false)
                 {{
                     // {propertyType} {originalName}
-                    writer.WritePropertyName(""{propertyName}"");
+                    writer.WritePropertyName(naming(""{propertyName}""));
                     {serializeLine}
                 }}");
                 }
@@ -276,7 +276,7 @@ public static partial class PopcornJsonOptionsExtension
                 if((useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference.Negated == false))
                 {{
                     // {propertyType} {originalName}
-                    writer.WritePropertyName(""{propertyName}"");
+                    writer.WritePropertyName(naming(""{propertyName}""));
                     {serializeLine}
                 }}");
                 }
@@ -286,7 +286,7 @@ public static partial class PopcornJsonOptionsExtension
                 if((useAll || propertyReference != null) && (propertyReference == null || propertyReference.Negated == false))
                 {{
                     // {propertyType} {originalName}
-                    writer.WritePropertyName(""{propertyName}"");
+                    writer.WritePropertyName(naming(""{propertyName}""));
                     {serializeLine}
                 }}");
                 }
@@ -324,6 +324,13 @@ namespace Popcorn.Generated.Converters
     {{
         public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
         {{
+                if(value.Data == null)
+                {{
+                    writer.WriteNullValue();
+                    return;
+                }}
+
+                Func<string, string> naming = options.PropertyNamingPolicy != null ? options.PropertyNamingPolicy.ConvertName : (a) => a;
                 var properties = value.PropertyReferences;
                 var useAll = properties.Any(p => ""!all"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));
                 // Use default includes if either nothing is explicitly called out or if defaults are explicitly requested
