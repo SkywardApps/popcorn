@@ -43,10 +43,32 @@ This document outlines a comprehensive test plan for the Popcorn serialization f
 - Test serialization of Guid
 
 ### 2.2 Complex Types
-- Test serialization of arrays and collections
-- Test serialization of dictionaries
-- Test serialization of custom objects
-- Test serialization of anonymous types
+- **Value Types**
+  - Test serialization of structs (value-type semantics)
+  - Test serialization of records structs (value-type semantics)
+  - Test serialization of records (reference-type semantics)
+  - Test serialization of tuples (ValueTuple and Tuple)
+  - Test serialization of nested value types
+
+- **Collections**
+  - Test serialization of arrays and basic collections (List, IEnumerable)
+  - Test serialization of dictionaries (Dictionary, IDictionary)
+  - Test serialization of advanced collection types:
+    - ConcurrentDictionary (thread-safe dictionary)
+    - ImmutableArray (immutable collection)
+    - HashSet (unique element collection)
+    - ReadOnlyCollection (read-only wrapper)
+    - ObservableCollection (collection with change notifications)
+
+- **Custom Objects**
+  - Test serialization of custom objects with mixed property types
+  - Test serialization of objects with circular references
+  - Test serialization of objects with deep nesting
+
+- **Special Types**
+  - Test serialization of anonymous types
+  - Test serialization of dynamic objects
+  - Test serialization of interfaces and abstract classes
 
 ## 3. Nested Object Tests
 

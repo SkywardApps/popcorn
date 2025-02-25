@@ -11,6 +11,7 @@ namespace Popcorn.FunctionalTests
     [JsonSerializable(typeof(ApiResponse<CollectionAlwaysAttributeTestModel>))]
     [JsonSerializable(typeof(ApiResponse<ConflictingAttributesTestModel>))]
     [JsonSerializable(typeof(ApiResponse<IncludeParameterTestModel>))]
+    [JsonSerializable(typeof(ApiResponse<PrimitiveTypesTestModel>))]
     partial class AppJsonSerializerContext : JsonSerializerContext
     {
     }

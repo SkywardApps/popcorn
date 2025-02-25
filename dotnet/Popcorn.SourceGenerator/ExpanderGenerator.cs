@@ -14,8 +14,6 @@ namespace Popcorn.SourceGenerator
         private const string IEnumerableTypeName = "System.Collections.Generic.IEnumerable<T>";
         private const string IDictionaryTypeName = "System.Collections.Generic.IDictionary<TKey,TValue>";
         private static readonly HashSet<string> NumberTypes = new HashSet<string>([
-            typeof(Single).FullName,
-            typeof(Double).FullName,
             typeof(Decimal).FullName,
             typeof(Byte).FullName,
             typeof(UInt16).FullName,
@@ -25,6 +23,7 @@ namespace Popcorn.SourceGenerator
             typeof(Int16).FullName,
             typeof(Int32).FullName,
             typeof(Int64).FullName,
+            "decimal",
             "byte",
             "sbyte",
             "short",
@@ -50,8 +49,15 @@ namespace Popcorn.SourceGenerator
         ]);
 
         private static readonly HashSet<string> IgnoreTypes = new HashSet<string>([
+            "char",
+            typeof(Single).FullName,
+            typeof(Double).FullName,
+            "float",
+            "double",
+            typeof(char).FullName,
             typeof(Guid).FullName,
             typeof(DateTime).FullName,
+            typeof(TimeSpan).FullName,
             typeof(DateTimeOffset).FullName, // We need a way to say "opt out of expanding these"
         ]);
 
@@ -127,6 +133,7 @@ public static class PopcornJsonOptionsExtension
 {{
     public static void AddPopcornOptions(this global::System.Text.Json.JsonSerializerOptions options)
     {{
+        options.NumberHandling = global::System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals;
         {String.Join("", targetTypes.Select(targetType => $@"
         options.Converters.Add(new global::Popcorn.Generated.Converters.{NameType(targetType)}JsonConverter());")
             )}
@@ -393,6 +400,7 @@ public static class PopcornJsonOptionsExtension
                 var serializeLine = $"JsonSerializer.Serialize(writer, {referenceName}, options);";
 
                 var propertyTypeName = property.Type.ToDisplayString().Replace("?", "");
+                var isNullable = property.Type.ToDisplayString().Contains("?");
                 Show($"Will Render {propertyTypeName}", context);
                 if (IgnoreTypes.Contains(propertyTypeName))
                 {
@@ -400,7 +408,14 @@ public static class PopcornJsonOptionsExtension
                 }
                 else if (NumberTypes.Contains(propertyTypeName))
                 {
-                    serializeLine = $"writer.WriteNumberValue({referenceName});";
+                    if (isNullable)
+                    {
+                        serializeLine = $"if({referenceName} == null) {{ writer.WriteNullValue(); }} else {{ writer.WriteNumberValue({referenceName}{(isNullable ? ".Value" : "")}); }}";
+                    }
+                    else
+                    {
+                        serializeLine = $"writer.WriteNumberValue({referenceName}{(isNullable ? ".Value" : "")});";
+                    }
                 }
                 else if (StringTypes.Contains(propertyTypeName))
                 {
@@ -408,7 +423,14 @@ public static class PopcornJsonOptionsExtension
                 }
                 else if (BoolTypes.Contains(propertyTypeName))
                 {
-                    serializeLine = $"writer.WriteBooleanValue({referenceName});";
+                    if (isNullable)
+                    {
+                        serializeLine = $"if({referenceName} == null) {{ writer.WriteNullValue(); }} else {{ writer.WriteBooleanValue({referenceName}{(isNullable ? ".Value" : "")}); }}";
+                    }
+                    else
+                    {
+                        serializeLine = $"writer.WriteBooleanValue({referenceName}{(isNullable ? ".Value" : "")});";
+                    }
                 }
                 else if (allTypeNames.Contains(propertyTypeName))
                 {
@@ -419,9 +441,9 @@ public static class PopcornJsonOptionsExtension
                     {{ 
                         Pop{NameType(property.Type as INamedTypeSymbol)}(
                             writer, 
-                            new global::Popcorn.Shared.Pop<{propertyTypeName}> 
+                            new global::Popcorn.Shared.Pop<{property.Type.ToDisplayString()}> 
                             {{ 
-                                Data = {referenceName}, 
+                                Data = ({property.Type.ToDisplayString()}){referenceName}, 
                                 PropertyReferences = propertyReference?.Children ?? global::Popcorn.Shared.PropertyReference.Default
                             }}, 
                             options); 
