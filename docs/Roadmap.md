@@ -4,15 +4,35 @@
 
 A high level overview of features we would like to develop, in relative priority order.
 
-1. Automatic schema generation
- 2. Automatic documentation generation
-3. Payload containers
- 4.   Pagination  
-2. Platform Provider: PHP
-3. Platform Provider: .Net Framework
-5. Platform Provider: Client side Typescript
-6. Platform Provider: Client side Javascript
-3. Filtering
-4. Calculated Properties (Count, Max, Sum...)
+1. Source Generator and AOT Compilation
+   - Optimize compile-time type checking and code generation
+   - Enhance error reporting and diagnostics
+   - Support for more complex type scenarios
+   - Performance profiling and optimization tools
 
-Feel free to check out how to [contribute](Contributing.md) towards these features! 
+2. Documentation and Tooling
+   - Source generator documentation and examples
+   - Migration guides from runtime to compile-time
+   - Visual Studio/VS Code integration
+   - Debugging tools for generated code
+
+3. Performance Optimizations
+   - Memory allocation reduction
+   - Startup time improvements
+   - Runtime performance metrics
+   - Benchmarking tools
+
+4. Core Features
+   - Enhanced schema generation
+   - Improved error handling
+   - Pagination support
+   - Filtering capabilities
+   - Calculated properties (Count, Max, Sum)
+
+5. Future Considerations
+   - GraphQL-style nested queries
+   - Real-time data support
+   - Custom expansion rules
+   - Integration with popular frameworks
+
+Feel free to check out how to [contribute](Contributing.md) towards these features!

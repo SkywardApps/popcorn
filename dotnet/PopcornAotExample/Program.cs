@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using over;
 using Popcorn.Shared;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 

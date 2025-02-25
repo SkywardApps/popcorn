@@ -1,20 +1,23 @@
 # Projects
 
-There are a number of projects under this solution.  This is a quick summary of the relationships
+There are a number of projects under this solution. This is a quick summary of the relationships.
 
-* Popcorn - All implementation code
-  * PopcornNetStandard - Implementation code that can be shared between all .NET versions
-  * PopcornNetStandard.EntityFrameworkCore - Lazy loading and helper utilities for projects using EntityFrameworkCore
-  * PopcornNetStandard.WebApiCore - Middleware for projects using WebApiCore
-  * PopcornNetFramework.WebApi - Specific utilities and hooks for Net Framework projects using Web Api 2 (ASP.NET).
+* Core Implementation
+  * Popcorn.Shared - Core attributes and models shared across all projects
+  * Popcorn.SourceGenerator - Source generator implementation for build-time code generation
+  * PopcornNetStandard - Legacy implementation code shared between all .NET versions (being migrated to source generation)
+  * PopcornNetStandard.WebApiCore - Middleware for projects using WebApiCore (being migrated to source generation)
 
-* Examples - References that integrate popcorn into example projects
-  * ExampleModel - Data models that are shared across projects (to avoid copy-paste, and enable quicker testing)
-  * PopcornNetCoreExample - An example implementation using EntityFrameworkCore (sqlite) and WebApiCore on DotNet Core
-  * PopcornNetFrameworkExample - An example implementation using Web Api (ASP.NET) on .Net Framework
+* Examples
+  * PopcornAotExample - Example implementation using source generation with AOT/trimming support
+  * PopcornNet5Example - Example implementation using .NET 5
+  * ExampleModel - Data models shared across projects
 
-* Test - All tests for the projects
-  * PopcornNetStandardTests - Tests that target only the base implementation in .NET standard that is common.
-  * CommonIntegrationTests - Integration tests written to be largely technology independent, but that need to be used in a technology-dependent environment.
-  * PopcornNetCoreExampleIntegrationTests - Thin wrapper applying the CommonIntegrationTests to the PopcornNetCoreExample project.
-  * PopcornNetFrameworkExampleIntegrationTests - Thin wrapper applying the CommonIntegrationTests to the PopcornNetFrameworkExample project.
+* Test
+  * Popcorn.SourceGenerator.Test - Tests for the source generator implementation using snapshot testing
+  * PopcornSpecTests - Tests for core protocol specification compliance
+  * CommonIntegrationTests - Integration tests written to be largely technology independent
+  * PopcornNetCoreExampleIntegrationTests - Integration tests for .NET Core examples
+
+* Benchmarks
+  * ParsingIncludes - Performance benchmarks for include parsing implementations
