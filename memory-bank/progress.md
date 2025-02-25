@@ -80,6 +80,12 @@
 - Comprehensive test plan created for serialization functionality
 - Fixed hardcoded JsonSerializerContext reference in ExpanderGenerator
 - Added test for selective property inclusion
+- Implemented tests for include parameter variations (case sensitivity, property negation)
+
+🔨 Documentation Improvements
+- Updated documentation to clarify include parameter syntax
+- Added detailed explanation of special references (!all, !default)
+- Added documentation for property negation using the "-" prefix
 
 🔨 Schema Generation
 - Design phase

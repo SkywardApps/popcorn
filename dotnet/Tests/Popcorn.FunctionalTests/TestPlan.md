@@ -29,9 +29,9 @@ This document outlines a comprehensive test plan for the Popcorn serialization f
   - Test case sensitivity of property names
   
 - **Property Negation**
-  - Test negating specific properties (e.g., `[prop1,prop2,!prop3]`)
-  - Test negating properties with `!all` (e.g., `[!all,!prop1]`)
-  - Test negating properties with `!default` (e.g., `[!default,!prop1]`)
+  - Test negating specific properties (e.g., `[prop1,prop2,-prop3]`)
+  - Test negating properties with `!all` (e.g., `[!all,-prop1]`)
+  - Test negating properties with `!default` (e.g., `[!default,-prop1]`)
 
 ## 2. Data Type Tests
 

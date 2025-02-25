@@ -75,6 +75,9 @@ graph TD
 [MyProperty1,_ASecondProperty,_0]           # Numbers and underscores
 [FirstName,Child[FirstName,LastName],_Age]  # Nested entities
 [AllMyChildren[FirstName,LastName]]         # Collections
+[!all,-ExcludedProperty]                    # All properties except ExcludedProperty
+[!default,-DefaultProperty]                 # Default properties except DefaultProperty
+[Property1,Property2,-Property3]            # Include Property1 and Property2, exclude Property3
 ```
 
 #### Invalid Examples
@@ -83,6 +86,7 @@ graph TD
 [Property!Name]     # Contains punctuation
 [A]                 # Single character
 [___]               # Only underscores
+[!Property]         # Invalid negation syntax (use -Property instead)
 ```
 
 ### Expansion Pattern
@@ -122,6 +126,13 @@ graph TD
 - Must contain at least one non-underscore
 - Minimum length of two characters
 - Alphanumeric and underscore only
+
+### Special Keywords and Negation
+- `!all` - Special keyword to include all properties
+- `!default` - Special keyword to include only default properties
+- `-PropertyName` - Negation syntax to exclude a specific property
+- Properties can be negated in combination with special keywords: `[!all,-PropertyName]`
+- Properties can be negated in specific property lists: `[Property1,Property2,-Property3]`
 
 ### Default Behavior
 - Entity-specific default fields

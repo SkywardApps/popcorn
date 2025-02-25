@@ -10,6 +10,7 @@ namespace Popcorn.FunctionalTests
     [JsonSerializable(typeof(ApiResponse<NestedAlwaysAttributeTestModel>))]
     [JsonSerializable(typeof(ApiResponse<CollectionAlwaysAttributeTestModel>))]
     [JsonSerializable(typeof(ApiResponse<ConflictingAttributesTestModel>))]
+    [JsonSerializable(typeof(ApiResponse<IncludeParameterTestModel>))]
     partial class AppJsonSerializerContext : JsonSerializerContext
     {
     }

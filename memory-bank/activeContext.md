@@ -51,6 +51,8 @@
 - Fixed hardcoded JsonSerializerContext reference in ExpanderGenerator
 - Created comprehensive test plan for serialization functionality
 - Added test for selective property inclusion
+- Implemented tests for include parameter variations (case sensitivity, property negation)
+- Updated documentation to clarify include parameter syntax, special references (!all, !default), and property negation
 
 ### In Progress
 - Source generator improvements (see Plan.md)

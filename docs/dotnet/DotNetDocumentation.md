@@ -4,6 +4,7 @@
 
 Tutorials:
 + [Getting Started](DotNetTutorialGettingStarted.md)
++ [Include Parameter Syntax](DotNetTutorialIncludeParameterSyntax.md)
 + [Wildcard Includes](DotNetTutorialWildcardIncludes.md)
 + [Advanced Projections](DotNetTutorialAdvancedProjections.md)
 + [Default Includes](DotNetTutorialDefaultIncludes.md)
@@ -18,4 +19,3 @@ Tutorials:
 Implementation Details:
 + OutputFormatter
 + Expander
-
