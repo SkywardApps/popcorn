@@ -202,6 +202,56 @@ Voila! Default inclusion complete.
 ## Important caveat
 It is important to mention that both option 1 and option 2 can't be used at the same time on any single projection in order to help maintain clarity of design.
 
+## Default Behavior When No Attributes Are Present
+
+Starting with version 2.0, Popcorn introduces a more intuitive default behavior:
+
+**If a type has no properties or fields with either `[Always]` or `[Default]` attributes, then all properties and fields of that type are considered Default.**
+
+This means:
+
+1. If you mark one or more properties with `[Default]` or `[Always]`, only those properties (and any with `[Always]`) will be included by default
+2. If you don't mark any properties with attributes, all properties will be included by default
+3. Properties marked with `[Never]` are still excluded, even when all other properties are included by default
+
+This behavior makes Popcorn more intuitive for new users while maintaining backward compatibility with existing code that uses attributes.
+
+### Examples:
+
+**Example 1: No attributes - all properties included by default**
+```csharp
+public class Person
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+}
+```
+All properties (Id, Name, Age) will be included by default.
+
+**Example 2: One Default attribute - only that property included by default**
+```csharp
+public class Person
+{
+    [Default]
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+}
+```
+Only the Id property will be included by default.
+
+**Example 3: Never attribute with no other attributes - all properties except Never included by default**
+```csharp
+public class Person
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    [Never]
+    public int Age { get; set; }
+}
+```
+Id and Name will be included by default, but Age will never be included.
 
 ### Default includes on subproperties
 We've also created a "SubPropertyDefaultIncludes" property that can be put on a projection to have any subordinate object

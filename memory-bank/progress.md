@@ -81,6 +81,7 @@
 - Fixed hardcoded JsonSerializerContext reference in ExpanderGenerator
 - Added test for selective property inclusion
 - Implemented tests for include parameter variations (case sensitivity, property negation)
+- Added test plan for ASP.NET Core Web API return types
 
 🔨 Documentation Improvements
 - Updated documentation to clarify include parameter syntax
@@ -111,6 +112,7 @@
 - Fix thread safety in PopcornAccessor
 - Implement property reference validation
 - Add attribute conflict detection
+- Implement tests for ASP.NET Core result types
 
 📋 Schema & Documentation
 - Complete schema generation system

@@ -1,6 +1,9 @@
 # Popcorn Serialization Test Plan
 
 This document outlines a comprehensive test plan for the Popcorn serialization functionality, covering various scenarios and edge cases.
+ 
+ ! Technical Note: The source generated for the tests is in obj/Generated, so while it isn't included directly in the project
+ you can find the source there to diagnose generation issues.
 
 ## 1. Property Inclusion/Exclusion Tests
 
@@ -17,6 +20,12 @@ This document outlines a comprehensive test plan for the Popcorn serialization f
 - **Never Attribute**
   - Test that properties with `[Never]` attribute are never included regardless of include parameters
   - Test that properties with `[Never]` attribute cannot be included even with explicit inclusion
+
+- **No Attributes Default Behavior**
+  - Test that all properties are included by default when no properties have `[Always]` or `[Default]` attributes
+  - Test that when one property has a `[Default]` attribute, only that property is included by default
+  - Test that when one property has an `[Always]` attribute, only that property is included by default
+  - Test that properties with `[Never]` attribute are excluded even when all other properties would be included by default
 
 ### 1.2 Include Parameter Variations
 - **Wildcard Includes**
@@ -69,6 +78,13 @@ This document outlines a comprehensive test plan for the Popcorn serialization f
   - Test serialization of anonymous types
   - Test serialization of dynamic objects
   - Test serialization of interfaces and abstract classes
+
+- **Web Types**
+  - Test serialization of ActionResult<T> return types
+  - Test serialization of IActionResult return types
+  - Test serialization of various result types (Ok, NotFound, BadRequest, etc.)
+  - Test content negotiation with Popcorn serialization
+  - Test integration with ASP.NET Core MVC filters and middleware
 
 ## 3. Nested Object Tests
 
@@ -171,6 +187,7 @@ For each test category, we should:
 6. **NullablePropertiesModel** - Model with nullable properties
 7. **PolymorphicModel** - Base model with derived types for polymorphism testing
 8. **LargeObjectModel** - Model with many properties for performance testing
+9. **NoAttributesModel** - Model with no attributes to test the new default behavior
 
 ## Priority Order
 

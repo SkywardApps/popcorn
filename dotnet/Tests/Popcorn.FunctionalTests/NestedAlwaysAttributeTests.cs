@@ -64,9 +64,10 @@ namespace Popcorn.FunctionalTests
             // Verify response
             var json = await response.Content.ReadAsStringAsync();
             var result = JsonDocument.Parse(json);
-            
-            // Assert top-level properties are NOT present
-            Assert.False(result.RootElement.GetProperty("Data").TryGetProperty("Id", out _), "Top-level Id property is NOT present");
+
+            Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("Id", out _), "Top-level Id property is present");
+
+            // Assert other top-level properties are NOT present
             Assert.False(result.RootElement.GetProperty("Data").TryGetProperty("Name", out _), "Top-level Name property is NOT present");
             
             // Assert nested object is NOT present

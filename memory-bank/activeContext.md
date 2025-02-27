@@ -53,6 +53,7 @@
 - Added test for selective property inclusion
 - Implemented tests for include parameter variations (case sensitivity, property negation)
 - Updated documentation to clarify include parameter syntax, special references (!all, !default), and property negation
+- Updated test plan to include Web Types testing for ASP.NET Core result types
 
 ### In Progress
 - Source generator improvements (see Plan.md)
@@ -60,6 +61,7 @@
 - Documentation improvements
 - Performance optimizations
 - Additional provider planning
+- Testing integration with ASP.NET Core result types (ActionResult<T>, IActionResult)
 
 ## Active Decisions
 

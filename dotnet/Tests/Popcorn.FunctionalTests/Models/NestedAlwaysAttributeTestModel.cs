@@ -5,6 +5,7 @@ namespace Popcorn.FunctionalTests.Models
 {
     public class NestedAlwaysAttributeTestModel
     {
+        [Default]
         public int Id { get; set; }
         
         public string Name { get; set; } = string.Empty;
