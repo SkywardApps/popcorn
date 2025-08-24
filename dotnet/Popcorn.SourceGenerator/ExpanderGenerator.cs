@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using Microsoft.CodeAnalysis;
+﻿﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
@@ -268,17 +268,8 @@ public static class PopcornJsonOptionsExtension
                     // Check if this is a collection type and extract its item type
                     if (namedType.OriginalDefinition != null)
                     {
-                        if (InheritsOrImplements(namedType, IEnumerableTypeName) &&
-                            namedType.TypeArguments.Length > 0)
-                        {
-                            var itemType = namedType.TypeArguments[0];
-                            if (itemType is INamedTypeSymbol itemNamedType && !visitedTypes.Contains(itemNamedType))
-                            {
-                                typesToVisit.Enqueue(itemNamedType);
-                            }
-                        }
-                        // Handle IDictionary<K,V> - only consider the value type V, not the key type K
-                        else if (InheritsOrImplements(namedType, IDictionaryTypeName) &&
+                        // Handle "dictionary" types eg IDictionary<K,V> - only consider the value type V, not the key type K
+                        if (InheritsOrImplements(namedType, IDictionaryTypeName) &&
                                 namedType.TypeArguments.Length > 1)
                         {
                             var valueType = namedType.TypeArguments[1];
@@ -286,6 +277,20 @@ public static class PopcornJsonOptionsExtension
                             {
                                 typesToVisit.Enqueue(valueNamedType);
                             }
+                            continue;
+                        }
+
+                        // Handle "list" types
+                        else if (InheritsOrImplements(namedType, IEnumerableTypeName) &&
+                            namedType.TypeArguments.Length > 0)
+                        {
+                            var itemType = namedType.TypeArguments[0];
+                            if (itemType is INamedTypeSymbol itemNamedType && !visitedTypes.Contains(itemNamedType))
+                            {
+                                typesToVisit.Enqueue(itemNamedType);
+                            }
+
+                            continue;
                         }
                     }
 
@@ -298,7 +303,7 @@ public static class PopcornJsonOptionsExtension
                         }
                     }
                     
-                    // Process fields - NEW CODE
+                    // Process fields
                     foreach (var member in namedType.GetMembers().OfType<IFieldSymbol>())
                     {
                         if (member.DeclaredAccessibility == Accessibility.Public && !member.IsStatic && !member.IsConst)
@@ -370,8 +375,20 @@ public static class PopcornJsonOptionsExtension
                             Data = unwrappedValue, 
                             PropertyReferences = value.PropertyReferences 
                         }}, 
-                        options);
+                        options, visitedObjects);
                 ";
+            }
+            else if (targetType is INamedTypeSymbol namedDictionaryTypeNonNullable && InheritsOrImplements(namedDictionaryTypeNonNullable, IDictionaryTypeName))
+            {
+                var valueType = namedDictionaryTypeNonNullable.TypeArguments[1] as INamedTypeSymbol;
+                Show($"DICTIONARY DETECTED: {namedDictionaryTypeNonNullable} Is an IDictionary of {valueType?.ToDisplayString()}", context);
+                internalSerializationCode = CreateDictionarySerializer(allTypeNames, valueType, context);
+            }
+            else if (targetType is INamedTypeSymbol namedTypeDictTest && namedTypeDictTest.OriginalDefinition?.ToDisplayString() == "System.Collections.Generic.Dictionary<TKey, TValue>")
+            {
+                var valueType = namedTypeDictTest.TypeArguments[1] as INamedTypeSymbol;
+                Show($"DICTIONARY BY ORIGINAL DEFINITION: {namedTypeDictTest} with value type {valueType?.ToDisplayString()}", context);
+                internalSerializationCode = CreateDictionarySerializer(allTypeNames, valueType, context);
             }
             // If this targetType implement IEnumerable, write out as an array and use the item type as target type instead for each element.
             else if (targetType is IArrayTypeSymbol arrayType)
@@ -397,6 +414,7 @@ public static class PopcornJsonOptionsExtension
             {
                 // We shouldn't really get here, but if we do, just serialize the object normally
                 internalSerializationCode = @"
+                    // 411: Just serialize the field normally
                     JsonSerializer.Serialize(writer, value.Data, options);
                 ";
             }
@@ -434,6 +452,7 @@ public static class PopcornJsonOptionsExtension
 
         public override void Write(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
         {{
+            System.Console.WriteLine($""CONVERTER LOG: {converterName}.Write() called for type {typeName}"");
             {jsonContextName}.Pop{NameType(targetType)}(writer, value, options);
         }}
         }}
@@ -443,6 +462,11 @@ public static class PopcornJsonOptionsExtension
         {classSymbol.DeclaredAccessibility.ToString().ToLower()} partial class {classSymbol.Name}
         {{
         public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
+        {{
+            Pop{NameType(targetType)}(writer, value, options, new HashSet<object>());
+        }}
+        
+        public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options, HashSet<object> visitedObjects)
         {{
                 {nullCheck}
                 {internalSerializationCode}
@@ -469,17 +493,70 @@ public static class PopcornJsonOptionsExtension
                                 new global::Popcorn.Shared.Pop<{itemType.ToDisplayString()}> {{ 
                                     Data = item, 
                                     PropertyReferences = value.PropertyReferences 
-                                }}, options);
+                                }}, options, visitedObjects);
                         }}  
                         writer.WriteEndArray();
     ";
             }
             else
             {
-                // We just do a normal json serialize of the array
+                // We just do a normal json serialize of the array // TODO << >> WHY DOES DICTIONARY SERIALIZATION GET HERE????
                 internalSerializationCode = @"
+                            // 493: Just serialize the field normally
                             JsonSerializer.Serialize(writer, value.Data, options);
     ";
+            }
+
+            return internalSerializationCode;
+        }
+
+
+        private static string CreateDictionarySerializer(HashSet<string> allTypeNames, INamedTypeSymbol? valueType, SourceProductionContext context)
+        {
+            string internalSerializationCode;
+            var propertyTypeName = valueType?.ToDisplayString().Replace("?", "") ?? "";
+            
+            if (allTypeNames.Contains(propertyTypeName))
+            {
+                // We need to recurse into this type, and treat it as an array of bundles
+                // This is... a wee bit ugly since each item needs to get bundled independently
+                internalSerializationCode = $@"
+                        // DICTIONARY COMPLEX PATH - Recursive dictionary serialization for {propertyTypeName}
+                        Func<string, string> naming = options.PropertyNamingPolicy != null ? options.PropertyNamingPolicy.ConvertName : (a) => a;
+                        writer.WriteStartObject();
+                        
+                        // For dictionaries, extract the children property references if they exist
+                        // If the dictionary has child references (e.g., [Dict[Prop1,Prop2]]), use those
+                        // Otherwise, use PropertyReference.Default to get default attribute-based behavior
+                        var hasPropertyReferences = value.PropertyReferences.Any();
+                        var firstRef = hasPropertyReferences ? value.PropertyReferences.First() : null;
+                        var hasChildren = firstRef?.Children != null;
+                        var childrenCount = hasChildren ? firstRef.Children.Count : 0;
+                        
+                        var dictionaryValueReferences = hasPropertyReferences && hasChildren && childrenCount > 0 ? 
+                            firstRef.Children : 
+                            global::Popcorn.Shared.PropertyReference.Default;
+                            
+                        foreach(var kv in value.Data)
+                        {{
+                                writer.WritePropertyName(naming(kv.Key));
+                                Pop{NameType(valueType)}(
+                                    writer, 
+                                    new global::Popcorn.Shared.Pop<{valueType.ToDisplayString()}> {{ 
+                                        Data = kv.Value, 
+                                        PropertyReferences = dictionaryValueReferences
+                                }}, options, visitedObjects);
+                        }}  
+                        writer.WriteEndObject();
+";
+            }
+            else
+            {
+                // We just do a normal json serialize of the dictionary
+                internalSerializationCode = @"
+                            // DICTIONARY SIMPLE PATH - Just serialize the field normally
+                        JsonSerializer.Serialize(writer, value.Data, options);
+";
             }
 
             return internalSerializationCode;
@@ -489,13 +566,13 @@ public static class PopcornJsonOptionsExtension
         private static bool ShouldSerializeMember(ISymbol member)
         {
             var attrs = member.GetAttributes();
-            return !attrs.Any(a => a.AttributeClass?.ToString() == typeof(Popcorn.NeverAttribute).FullName);
+            return !attrs.Any(a => a.AttributeClass?.ToDisplayString() == "Popcorn.NeverAttribute");
         }
 
         private static string GetSerializedName(ISymbol member)
         {
             var attrs = member.GetAttributes();
-            var nameAttr = attrs.FirstOrDefault(a => a.AttributeClass?.ToString() == "System.Text.Json.Serialization.JsonPropertyNameAttribute");
+            var nameAttr = attrs.FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "System.Text.Json.Serialization.JsonPropertyNameAttribute");
             if (nameAttr != null && nameAttr.ConstructorArguments.Any())
             {
                 return nameAttr.ConstructorArguments[0].Value?.ToString() ?? member.Name;
@@ -505,7 +582,7 @@ public static class PopcornJsonOptionsExtension
 
         private static bool HasAttribute(ISymbol member, string attributeTypeName)
         {
-            return member.GetAttributes().Any(a => a.AttributeClass?.ToString() == attributeTypeName);
+            return member.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == attributeTypeName);
         }
 
         private static string CreateComplexObjectSerialization(INamedTypeSymbol targetType, SourceProductionContext context, HashSet<string> allTypeNames)
@@ -519,8 +596,8 @@ public static class PopcornJsonOptionsExtension
             foreach (var property in targetType.GetMembers().OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public && p.GetMethod != null && !p.IsIndexer))
             {
-                if (HasAttribute(property, typeof(Popcorn.AlwaysAttribute).FullName) || 
-                    HasAttribute(property, typeof(Popcorn.DefaultAttribute).FullName))
+                if (HasAttribute(property, "Popcorn.AlwaysAttribute") || 
+                    HasAttribute(property, "Popcorn.DefaultAttribute"))
                 {
                     hasAlwaysOrDefaultAttribute = true;
                     break;
@@ -533,8 +610,8 @@ public static class PopcornJsonOptionsExtension
                 foreach (var field in targetType.GetMembers().OfType<IFieldSymbol>()
                     .Where(f => f.DeclaredAccessibility == Accessibility.Public && !f.IsStatic && !f.IsConst))
                 {
-                    if (HasAttribute(field, typeof(Popcorn.AlwaysAttribute).FullName) || 
-                        HasAttribute(field, typeof(Popcorn.DefaultAttribute).FullName))
+                    if (HasAttribute(field, "Popcorn.AlwaysAttribute") || 
+                        HasAttribute(field, "Popcorn.DefaultAttribute"))
                     {
                         hasAlwaysOrDefaultAttribute = true;
                         break;
@@ -567,6 +644,17 @@ public static class PopcornJsonOptionsExtension
             }
             
             var internalSerializationCode = $@"
+                // Circular reference detection
+                if (visitedObjects.Contains(value.Data))
+                {{
+                    writer.WriteStartObject();
+                    writer.WritePropertyName(""$ref"");
+                    writer.WriteStringValue(""circular"");
+                    writer.WriteEndObject();
+                    return;
+                }}
+                visitedObjects.Add(value.Data);
+
                 Func<string, string> naming = options.PropertyNamingPolicy != null ? options.PropertyNamingPolicy.ConvertName : (a) => a;
                 var properties = value.PropertyReferences;
                 var useAll = properties.Any(p => ""!all"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));
@@ -579,6 +667,9 @@ public static class PopcornJsonOptionsExtension
                 {propertySerializationCode}
 
                 writer.WriteEndObject();
+                
+                // Remove from visited objects after serialization
+                visitedObjects.Remove(value.Data);
             ";
             return internalSerializationCode;
         }
@@ -596,7 +687,9 @@ public static class PopcornJsonOptionsExtension
             var serializedName = GetSerializedName(member);
             var originalName = memberName;
             var referenceName = $"value.Data.{originalName}";
-            var serializeLine = $"JsonSerializer.Serialize(writer, {referenceName}, options);";
+            var serializeLine = @$"
+                // 646: Just serialize the field normally
+                JsonSerializer.Serialize(writer, {referenceName}, options);";
             
             var memberTypeName = memberType.ToDisplayString().Replace("?", "");
             var handleNullable = IsNullableType(memberType);
@@ -646,6 +739,7 @@ public static class PopcornJsonOptionsExtension
                     }} 
                     else 
                     {{ 
+                        // 695: We need to recurse into this type, and treat it as an array of bundles
                         writer.WriteStartArray();
                         foreach(var item in {referenceName})
                         {{
@@ -654,7 +748,7 @@ public static class PopcornJsonOptionsExtension
                                 new global::Popcorn.Shared.Pop<{arrayType.ElementType.ToDisplayString()}> {{ 
                                     Data = item, 
                                     PropertyReferences = propertyReference?.Children ?? global::Popcorn.Shared.PropertyReference.Default
-                                }}, options);
+                                }}, options, visitedObjects);
                         }}  
                         writer.WriteEndArray();
                     }}";
@@ -662,7 +756,9 @@ public static class PopcornJsonOptionsExtension
                 else
                 {
                     // Just serialize the array normally
-                    serializeLine = $"JsonSerializer.Serialize(writer, {referenceName}, options);";
+                    serializeLine = @$"
+                        // 713: Just serialize the array normally
+                        JsonSerializer.Serialize(writer, {referenceName}, options);";
                 }
             }
             else if (allTypeNames.Contains(memberTypeName) && memberType is INamedTypeSymbol memberNamedType)
@@ -678,6 +774,7 @@ public static class PopcornJsonOptionsExtension
                 }
                 serializeLine = $@"{nullCheck}
                 {{ 
+                    // 730: We need to recurse into this type, and treat it as a bundle
                     Pop{NameType(memberNamedType)}(
                         writer, 
                         new global::Popcorn.Shared.Pop<{memberType.ToDisplayString()}> 
@@ -685,17 +782,18 @@ public static class PopcornJsonOptionsExtension
                             Data = ({memberType.ToDisplayString()}){referenceName}, 
                             PropertyReferences = propertyReference?.Children ?? global::Popcorn.Shared.PropertyReference.Default
                         }}, 
-                        options); 
+                        options, visitedObjects); 
                 }}";
             }
             
             var serializeGroup = "";
             
             // Is this _Always_ included? Then include it.
-            if (HasAttribute(member, typeof(Popcorn.AlwaysAttribute).FullName))
+            if (HasAttribute(member, "Popcorn.AlwaysAttribute"))
             {
                 serializeGroup = ($@"
-            if(propertyReference == null || propertyReference.Negated == false)
+            // Always properties must ALWAYS be included, even when explicitly negated
+            // This is the core contract of the [Always] attribute
             {{
                 // {memberTypeName} {originalName} ({(isField ? "field" : "property")})
                 writer.WritePropertyName(naming(""{serializedName}""));
@@ -703,10 +801,10 @@ public static class PopcornJsonOptionsExtension
             }}");
             }
             // Is this included by !default Then include it unless excluded
-            else if (HasAttribute(member, typeof(Popcorn.DefaultAttribute).FullName) || (!hasAlwaysOrDefaultAttribute && !HasAttribute(member, typeof(Popcorn.NeverAttribute).FullName)))
+            else if (HasAttribute(member, "Popcorn.DefaultAttribute"))
             {
                 serializeGroup = ($@"
-            if((useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference.Negated == false))
+            if((useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference?.Negated == false))
             {{
                 // {memberTypeName} {originalName} ({(isField ? "field" : "property")})
                 writer.WritePropertyName(naming(""{serializedName}""));
@@ -715,19 +813,74 @@ public static class PopcornJsonOptionsExtension
             }
             else
             {
-                serializeGroup = ($@"
-            if((useAll || propertyReference != null) && (propertyReference == null || propertyReference.Negated == false))
+                // Properties with no attributes: include by default only if class has no explicit Always/Default attributes
+                if (!hasAlwaysOrDefaultAttribute && !HasAttribute(member, "Popcorn.NeverAttribute"))
+                {
+                    serializeGroup = ($@"
+            if((useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference?.Negated == false))
             {{
-                // {memberTypeName} {originalName} ({(isField ? "field" : "property")})
+                // {memberTypeName} {originalName} ({(isField ? "field" : "property")}) - default behavior when no explicit attributes in class
                 writer.WritePropertyName(naming(""{serializedName}""));
                 {serializeLine}
             }}");
+                }
+                else
+                {
+                    // Properties with no attributes in classes with explicit attributes: only include if explicitly requested
+                    serializeGroup = ($@"
+            if(propertyReference != null && propertyReference?.Negated == false)
+            {{
+                // {memberTypeName} {originalName} ({(isField ? "field" : "property")}) - explicit request only when class has explicit attributes
+                writer.WritePropertyName(naming(""{serializedName}""));
+                {serializeLine}
+            }}");
+                }
+            }
+            
+            // Add specific diagnostic logging for ComplexItem.Id property
+            var diagnosticCode = "";
+            if (originalName == "Id" && member.ContainingType.Name == "ComplexItem")
+            {
+                // Update diagnostic to match the actual condition being used
+                if (HasAttribute(member, "Popcorn.AlwaysAttribute"))
+                {
+                    diagnosticCode = $@"
+            // DIAGNOSTIC: Always attribute - will be included unconditionally
+            System.Console.WriteLine(""DIAGNOSTIC ComplexItem.Id: Always attribute - WILL BE WRITTEN"");";
+                }
+                else if (HasAttribute(member, "Popcorn.DefaultAttribute"))
+                {
+                    diagnosticCode = $@"
+            // DIAGNOSTIC: Default attribute logic
+            var diagCondition = (useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference?.Negated == false);
+            System.Console.WriteLine($""DIAGNOSTIC ComplexItem.Id: useAll={{useAll}}, useDefault={{useDefault}}, propRef={{(propertyReference != null ? ""Found"" : ""null"")}}, CONDITION={{diagCondition}}"");";
+                }
+                else if (!hasAlwaysOrDefaultAttribute && !HasAttribute(member, "Popcorn.NeverAttribute"))
+                {
+                    diagnosticCode = $@"
+            // DIAGNOSTIC: Default behavior (no explicit attributes in class)
+            var diagCondition = (useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference?.Negated == false);
+            System.Console.WriteLine($""DIAGNOSTIC ComplexItem.Id: useAll={{useAll}}, useDefault={{useDefault}}, propRef={{(propertyReference != null ? ""Found"" : ""null"")}}, CONDITION={{diagCondition}}"");";
+                }
+                else
+                {
+                    diagnosticCode = $@"
+            // DIAGNOSTIC: Explicit request only logic  
+            var diagCondition = propertyReference != null && propertyReference?.Negated == false;
+            System.Console.WriteLine($""DIAGNOSTIC ComplexItem.Id: propRef={{(propertyReference != null ? ""Found"" : ""null"")}}, negated={{propertyReference?.Negated}}, CONDITION={{diagCondition}}"");
+            if (diagCondition) {{
+                System.Console.WriteLine(""DIAGNOSTIC: CONDITION TRUE - Id WILL BE WRITTEN"");
+            }} else {{
+                System.Console.WriteLine(""DIAGNOSTIC: CONDITION FALSE - Id SHOULD NOT BE WRITTEN"");
+            }}";
+                }
             }
             
             codeBuilder.AppendLine($@"
         {{
             // Find if this specific member is requested
             var propertyReference = properties.FirstOrDefault(p => ""{serializedName}"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));
+            {diagnosticCode}
             {serializeGroup}
         }}");
         }
@@ -773,6 +926,19 @@ public static class PopcornJsonOptionsExtension
                     DiagnosticSeverity.Warning,
                     isEnabledByDefault: true),
                 Location.None));
+        }
+        
+        private static string CreateComplexItemDiagnostic(string memberName, bool hasDefaultAttribute, bool hasAlwaysAttribute)
+        {
+            return $@"
+            // DIAGNOSTIC: Processing {memberName} (Default={hasDefaultAttribute}, Always={hasAlwaysAttribute})
+            if (typeof({memberName}) == typeof(string) && ""{memberName}"" == ""Id"")
+            {{
+                var debugPropertyNames = string.Join("","", properties.Select(p => p.Name.ToString()));
+                var debugMessage = $""DIAGNOSTIC ComplexItem.{memberName}: useAll={{useAll}}, useDefault={{useDefault}}, propertyReference={{propertyReference?.Name.ToString() ?? ""null""}}, properties=[{{debugPropertyNames}}]"";
+                System.Diagnostics.Debug.WriteLine(debugMessage);
+                System.Console.WriteLine(debugMessage);
+            }}";
         }
     }
 

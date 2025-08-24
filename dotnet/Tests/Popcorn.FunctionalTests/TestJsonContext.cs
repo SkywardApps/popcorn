@@ -18,6 +18,10 @@ namespace Popcorn.FunctionalTests
     [JsonSerializable(typeof(ApiResponse<SingleAlwaysModel>))]
     [JsonSerializable(typeof(ApiResponse<SingleNeverModel>))]
     [JsonSerializable(typeof(ApiResponse<MixedAttributesModel>))]
+    [JsonSerializable(typeof(ApiResponse<BasicCollectionTypesModel>))]
+    [JsonSerializable(typeof(ApiResponse<CollectionEdgeCasesModel>))]
+    [JsonSerializable(typeof(ApiResponse<DictionaryTypesModel>))]
+    [JsonSerializable(typeof(ApiResponse<CollectionPropertyInclusionModel>))]
     partial class AppJsonSerializerContext : JsonSerializerContext
     {
     }
