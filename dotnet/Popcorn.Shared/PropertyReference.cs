@@ -19,6 +19,9 @@ namespace Popcorn.Shared
                 return Default;
             }
 
+            PropertyReference root = new PropertyReference { };
+            PropertyReference cursor = root;
+
             int position = 0;
             IReadOnlyList<PropertyReference> ParseList()
             {
@@ -30,17 +33,7 @@ namespace Popcorn.Shared
                     if (c == '[')
                     {
                         position++;
-                        // The last property added to builder should get the children
-                        if (builder.Count > 0)
-                        {
-                            var parentProperty = builder[builder.Count - 1];
-                            var children = ParseList();
-                            // Create new PropertyReference with children to maintain immutability
-                            var updatedParent = parentProperty with { Children = children };
-                            builder[builder.Count - 1] = updatedParent;
-                        }
-                        // If builder.Count == 0, this is just the opening bracket of the top-level list
-                        // Continue parsing the contents (don't call ParseList recursively)
+                        cursor!.Children = ParseList();
                     }
                     else if (c == ']')
                     {
@@ -67,19 +60,20 @@ namespace Popcorn.Shared
                             start++;
                         }
 
-                        var newProperty = new PropertyReference
+                        cursor = new PropertyReference
                         {
                             Name = input.AsMemory().Slice(start, position - start),
                             Negated = isNegated,
-                            Children = null, // Will be set later if brackets follow
+                            Children = PropertyReference.Default,
                         };
-                        builder.Add(newProperty);
+                        builder.Add(cursor);
                     }
                 }
                 return builder;
             }
 
-            return ParseList();
+            ParseList();
+            return root.Children ?? PropertyReference.Default;
         }
     }
 }

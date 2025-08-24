@@ -452,7 +452,6 @@ public static class PopcornJsonOptionsExtension
 
         public override void Write(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
         {{
-            System.Console.WriteLine($""CONVERTER LOG: {converterName}.Write() called for type {typeName}"");
             {jsonContextName}.Pop{NameType(targetType)}(writer, value, options);
         }}
         }}
@@ -801,10 +800,10 @@ public static class PopcornJsonOptionsExtension
             }}");
             }
             // Is this included by !default Then include it unless excluded
-            else if (HasAttribute(member, "Popcorn.DefaultAttribute"))
+            else if (HasAttribute(member, "Popcorn.DefaultAttribute") || (!hasAlwaysOrDefaultAttribute && !HasAttribute(member, "Popcorn.NeverAttribute")))
             {
                 serializeGroup = ($@"
-            if((useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference?.Negated == false))
+            if((useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference.Negated == false))
             {{
                 // {memberTypeName} {originalName} ({(isField ? "field" : "property")})
                 writer.WritePropertyName(naming(""{serializedName}""));
@@ -813,74 +812,19 @@ public static class PopcornJsonOptionsExtension
             }
             else
             {
-                // Properties with no attributes: include by default only if class has no explicit Always/Default attributes
-                if (!hasAlwaysOrDefaultAttribute && !HasAttribute(member, "Popcorn.NeverAttribute"))
-                {
-                    serializeGroup = ($@"
-            if((useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference?.Negated == false))
+                serializeGroup = ($@"
+            if((useAll || propertyReference != null) && (propertyReference == null || propertyReference.Negated == false))
             {{
-                // {memberTypeName} {originalName} ({(isField ? "field" : "property")}) - default behavior when no explicit attributes in class
+                // {memberTypeName} {originalName} ({(isField ? "field" : "property")})
                 writer.WritePropertyName(naming(""{serializedName}""));
                 {serializeLine}
             }}");
-                }
-                else
-                {
-                    // Properties with no attributes in classes with explicit attributes: only include if explicitly requested
-                    serializeGroup = ($@"
-            if(propertyReference != null && propertyReference?.Negated == false)
-            {{
-                // {memberTypeName} {originalName} ({(isField ? "field" : "property")}) - explicit request only when class has explicit attributes
-                writer.WritePropertyName(naming(""{serializedName}""));
-                {serializeLine}
-            }}");
-                }
-            }
-            
-            // Add specific diagnostic logging for ComplexItem.Id property
-            var diagnosticCode = "";
-            if (originalName == "Id" && member.ContainingType.Name == "ComplexItem")
-            {
-                // Update diagnostic to match the actual condition being used
-                if (HasAttribute(member, "Popcorn.AlwaysAttribute"))
-                {
-                    diagnosticCode = $@"
-            // DIAGNOSTIC: Always attribute - will be included unconditionally
-            System.Console.WriteLine(""DIAGNOSTIC ComplexItem.Id: Always attribute - WILL BE WRITTEN"");";
-                }
-                else if (HasAttribute(member, "Popcorn.DefaultAttribute"))
-                {
-                    diagnosticCode = $@"
-            // DIAGNOSTIC: Default attribute logic
-            var diagCondition = (useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference?.Negated == false);
-            System.Console.WriteLine($""DIAGNOSTIC ComplexItem.Id: useAll={{useAll}}, useDefault={{useDefault}}, propRef={{(propertyReference != null ? ""Found"" : ""null"")}}, CONDITION={{diagCondition}}"");";
-                }
-                else if (!hasAlwaysOrDefaultAttribute && !HasAttribute(member, "Popcorn.NeverAttribute"))
-                {
-                    diagnosticCode = $@"
-            // DIAGNOSTIC: Default behavior (no explicit attributes in class)
-            var diagCondition = (useAll || useDefault || propertyReference != null) && (propertyReference == null || propertyReference?.Negated == false);
-            System.Console.WriteLine($""DIAGNOSTIC ComplexItem.Id: useAll={{useAll}}, useDefault={{useDefault}}, propRef={{(propertyReference != null ? ""Found"" : ""null"")}}, CONDITION={{diagCondition}}"");";
-                }
-                else
-                {
-                    diagnosticCode = $@"
-            // DIAGNOSTIC: Explicit request only logic  
-            var diagCondition = propertyReference != null && propertyReference?.Negated == false;
-            System.Console.WriteLine($""DIAGNOSTIC ComplexItem.Id: propRef={{(propertyReference != null ? ""Found"" : ""null"")}}, negated={{propertyReference?.Negated}}, CONDITION={{diagCondition}}"");
-            if (diagCondition) {{
-                System.Console.WriteLine(""DIAGNOSTIC: CONDITION TRUE - Id WILL BE WRITTEN"");
-            }} else {{
-                System.Console.WriteLine(""DIAGNOSTIC: CONDITION FALSE - Id SHOULD NOT BE WRITTEN"");
-            }}";
-                }
             }
             
             codeBuilder.AppendLine($@"
         {{
             // Find if this specific member is requested
             var propertyReference = properties.FirstOrDefault(p => ""{serializedName}"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));
-            {diagnosticCode}
             {serializeGroup}
         }}");
         }
@@ -926,19 +870,6 @@ public static class PopcornJsonOptionsExtension
                     DiagnosticSeverity.Warning,
                     isEnabledByDefault: true),
                 Location.None));
-        }
-        
-        private static string CreateComplexItemDiagnostic(string memberName, bool hasDefaultAttribute, bool hasAlwaysAttribute)
-        {
-            return $@"
-            // DIAGNOSTIC: Processing {memberName} (Default={hasDefaultAttribute}, Always={hasAlwaysAttribute})
-            if (typeof({memberName}) == typeof(string) && ""{memberName}"" == ""Id"")
-            {{
-                var debugPropertyNames = string.Join("","", properties.Select(p => p.Name.ToString()));
-                var debugMessage = $""DIAGNOSTIC ComplexItem.{memberName}: useAll={{useAll}}, useDefault={{useDefault}}, propertyReference={{propertyReference?.Name.ToString() ?? ""null""}}, properties=[{{debugPropertyNames}}]"";
-                System.Diagnostics.Debug.WriteLine(debugMessage);
-                System.Console.WriteLine(debugMessage);
-            }}";
         }
     }
 
