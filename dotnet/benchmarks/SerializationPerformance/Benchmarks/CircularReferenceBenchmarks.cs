@@ -1,6 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using SerializationPerformance.Models;
 using System.Text.Json;
+using Popcorn.Shared;
 
 namespace SerializationPerformance.Benchmarks;
 
@@ -19,6 +20,22 @@ public class CircularReferenceBenchmarks
         ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
     };
 
+    private List<PropertyReference> _emptyIncludes = new();
+    private List<PropertyReference> _allIncludes = new() { new PropertyReference { Name = "!all".AsMemory(), Negated = false, Children = null } };
+
+    private ApiResponse<CircularReferenceModel> _singleNoCircularDefaultResponse;
+    private ApiResponse<CircularReferenceModel> _singleNoCircularAllResponse;
+    private ApiResponse<CircularReferenceModel> _singleWithCircularDefaultResponse;
+    private ApiResponse<CircularReferenceModel> _singleWithCircularAllResponse;
+    
+    private ApiResponse<List<CircularReferenceModel>> _listNoCircularDefaultResponse;
+    private ApiResponse<List<CircularReferenceModel>> _listNoCircularAllResponse;
+    private ApiResponse<List<CircularReferenceModel>> _listWithCircularDefaultResponse;
+    private ApiResponse<List<CircularReferenceModel>> _listWithCircularAllResponse;
+    
+    private ApiResponse<List<CircularReferenceModel>> _overheadNoCircularResponse;
+    private ApiResponse<List<CircularReferenceModel>> _overheadWithCircularResponse;
+
     [GlobalSetup]
     public void Setup()
     {
@@ -31,6 +48,64 @@ public class CircularReferenceBenchmarks
         // Single models for focused testing
         _singleModelNoCircular = TestDataGenerator.CreateCircularReferenceModel(1, createCircular: false);
         _singleModelWithCircular = TestDataGenerator.CreateCircularReferenceModel(1, createCircular: true);
+
+        _standardJsonOptions.AddPopcornOptions();
+
+        // Initialize single model responses
+        _singleNoCircularDefaultResponse = new ApiResponse<CircularReferenceModel>(new Pop<CircularReferenceModel>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _singleModelNoCircular
+        });
+        _singleNoCircularAllResponse = new ApiResponse<CircularReferenceModel>(new Pop<CircularReferenceModel>
+        {
+            PropertyReferences = _allIncludes,
+            Data = _singleModelNoCircular
+        });
+        _singleWithCircularDefaultResponse = new ApiResponse<CircularReferenceModel>(new Pop<CircularReferenceModel>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _singleModelWithCircular
+        });
+        _singleWithCircularAllResponse = new ApiResponse<CircularReferenceModel>(new Pop<CircularReferenceModel>
+        {
+            PropertyReferences = _allIncludes,
+            Data = _singleModelWithCircular
+        });
+
+        // Initialize list responses
+        _listNoCircularDefaultResponse = new ApiResponse<List<CircularReferenceModel>>(new Pop<List<CircularReferenceModel>>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _modelsNoCircular
+        });
+        _listNoCircularAllResponse = new ApiResponse<List<CircularReferenceModel>>(new Pop<List<CircularReferenceModel>>
+        {
+            PropertyReferences = _allIncludes,
+            Data = _modelsNoCircular
+        });
+        _listWithCircularDefaultResponse = new ApiResponse<List<CircularReferenceModel>>(new Pop<List<CircularReferenceModel>>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _modelsWithCircular
+        });
+        _listWithCircularAllResponse = new ApiResponse<List<CircularReferenceModel>>(new Pop<List<CircularReferenceModel>>
+        {
+            PropertyReferences = _allIncludes,
+            Data = _modelsWithCircular
+        });
+
+        // Initialize overhead test responses
+        _overheadNoCircularResponse = new ApiResponse<List<CircularReferenceModel>>(new Pop<List<CircularReferenceModel>>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _modelsNoCircular
+        });
+        _overheadWithCircularResponse = new ApiResponse<List<CircularReferenceModel>>(new Pop<List<CircularReferenceModel>>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _modelsWithCircular
+        });
     }
 
     // Single Model Tests - Baseline (No Circular References)
@@ -43,15 +118,13 @@ public class CircularReferenceBenchmarks
     [Benchmark]
     public string SingleModel_PopcornDefault_NoCircular()
     {
-        // TODO: Replace with actual Popcorn serialization
-        return JsonSerializer.Serialize(_singleModelNoCircular, _standardJsonOptions);
+        return JsonSerializer.Serialize(_singleNoCircularDefaultResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string SingleModel_PopcornAll_NoCircular()
     {
-        // TODO: Replace with actual Popcorn serialization with [!all]
-        return JsonSerializer.Serialize(_singleModelNoCircular, _standardJsonOptions);
+        return JsonSerializer.Serialize(_singleNoCircularAllResponse, _standardJsonOptions);
     }
 
     // Single Model Tests - With Circular References
@@ -64,15 +137,13 @@ public class CircularReferenceBenchmarks
     [Benchmark]
     public string SingleModel_PopcornDefault_WithCircular()
     {
-        // TODO: Replace with actual Popcorn serialization - should detect circular references
-        return JsonSerializer.Serialize(_singleModelWithCircular, _standardJsonOptions);
+        return JsonSerializer.Serialize(_singleWithCircularDefaultResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string SingleModel_PopcornAll_WithCircular()
     {
-        // TODO: Replace with actual Popcorn serialization with [!all] - should detect circular references
-        return JsonSerializer.Serialize(_singleModelWithCircular, _standardJsonOptions);
+        return JsonSerializer.Serialize(_singleWithCircularAllResponse, _standardJsonOptions);
     }
 
     // List Tests - No Circular References
@@ -85,15 +156,13 @@ public class CircularReferenceBenchmarks
     [Benchmark]
     public string List_PopcornDefault_NoCircular()
     {
-        // TODO: Replace with actual Popcorn serialization
-        return JsonSerializer.Serialize(_modelsNoCircular, _standardJsonOptions);
+        return JsonSerializer.Serialize(_listNoCircularDefaultResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string List_PopcornAll_NoCircular()
     {
-        // TODO: Replace with actual Popcorn serialization with [!all]
-        return JsonSerializer.Serialize(_modelsNoCircular, _standardJsonOptions);
+        return JsonSerializer.Serialize(_listNoCircularAllResponse, _standardJsonOptions);
     }
 
     // List Tests - With Circular References
@@ -106,31 +175,25 @@ public class CircularReferenceBenchmarks
     [Benchmark]
     public string List_PopcornDefault_WithCircular()
     {
-        // TODO: Replace with actual Popcorn serialization - should detect circular references
-        return JsonSerializer.Serialize(_modelsWithCircular, _standardJsonOptions);
+        return JsonSerializer.Serialize(_listWithCircularDefaultResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string List_PopcornAll_WithCircular()
     {
-        // TODO: Replace with actual Popcorn serialization with [!all] - should detect circular references
-        return JsonSerializer.Serialize(_modelsWithCircular, _standardJsonOptions);
+        return JsonSerializer.Serialize(_listWithCircularAllResponse, _standardJsonOptions);
     }
 
     // Circular Reference Detection Overhead Tests
     [Benchmark]
     public string CircularDetectionOverhead_NoCircular()
     {
-        // TODO: This should use Popcorn serialization with circular detection enabled
-        // but applied to data without actual circular references to measure overhead
-        return JsonSerializer.Serialize(_modelsNoCircular, _standardJsonOptions);
+        return JsonSerializer.Serialize(_overheadNoCircularResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string CircularDetectionOverhead_WithCircular()
     {
-        // TODO: This should use Popcorn serialization with circular detection enabled
-        // and applied to data with circular references to measure detection cost
-        return JsonSerializer.Serialize(_modelsWithCircular, _standardJsonOptions);
+        return JsonSerializer.Serialize(_overheadWithCircularResponse, _standardJsonOptions);
     }
 }

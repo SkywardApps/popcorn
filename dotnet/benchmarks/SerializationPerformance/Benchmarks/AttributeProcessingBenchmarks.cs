@@ -18,6 +18,52 @@ public class AttributeProcessingBenchmarks
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    private List<PropertyReference> _emptyIncludes = new();
+    private List<PropertyReference> _allIncludes = new() { new PropertyReference { Name = "!all".AsMemory(), Negated = false, Children = null } };
+    private List<PropertyReference> _defaultIncludes = new() { new PropertyReference { Name = "!default".AsMemory(), Negated = false, Children = null } };
+    
+    // Always fields only for AttributeHeavyModel [Id,Name,IsActive]  
+    private List<PropertyReference> _alwaysFieldsOnly = new()
+    {
+        new PropertyReference { Name = "Id".AsMemory(), Negated = false, Children = null },
+        new PropertyReference { Name = "Name".AsMemory(), Negated = false, Children = null },
+        new PropertyReference { Name = "IsActive".AsMemory(), Negated = false, Children = null }
+    };
+    
+    // Exclude Never fields [!all,-Password,-InternalNotes,-Metadata]
+    private List<PropertyReference> _excludeNeverFields = new()
+    {
+        new PropertyReference { Name = "!all".AsMemory(), Negated = false, Children = null },
+        new PropertyReference { Name = "Password".AsMemory(), Negated = true, Children = null },
+        new PropertyReference { Name = "InternalNotes".AsMemory(), Negated = true, Children = null },
+        new PropertyReference { Name = "Metadata".AsMemory(), Negated = true, Children = null }
+    };
+    
+    // Custom includes for PropertyMappingModel [UserId,FullName,EmailAddress,IsVerified]
+    private List<PropertyReference> _propertyMappingCustomIncludes = new()
+    {
+        new PropertyReference { Name = "UserId".AsMemory(), Negated = false, Children = null },
+        new PropertyReference { Name = "FullName".AsMemory(), Negated = false, Children = null },
+        new PropertyReference { Name = "EmailAddress".AsMemory(), Negated = false, Children = null },
+        new PropertyReference { Name = "IsVerified".AsMemory(), Negated = false, Children = null }
+    };
+
+    private ApiResponse<List<SimpleModel>> _simpleDefaultResponse;
+    private ApiResponse<List<SimpleModel>> _simpleAllResponse;
+    
+    private ApiResponse<List<AttributeHeavyModel>> _attributeDefaultResponse;
+    private ApiResponse<List<AttributeHeavyModel>> _attributeAllResponse;
+    private ApiResponse<List<AttributeHeavyModel>> _attributeAlwaysOnlyResponse;
+    private ApiResponse<List<AttributeHeavyModel>> _attributeDefaultOnlyResponse;
+    private ApiResponse<List<AttributeHeavyModel>> _attributeExcludeNeverResponse;
+    
+    private ApiResponse<List<PropertyMappingModel>> _propertyMappingDefaultResponse;
+    private ApiResponse<List<PropertyMappingModel>> _propertyMappingAllResponse;
+    private ApiResponse<List<PropertyMappingModel>> _propertyMappingCustomResponse;
+    
+    private ApiResponse<List<SimpleModel>> _minimalAttributesResponse;
+    private ApiResponse<List<AttributeHeavyModel>> _heavyAttributesResponse;
+
 
     [GlobalSetup]
     public void Setup()
@@ -25,6 +71,76 @@ public class AttributeProcessingBenchmarks
         _simpleModels = TestDataGenerator.CreateSimpleModelList(200);
         _attributeHeavyModels = TestDataGenerator.CreateAttributeHeavyModelList(200);
         _propertyMappingModels = TestDataGenerator.CreatePropertyMappingModelList(200);
+
+        _standardJsonOptions.AddPopcornOptions();
+
+        // Initialize simple model responses
+        _simpleDefaultResponse = new ApiResponse<List<SimpleModel>>(new Pop<List<SimpleModel>>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _simpleModels
+        });
+        _simpleAllResponse = new ApiResponse<List<SimpleModel>>(new Pop<List<SimpleModel>>
+        {
+            PropertyReferences = _allIncludes,
+            Data = _simpleModels
+        });
+
+        // Initialize attribute heavy model responses
+        _attributeDefaultResponse = new ApiResponse<List<AttributeHeavyModel>>(new Pop<List<AttributeHeavyModel>>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _attributeHeavyModels
+        });
+        _attributeAllResponse = new ApiResponse<List<AttributeHeavyModel>>(new Pop<List<AttributeHeavyModel>>
+        {
+            PropertyReferences = _allIncludes,
+            Data = _attributeHeavyModels
+        });
+        _attributeAlwaysOnlyResponse = new ApiResponse<List<AttributeHeavyModel>>(new Pop<List<AttributeHeavyModel>>
+        {
+            PropertyReferences = _alwaysFieldsOnly,
+            Data = _attributeHeavyModels
+        });
+        _attributeDefaultOnlyResponse = new ApiResponse<List<AttributeHeavyModel>>(new Pop<List<AttributeHeavyModel>>
+        {
+            PropertyReferences = _defaultIncludes,
+            Data = _attributeHeavyModels
+        });
+        _attributeExcludeNeverResponse = new ApiResponse<List<AttributeHeavyModel>>(new Pop<List<AttributeHeavyModel>>
+        {
+            PropertyReferences = _excludeNeverFields,
+            Data = _attributeHeavyModels
+        });
+
+        // Initialize property mapping model responses
+        _propertyMappingDefaultResponse = new ApiResponse<List<PropertyMappingModel>>(new Pop<List<PropertyMappingModel>>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _propertyMappingModels
+        });
+        _propertyMappingAllResponse = new ApiResponse<List<PropertyMappingModel>>(new Pop<List<PropertyMappingModel>>
+        {
+            PropertyReferences = _allIncludes,
+            Data = _propertyMappingModels
+        });
+        _propertyMappingCustomResponse = new ApiResponse<List<PropertyMappingModel>>(new Pop<List<PropertyMappingModel>>
+        {
+            PropertyReferences = _propertyMappingCustomIncludes,
+            Data = _propertyMappingModels
+        });
+
+        // Initialize attribute overhead comparison responses
+        _minimalAttributesResponse = new ApiResponse<List<SimpleModel>>(new Pop<List<SimpleModel>>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _simpleModels
+        });
+        _heavyAttributesResponse = new ApiResponse<List<AttributeHeavyModel>>(new Pop<List<AttributeHeavyModel>>
+        {
+            PropertyReferences = _emptyIncludes,
+            Data = _attributeHeavyModels
+        });
     }
 
     // Baseline tests with minimal attributes
@@ -37,16 +153,13 @@ public class AttributeProcessingBenchmarks
     [Benchmark]
     public string SimpleModels_PopcornDefault()
     {
-        // TODO: Replace with actual Popcorn serialization
-        // SimpleModel has minimal attributes: [Always] CreatedAt, [Default] Description
-        return JsonSerializer.Serialize(_simpleModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_simpleDefaultResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string SimpleModels_PopcornAll()
     {
-        // TODO: Replace with actual Popcorn serialization with [!all]
-        return JsonSerializer.Serialize(_simpleModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_simpleAllResponse, _standardJsonOptions);
     }
 
     // Heavy attribute processing tests
@@ -59,41 +172,31 @@ public class AttributeProcessingBenchmarks
     [Benchmark]
     public string AttributeHeavy_PopcornDefault()
     {
-        // TODO: Replace with actual Popcorn serialization
-        // AttributeHeavyModel has many attributes: [Always], [Never], [Default]
-        return JsonSerializer.Serialize(_attributeHeavyModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_attributeDefaultResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string AttributeHeavy_PopcornAll()
     {
-        // TODO: Replace with actual Popcorn serialization with [!all]
-        // Should respect [Never] attributes even with [!all]
-        return JsonSerializer.Serialize(_attributeHeavyModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_attributeAllResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string AttributeHeavy_PopcornAlwaysOnly()
     {
-        // TODO: Replace with actual Popcorn serialization that only processes [Always] fields
-        // Should include: Id, Name, EmailAddress, IsActive
-        return JsonSerializer.Serialize(_attributeHeavyModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_attributeAlwaysOnlyResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string AttributeHeavy_PopcornDefaultOnly()
     {
-        // TODO: Replace with actual Popcorn serialization with [!default]
-        // Should include: Email, LastLogin, IsVerified, Tags + [Always] fields
-        return JsonSerializer.Serialize(_attributeHeavyModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_attributeDefaultOnlyResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string AttributeHeavy_PopcornExcludeNever()
     {
-        // TODO: Replace with actual Popcorn serialization with [!all] excluding [Never] fields
-        // Should exclude: Password, InternalNotes, Metadata
-        return JsonSerializer.Serialize(_attributeHeavyModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_attributeExcludeNeverResponse, _standardJsonOptions);
     }
 
     // Property name mapping tests
@@ -106,39 +209,32 @@ public class AttributeProcessingBenchmarks
     [Benchmark]
     public string PropertyMapping_PopcornDefault()
     {
-        // TODO: Replace with actual Popcorn serialization
-        // PropertyMappingModel has JsonPropertyName mappings: user_id, full_name, etc.
-        return JsonSerializer.Serialize(_propertyMappingModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_propertyMappingDefaultResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string PropertyMapping_PopcornAll()
     {
-        // TODO: Replace with actual Popcorn serialization with [!all]
-        return JsonSerializer.Serialize(_propertyMappingModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_propertyMappingAllResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string PropertyMapping_PopcornCustomIncludes()
     {
-        // TODO: Replace with actual Popcorn serialization with specific includes
-        // Test property name mapping with custom field selection
-        return JsonSerializer.Serialize(_propertyMappingModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_propertyMappingCustomResponse, _standardJsonOptions);
     }
 
     // Attribute processing overhead comparison
     [Benchmark]
     public string MinimalAttributes_Popcorn()
     {
-        // TODO: Simple models with few attributes
-        return JsonSerializer.Serialize(_simpleModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_minimalAttributesResponse, _standardJsonOptions);
     }
 
     [Benchmark]
     public string HeavyAttributes_Popcorn()
     {
-        // TODO: Models with many attributes to measure processing overhead
-        return JsonSerializer.Serialize(_attributeHeavyModels, _standardJsonOptions);
+        return JsonSerializer.Serialize(_heavyAttributesResponse, _standardJsonOptions);
     }
 
     [Benchmark]

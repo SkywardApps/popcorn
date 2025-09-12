@@ -2,6 +2,9 @@ using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Toolchains.InProcess.Emit;
+using BenchmarkDotNet.Exporters;
+using BenchmarkDotNet.Exporters.Csv;
+using BenchmarkDotNet.Exporters.Json;
 using SerializationPerformance.Benchmarks;
 
 namespace SerializationPerformance;
@@ -11,7 +14,11 @@ class Program
     static void Main(string[] args)
     {
         var config = DefaultConfig.Instance
-            .AddJob(Job.Default.WithToolchain(InProcessEmitToolchain.Instance));
+            .AddJob(Job.Default.WithToolchain(InProcessEmitToolchain.Instance))
+            .AddExporter(CsvExporter.Default)
+            .AddExporter(HtmlExporter.Default)
+            .AddExporter(JsonExporter.Full)
+            .AddExporter(MarkdownExporter.GitHub);
 
         if (args.Length == 0)
         {

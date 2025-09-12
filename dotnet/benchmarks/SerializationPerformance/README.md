@@ -104,6 +104,22 @@ dotnet run -c Release -- all
 dotnet run -c Release
 ```
 
+### Result Persistence
+
+All benchmarks automatically save results in multiple formats to `BenchmarkDotNet.Artifacts/results/`:
+
+- **CSV** - For data analysis and Excel import
+- **HTML** - Interactive reports with charts and detailed analysis
+- **JSON** - Machine-readable format for programmatic analysis  
+- **Markdown** - GitHub-flavored markdown for documentation
+
+The HTML format is particularly useful as it provides:
+- Interactive performance charts
+- Statistical analysis
+- Memory allocation details
+- Execution time distributions
+- Comparative analysis between benchmark methods
+
 ### Visual Studio Usage
 
 Set the project as startup project and configure command line arguments in project properties.
