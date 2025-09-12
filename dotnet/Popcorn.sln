@@ -59,6 +59,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParsingIncludes", "benchmarks\ParsingIncludes\ParsingIncludes.csproj", "{4EC9547A-B06C-475C-A139-05147993764C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SerializationPerformance", "benchmarks\SerializationPerformance\SerializationPerformance.csproj", "{B8F3A7E2-9C1D-4F8A-B5E6-3D2A8E7C9F4B}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{9E78F644-BBBB-42E1-9489-59290CC0C85C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Popcorn.FunctionalTests", "Tests\Popcorn.FunctionalTests\Popcorn.FunctionalTests.csproj", "{C9C3B472-1DB7-4457-A256-5906B0548BA0}"
@@ -101,6 +103,10 @@ Global
 		{C9C3B472-1DB7-4457-A256-5906B0548BA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9C3B472-1DB7-4457-A256-5906B0548BA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9C3B472-1DB7-4457-A256-5906B0548BA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8F3A7E2-9C1D-4F8A-B5E6-3D2A8E7C9F4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8F3A7E2-9C1D-4F8A-B5E6-3D2A8E7C9F4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8F3A7E2-9C1D-4F8A-B5E6-3D2A8E7C9F4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8F3A7E2-9C1D-4F8A-B5E6-3D2A8E7C9F4B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -114,6 +120,7 @@ Global
 		{F56C830B-9E6D-4A46-88B1-49E02B6D5945} = {6927209F-F97B-4039-9702-1544DF636EFB}
 		{6EFCDF16-F55B-4615-BB38-06841D5AAEF4} = {9323797C-D1AC-4778-9941-241B7298A0A3}
 		{4EC9547A-B06C-475C-A139-05147993764C} = {4D391D9D-645A-4612-8CE3-006F667A1822}
+		{B8F3A7E2-9C1D-4F8A-B5E6-3D2A8E7C9F4B} = {4D391D9D-645A-4612-8CE3-006F667A1822}
 		{C9C3B472-1DB7-4457-A256-5906B0548BA0} = {9E78F644-BBBB-42E1-9489-59290CC0C85C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
