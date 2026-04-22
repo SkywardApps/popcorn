@@ -1,194 +1,88 @@
 # Technical Context: Popcorn
 
-## Development Environment
+## Stack
+- **.NET 8+** for runtime targets (test project, AOT example).
+- **.NET Standard 2.0** for `Popcorn.Shared` and `Popcorn.SourceGenerator` (source generators *must* target netstandard2.0 per Roslyn rules).
+- **Roslyn** — `Microsoft.CodeAnalysis.CSharp` 4.12.0 for the generator.
+- **System.Text.Json** 9.0.1.
+- **Microsoft.AspNetCore.Http.Abstractions** 2.3.0 (for `HttpContext` in netstandard2.0 land).
+- **xUnit** 2.6.6 + `Microsoft.AspNetCore.TestHost` 8.0.0 for functional tests.
+- **BenchmarkDotNet** for perf suite.
 
-### Primary Technologies
-- .NET Core / C# (targeting .NET 8.0+)
-- Source Generators (Roslyn)
-- System.Text.Json
-- AOT Compilation Support
-- Visual Studio / VS Code
-
-### Build & CI/CD
-- AppVeyor CI
-- NuGet package deployment
-- GitHub repository
-- Gitter community chat
-
-## Project Structure
-
-### Core Components
+## Solution Layout (`dotnet/Popcorn.sln`)
 ```
 dotnet/
 ├── Popcorn.sln
-├── Popcorn.SourceGenerator/       # Source generator implementation
-│   ├── ExpanderGenerator.cs       # Main generator logic
-│   └── Plan.md                    # Improvement plan
-├── Popcorn.Shared/                # Shared attributes and models
-│   ├── ApiResponse.cs             # Core response type
-│   ├── Pop.cs                     # Generic wrapper for data
-│   ├── PopAttribute.cs            # Attribute definitions
-│   ├── PopcornAccessor.cs         # HTTP context accessor
-│   ├── PropertyReference.cs       # Property reference parsing
-│   └── HttpContextExtensions.cs   # Extension methods
-├── Popcorn.SourceGenerator.Test/  # Generator tests
-│   ├── PopcornGeneratorSnapshotTests.cs  # Snapshot tests
-│   └── TestHelper.cs              # Test utilities
-└── PopcornAotExample/             # AOT-compatible example project
+├── Popcorn.Shared/              # Runtime attrs, ApiResponse<T>, Pop<T>, PropertyReference, PopcornAccessor
+├── Popcorn.SourceGenerator/     # IIncrementalGenerator — ExpanderGenerator.cs, Plan.md
+├── PopcornAotExample/           # AOT/trim smoke test: minimal API, CreateSlimBuilder, PublishAot=True, PublishTrimmed=True
+├── PopcornNetStandard/          # LEGACY reflection-based expander (Abstractions, Expanders, Externals, Internals) — being replaced
+├── PopcornNetStandard.WebApiCore/ # LEGACY middleware (ExpandResultAttribute, ExpandServiceFilter) — being replaced
+├── Tests/
+│   ├── Popcorn.FunctionalTests/ # NEW — xUnit tests for the source generator
+│   │   ├── *Tests.cs            # PrimitiveTypes, ValueTypes, BasicCollectionTypes, CollectionEdgeCases,
+│   │   │                        #   CollectionPropertyInclusion, DictionaryTypes, AlwaysAttribute,
+│   │   │                        #   NestedAlwaysAttribute, CollectionAlwaysAttribute, ConflictingAttributes,
+│   │   │                        #   DefaultBehavior, IncludeParameterVariation, BasicSerialization
+│   │   ├── Models/              # 15+ test model classes
+│   │   ├── TestJsonContext.cs   # JsonSerializerContext with [JsonSerializable] attrs for every test model
+│   │   └── TestPlan.md
+│   └── PopcornSpecTests/        # Protocol-level spec tests
+├── benchmarks/
+│   ├── ParsingIncludes/         # Include-string parser benchmarks
+│   └── SerializationPerformance/ # End-to-end serialization benchmarks (JSON baseline vs Popcorn)
+├── Examples/PopcornNet5Example/ # Older reflection-based demo
+├── Build/                       # Build scripts
+└── Projects.md                  # Project index
 ```
 
-### Key Dependencies
-1. **Runtime**
-   - .NET 8.0+ (for AOT support)
-   - System.Text.Json 9.0.1
-   - Microsoft.CodeAnalysis (for source generation)
-   - Microsoft.AspNetCore.Http.Abstractions 2.3.0
-   - Microsoft.Extensions.DependencyInjection.Abstractions 9.0.1
+## Key AOT/Trim Settings (`PopcornAotExample.csproj`)
+- `<PublishTrimmed>True</PublishTrimmed>`
+- `<PublishAot>True</PublishAot>`
+- `<InvariantGlobalization>true</InvariantGlobalization>`
+- `WebApplication.CreateSlimBuilder(args)` — minimal hosting, AOT-compatible.
+- `<EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>` with `<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>` — keeps the generated tree out of the csproj globs but still lets you inspect output.
 
-2. **Development**
-   - C# Latest (for source generator features)
-   - Microsoft.CodeAnalysis.CSharp 4.12.0
-   - Verify.SourceGenerators 2.2.0
-   - Verify.Xunit 22.8.0
-   - xUnit 2.6.6
+## Source Generator Packaging
+From `Popcorn.SourceGenerator.csproj`:
+- `IsRoslynComponent=true`, `EnforceExtendedAnalyzerRules=true`.
+- `IncludeBuildOutput=false` — consumers get the generator as an analyzer, not a runtime dll reference.
+- Packs `Popcorn.SourceGenerator.dll` and `Popcorn.Shared.dll` under `analyzers/dotnet/cs` (so the generator sees the attribute types) AND `Popcorn.Shared.dll` under `lib/netstandard2.0` (so consumers get the attributes at runtime).
 
-## Technical Constraints
+## Source Generator Entry Points (`ExpanderGenerator.cs`)
+- `Initialize()` — pipeline: `ForAttributeWithMetadataName(JsonSerializableAttribute)` → filter to `JsonSerializerContext` subclasses → filter to `ApiResponse<T>` target types → emit converter + registrar.
+- `GetJsonSerializerContextClass` — confirms base class is `System.Text.Json.Serialization.JsonSerializerContext`.
+- `GetJsonSerializableTypes` — pulls `[JsonSerializable(typeof(ApiResponse<…>))]` attrs.
+- `InheritsOrImplements(typeSymbol, "Popcorn.Shared.ApiResponse<T>")` — used for both response filtering and for `IEnumerable<T>`/`IDictionary<K,V>` detection when walking properties.
+- `GetReferencedTypes` — BFS over property types; handles arrays, dictionaries (walks value type), enumerables (walks item type), skips primitives/ignored types.
+- `GenerateJsonConverter` → `CreateComplexObjectSerialization` — emits per-property write logic with attribute + property-reference gating.
+- Registration: emits `Popcorn.Shared.PopcornJsonOptionsExtension.AddPopcornOptions(JsonSerializerOptions)` that installs every generated converter and sets `NumberHandling = AllowNamedFloatingPointLiterals`.
 
-### Platform Requirements
-- .NET Standard 2.0 compatibility
-- HTTP/REST architecture
-- JSON serialization
-- Standard middleware pipeline
+## Type Handling Buckets (`ExpanderGenerator.cs`)
+- **Numbers**: all integer types and `decimal` (floats are in `IgnoreTypes`).
+- **Strings**: `string`, `Span<char>`, `ReadOnlySpan<char>`, `Memory<char>`, `ReadOnlyMemory<char>`.
+- **Bools**: `bool`, `System.Boolean`.
+- **Ignored (write-as-is, don't expand)**: `char`, `float`, `double`, `Guid`, `DateTime`, `TimeSpan`, `DateTimeOffset`.
+- **Collections**: dispatched via `InheritsOrImplements` for `IEnumerable<T>` / `IDictionary<K,V>`.
+- **Enums and `Nullable<Enum>`**: skipped in `GetReferencedTypes` (not registered as Popcorn-aware types). Fall through to `JsonSerializer.Serialize(writer, value, options)`, which transparently picks up global `options.Converters.Add(new JsonStringEnumConverter())` registrations and per-enum `[JsonConverter(typeof(JsonStringEnumConverter))]` attributes. Default output is numeric; string-form is opt-in via standard System.Text.Json configuration — no Popcorn-specific API.
 
-### Performance Targets
-- Minimal overhead on API calls
-- Efficient query generation
-- Optimized memory usage
-- Fast field parsing
+## CI / Publish
+- GitHub Actions (`.github/workflows/main.yml`) and `.gitlab-ci.yml` for builds.
+- AppVeyor badge still in README (legacy).
+- NuGet package `Skyward.Api.Popcorn` (legacy) — source-generator packages not yet published.
+- Recent `master` commits: CI pipeline for NuGet publishing (#72), unrelated bugfix `ELUM-3318_ErrorsReturnedAsOK` (#71).
 
-## Source Generator Implementation
+## Testing Strategy
+- **Functional tests** (`Popcorn.FunctionalTests`) use `TestJsonContext` — a single `JsonSerializerContext` that declares `[JsonSerializable(typeof(ApiResponse<Model>))]` for every test model. The source generator runs against this and produces real converters, which the tests invoke via `JsonSerializer.Serialize`. To inspect generated output, look in `$(BaseIntermediateOutputPath)Generated` (csproj sets `EmitCompilerGeneratedFiles=true`).
+- **No mocking** of the generator or the serializer — tests exercise the real pipeline.
+- **Snapshot tests** (Verify.SourceGenerators/Verify.Xunit, as declared in previous notes) — referenced in prior memory, but current branch leans on functional-output assertions rather than snapshot files.
 
-### Core Components
-1. **ExpanderGenerator**
-   - Implements IIncrementalGenerator
-   - Finds classes with JsonSerializable attributes
-   - Extracts target types
-   - Generates JsonConverter classes
+## Development Workflow
+- Current active branch: `spike/source-generator`. Diff vs `master`: ~12k lines added across 82 files, mostly functional tests (~4k), benchmarks (~2k), source generator (~1.5k), and memory-bank docs.
+- Do not merge to `master` until feature parity decisions are made on sorting/pagination/filtering/authorization and perf benchmarks are validated.
+- Code philosophy (from `Plan.md`): one improvement at a time, fully tested before the next; maintain or improve performance; minimalist code.
 
-2. **Type Handling**
-   - Primitive types (numbers, strings, booleans)
-   - Complex objects
-   - Collections
-   - Nested types
-   - Nullable types
-
-3. **Attribute System**
-   - AlwaysAttribute - Always include property
-   - NeverAttribute - Never include property
-   - DefaultAttribute - Include by default
-
-4. **Property Reference System**
-   - Parses include statements
-   - Supports nested properties
-   - Handles collections
-   - Supports negation
-
-### Improvement Plan
-1. **Critical Issues**
-   - Comprehensive test coverage
-   - Circular reference detection
-   - Thread safety in PopcornAccessor
-   - Property reference validation
-   - Attribute conflict detection
-
-2. **Performance Improvements**
-   - Property reference parsing optimization
-   - Generated code optimization
-
-3. **API Improvements**
-   - Error state support
-   - Deserialization support
-   - XML documentation
-   - Diagnostic message improvements
-
-## Development Practices
-
-### Code Standards
-- C# coding conventions
-- XML documentation
-- Unit test coverage
-- Performance benchmarking
-- Code of conduct adherence
-- Semantic versioning
-
-### Testing Approach
-- Snapshot testing with Verify
-- Unit tests with xUnit
-- Test helper utilities
-- Test output helpers
-- Diagnostic verification
-
-### Contribution Process
-1. **Initial Discussion**
-   - Open issue for discussion
-   - Get maintainer feedback
-   - Align with roadmap
-
-2. **Development**
-   - Fork repository
-   - Create feature branch
-   - Follow coding standards
-   - Add/update tests
-   - Update documentation
-
-3. **Pull Request**
-   - Remove build dependencies
-   - Update documentation
-   - Update version numbers
-   - Get maintainer sign-off
-
-4. **Review**
-   - Code review feedback
-   - CI/CD checks
-   - Documentation review
-   - Test coverage verification
-
-### Version Control
-- Git workflow
-- Semantic versioning
-- Pull request reviews
-- CI/CD integration
-
-### Documentation
-- XML API documentation
-- Markdown for guides
-- Example projects
-- Integration tutorials
-
-## Deployment
-
-### Package Distribution
-- NuGet packages
-- Versioned releases
-- Release notes
-- Migration guides
-
-### Integration
-- Middleware configuration
-- DI container setup
-- Options pattern usage
-- Logging integration
-
-## Monitoring & Maintenance
-
-### Diagnostics
-- Performance metrics
-- Error logging
-- Usage statistics
-- Debug information
-
-### Support
-- GitHub issues
-- Gitter community
-- Documentation updates
-- Security patches
+## Known External Dependencies / Constraints
+- `PropertyReference.ParseIncludeStatement` lives in `Popcorn.Shared` (runtime library), not in the generator. Parsing bugs affect all consumers regardless of generator.
+- Source generator must target netstandard2.0, so no `Span<T>` / `init`-only niceties in generator code itself (user models can use them).
+- `Microsoft.AspNetCore.Http.Abstractions` 2.3.0 is the last netstandard2.0-compatible version.

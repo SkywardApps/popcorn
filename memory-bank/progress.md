@@ -1,227 +1,86 @@
-# Progress Tracking: Popcorn
+# Progress: Popcorn `spike/source-generator`
 
-## Version History
+## What Exists and Works
 
-### Major Release: 2.0.0
-✅ Feature Additions
-- Condensed .NET offering into one .NET Standard project
-- Enhanced mapping for multiple destination types
-- Added default response inspector
-- Added authorizers for access control
+### Source generator (`Popcorn.SourceGenerator`)
+- `IIncrementalGenerator`-based pipeline.
+- Discovers `JsonSerializerContext` subclasses and filters `[JsonSerializable(typeof(ApiResponse<T>))]` attrs.
+- Walks referenced types transitively (named types, arrays, `IEnumerable<T>`, `IDictionary<K,V>`).
+- Emits one `JsonConverter<T>` per reachable type + a `PopcornJsonOptionsExtension.AddPopcornOptions()` extension that registers them and sets `NumberHandling.AllowNamedFloatingPointLiterals`.
+- Handles `[Always]` / `[Default]` / `[Never]` attributes, `JsonPropertyName` mapping, nullable types, nested types, collections, dictionaries.
+- Runtime circular-reference guard via visited-object `HashSet` with `{"$ref":"circular"}` output.
 
-✅ Bug Fixes
-- Fixed polymorphism in DefaultIncludes
-- Improved MapEntityFramework customization
+### Runtime shared library (`Popcorn.Shared`)
+- `ApiResponse<T>`, `Pop<T>` envelopes.
+- `PropertyReference` include parser (stateful recursive descent over the bracketed grammar).
+- `PopcornAccessor` + `IPopcornAccessor` — per-request include parsing off `HttpContext.Request.Query["include"]`.
+- `AddPopcorn()` DI registration, `HttpContextExtensions.Respond<T>`.
 
-### Minor Releases
-- 1.3.0: Added sorting capabilities
-- 1.2.0: Added IncludeByDefault property option
-- 1.1.0: Added initial documentation
-- 1.0.0: Project inception
+### Functional test suite (`dotnet/Tests/Popcorn.FunctionalTests`)
+- xUnit, 25 test files.
+- **177 tests total**: 126 passing, 0 failing, 51 skipped (TDD-pending features).
+- Covers attribute semantics, include-parameter variations, primitives, value types, basic + advanced collections, dictionaries, nesting, conflicting attributes, default-behavior rules, enums, `JsonPropertyName`, inheritance, generics, include-parser edge cases, error handling, middleware integration, computed-property translators.
+- Single `TestJsonContext` drives the generator over 30+ `ApiResponse<Model>` declarations.
+- Generated sources visible at `$(BaseIntermediateOutputPath)Generated` for debugging.
+- `TestServerHelper` reduces per-test boilerplate to ~5 lines.
 
-## Current Status
+### Bugs surfaced by new test coverage
+1. **Enum serialization — FIXED.** Generator was treating enum types as POCOs in `GetReferencedTypes`, registering them in `allTypeNames`, which caused `AddMemberSerializationCode` to recurse through a broken `PopEnumType` converter that emitted `{}`. Fix: added an early `continue` in `GetReferencedTypes` for `TypeKind.Enum` and `Nullable<Enum>`, so enum members fall through to the default `JsonSerializer.Serialize(writer, value, options)` path. This path honors global `JsonStringEnumConverter` registrations and per-type `[JsonConverter(typeof(JsonStringEnumConverter))]` attributes transparently — no Popcorn-specific API needed. Covered by `EnumTests` (10 tests: numeric default, nullable, flags, in-collection, global string converter, camelCase naming policy, per-type attribute).
+2. **Inheritance: base-class attributes ignored on derived types — FIXED.** `[Default]` / `[Always]` on a base class were dropped when serializing a derived runtime type because `INamedTypeSymbol.GetMembers()` only returns members declared directly on the type. Fix: introduced `GetSerializableProperties` / `GetSerializableFields` helpers that walk derived → base up to `System.Object`, dedupe by name (so `new`/`override` shadows resolve to the derived declaration), and reused them at every member-enumeration site in the generator (`GetReferencedTypes` + `CreateComplexObjectSerialization`). Covered by `PolymorphismTests.DerivedType_InheritedAttributesApply` and `DerivedType_SerializedAsBaseType_EmitsBaseProperties`.
 
-### What Works ✅ PRODUCTION READY
-✅ **Source Generator Core - SUBSTANTIALLY COMPLETE**
-- ✅ Comprehensive test coverage (98.7% - 76/77 tests passing)
-- ✅ Circular reference detection (production ready with HashSet tracking)
-- ✅ Always attribute logic (correctly implemented per specification)
-- ✅ Attribute-based control (Always, Never, Default) working correctly
-- ✅ Enhanced dictionary serialization with complex type detection
-- ✅ JsonPropertyName support
-- ✅ Null handling
-- ✅ Collection support
-- ✅ Nested type handling
-- ✅ Robust error handling and diagnostics
-- ✅ Thread safety verified (no issues found)
-- ✅ Attribute conflict scenarios tested (no conflicts found)
+### Established Contract: `?include=` uses wire names only
+The include list is part of the API contract — it uses the wire name (from `[JsonPropertyName]` if present, otherwise the C# name). The C# name is an implementation detail the client has no visibility into. A client sees `{"display_name":...}` in responses and must request `?include=[display_name]`; `?include=[DisplayName]` is treated as an unknown name and the property is not emitted. This matches how the generator currently behaves and is the correct design. Tests in `JsonPropertyNameTests.cs` assert this contract explicitly (both positive: `IncludeMatchesWireName`, and negative: `IncludeByCSharpName_DoesNotMatch`).
 
-✅ **Performance Testing & Benchmarking Suite - COMPLETE**
-- ✅ Comprehensive BenchmarkDotNet testing infrastructure
-- ✅ SerializationComparisonBenchmarks (Standard JSON vs Popcorn with ApiResponse<T>/Pop<T> integration)
-- ✅ Include strategy performance analysis (default, !all, custom field selection)
-- ✅ Scalability benchmarks for Big O complexity (flat lists and deep nesting)
-- ✅ Circular reference detection overhead measurement
-- ✅ Attribute processing performance benchmarks
-- ✅ 7 specialized test models (SimpleModel, ComplexNestedModel, CircularReferenceModel, etc.)
-- ✅ TestDataGenerator with reproducible results
-- ✅ Memory diagnostics and performance profiling
-- ✅ Command-line interface for selective benchmark execution
-- ✅ Integration with main solution and CI/CD pipeline
+### TDD-pending test ledger (51 skipped)
+Every planned feature from `apiDesign.md` has corresponding skipped tests. When implementation lands, remove the `Skip=` attribute and the test becomes active. Files:
+- `SortingTests.cs` (7), `PaginationTests.cs` (7), `FilteringTests.cs` (8) — Tier-1 query surface.
+- `AuthorizerTests.cs` (5), `CustomEnvelopeTests.cs` (5), `SubPropertyDefaultTests.cs` (4) — Tier-1 extensibility.
+- `TranslatorTests.cs` (3 skipped, 3 passing for computed properties), `BlindHandlerTests.cs` (4), `ExpandFromTests.cs` (4) — Tier-2.
+- `PolymorphismTests.cs` (2 skipped), `ErrorHandlingTests.cs` (1 skipped), `IncludeParserEdgeTests.cs` (1 skipped — the known dictionary-value parser bug).
 
-✅ **AOT Support - COMPLETE**
-- Native compilation
-- Trimming support
-- Docker containerization
-- Performance optimization
+### AOT smoke test (`PopcornAotExample`)
+- `WebApplication.CreateSlimBuilder`, `PublishAot=True`, `PublishTrimmed=True`, Dockerfile.
+- Three endpoints exercising nullable, nested, and null-response shapes.
+- Validates that generated converters pass the AOT analyzer.
 
-✅ **Basic Features - COMPLETE**
-- Field selection syntax
-- Property references
-- Default field behavior
-- Production-grade error handling
+### Benchmarks (`dotnet/benchmarks/`)
+- `SerializationPerformance` — BenchmarkDotNet suite: serialization comparison (stock vs Popcorn), include strategies, scalability (flat + deep), circular-ref overhead, attribute processing. 7 test models with seeded `TestDataGenerator`. `MemoryDiagnoser` enabled. Command-line selector (`comparison` | `includes` | `scalability` | `circular` | `attributes` | `all`).
+- `ParsingIncludes` — include-string parser micro-benchmarks.
 
-✅ **Systematic Test Fixing - COMPLETE WITH 80% SUCCESS RATE**
-- 5 failing tests reduced to 1 failing test
-- Implemented circular reference detection
-- Fixed Always attribute logic
-- Enhanced dictionary serialization
-- Verified value type handling works correctly
-- Completed holistic review with no regressions
+## What's Broken or Incomplete
 
-### Remaining Issues (1 test failing)
-🔄 **External Dependencies**
-- PropertyReference parsing issue in Popcorn.Shared library (outside source generator scope)
-- Dictionary complex value test still failing due to parsing logic in shared library
+### Known failing / flaky
+- `DictionaryTypes_ComplexValueDictionary_SerializesCorrectly` — root cause is `PropertyReference.ParseIncludeStatement` mishandling nested structures within dictionary value types. Fix belongs in `Popcorn.Shared`.
 
-### Missing Features (Future Work)
-❌ **Advanced Features**
-- Sorting support
-- Pagination  
+### Not yet ported from legacy reflection engine
+- Sorting
+- Pagination
 - Filtering
-- Authorization system
+- Authorization / permissioning
 - Response inspectors
 - Contexts
 - Lazy loading
 - Blind expansion
 
-❌ **Optional Enhancements**
-- Property reference parsing optimization (external dependency)
-- Generated code optimization (current performance acceptable)
-- Error state support (not needed for current scope)
-- Deserialization support (out of scope)
-- XML documentation improvements (low priority)
-- Enhanced diagnostic messages (current level sufficient)
+### Out of scope for this spike (explicit)
+- Deserialization (generated converters are write-only).
+- Header-based `POPCORN-INCLUDE` selection.
+- Schema / OpenAPI generation.
+- Cross-language providers (PHP, JS, TS).
 
-### Completed Development
-✅ **Source Generator Improvements - SUBSTANTIALLY COMPLETE**
-- ✅ Detailed improvement plan created and executed
-- ✅ Prioritization completed with systematic approach
-- ✅ Test infrastructure established and working
-- ✅ Comprehensive test plan executed successfully
-- ✅ Fixed hardcoded JsonSerializerContext reference in ExpanderGenerator
-- ✅ Added comprehensive test coverage for serialization functionality
-- ✅ Implemented tests for include parameter variations (case sensitivity, property negation)
-- ✅ Created and executed systematic test fixing methodology
+## Branch Position
+- Base: `master` at `dacf03d` (NuGet publish CI).
+- 13 commits ahead of `master`; ~12k lines added, ~225 removed across 82 files.
+- `PopcornNetStandard` and `PopcornNetStandard.WebApiCore` remain in the tree unchanged — this spike does not delete the legacy engine. Legacy packages on NuGet (`Skyward.Api.Popcorn`) continue shipping from `master`.
 
-✅ **Performance Testing & Benchmarking Suite - COMPLETE**
-- ✅ SerializationPerformance benchmark project created and integrated into main solution
-- ✅ Complete ApiResponse<T>/Pop<T> integration pattern implemented across all benchmarks
-- ✅ SerializationComparisonBenchmarks with Standard JSON vs Popcorn comparisons
-- ✅ Include strategy performance benchmarks (default, !all, custom field selection)
-- ✅ Scalability benchmarks for Big O complexity analysis (flat lists and deep nesting)
-- ✅ Circular reference detection overhead measurement benchmarks
-- ✅ Attribute processing performance benchmarks ([Always], [Never], [Default])
-- ✅ 7 specialized test models with comprehensive attribute coverage
-- ✅ TestDataGenerator with reproducible random seed for consistent results
-- ✅ Memory diagnostics and performance profiling enabled
-- ✅ Command-line interface for selective benchmark execution
-- ✅ Custom PropertyReference lists for meaningful custom include scenarios
+## Migration Thesis (validation status)
+1. **Perf parity or better vs System.Text.Json** — benchmark suite exists; numbers have not been captured in a committed report yet.
+2. **Native AOT works** — `PopcornAotExample` builds with `PublishAot=True`. End-to-end runtime validation: done locally per recent commits, no CI job yet.
+3. **Trimming works** — `PublishTrimmed=True` set alongside AOT. No separate trim-only run documented.
 
-✅ **Documentation Improvements - COMPLETE**
-- Updated documentation to clarify include parameter syntax
-- Added detailed explanation of special references (!all, !default)
-- Added documentation for property negation using the "-" prefix
-- Created comprehensive diagnostic documentation for test fixes
-
-🔨 **In Development (Lower Priority)**
-- Schema Generation (design phase)
-- Documentation Generator (requirements gathering)
-- Performance Optimization (current performance acceptable)
-
-## Remaining Work
-
-### Short Term (Next Phase Priorities)
-📋 **External Dependencies**
-- Fix PropertyReference parsing logic in Popcorn.Shared library
-- Address dictionary complex value processing issue
-
-📋 **Schema & Documentation**
-- Complete schema generation system
-- Implement documentation generator
-- Integrate with existing tools
-- Create usage examples
-
-📋 **Advanced Features (Feature Expansion)**
-- Implement payload containers
-- Add pagination support
-- Design filtering system
-- Re-implement authorization system
-
-### Medium Term
-📋 **Platform Support**
-- PHP provider implementation
-- .NET Framework provider
-- TypeScript client library
-- JavaScript client library
-
-📋 **Advanced Features**
-- Calculated properties
-- Advanced filtering
-- Batch operations
-- Caching system
-
-## Resolved Issues ✅
-
-### Technical Debt - RESOLVED
-✅ **Source Generator - SUBSTANTIALLY COMPLETE**
-- ✅ Circular reference detection implemented (production ready)
-- ✅ Thread safety verified (no issues found)
-- ✅ Comprehensive test coverage achieved (98.7%)
-- ✅ Attribute conflict detection tested (no conflicts found)
-- ✅ Performance verified (current performance acceptable)
-
-### Remaining Issues
-⚠️ **External Dependencies**
-- PropertyReference parsing logic (in shared library, outside source generator scope)
-
-⚠️ **Query Optimization (Lower Priority)**
-- Complex nested queries optimization
-- Memory usage in large result sets
-- Cache implementation
-
-⚠️ **Error Handling (Current Level Sufficient)**
-- Advanced error messages (current level adequate)
-- Enhanced validation details (current validation working)
-- Enhanced debugging info (diagnostics comprehensive)
-
-### Limitations (Unchanged)
-⚠️ **Current**
-- No header-based field selection
-- URL length limitations
-- Basic authorization system
-- Limited filtering capabilities
-
-⚠️ **Platform**
-- .NET Core only
-- No client libraries
-- Limited tooling
-
-## Next Steps
-
-### ✅ COMPLETED Immediate Priority
-1. ✅ Implement comprehensive test coverage for source generator (98.7% achieved)
-2. ✅ Add circular reference detection (production ready implementation)
-3. ✅ Fix thread safety in PopcornAccessor (verified - no issues found)
-4. ✅ Implement property reference validation (external dependency identified)
-5. ✅ Add attribute conflict detection (tested - no conflicts found)
-
-### Future Considerations
-1. PropertyReference parsing fix in shared library
-2. Client library development
-3. Advanced filtering system
-4. Caching implementation
-5. Additional platform support
-
-## Success Metrics
-📊 **Performance**
-- Query execution time
-- Memory usage
-- Response size
-- Cache hit rate
-
-📊 **Adoption**
-- GitHub stars
-- NuGet downloads
-- Community engagement
-- Provider implementations
+## Merge-to-master Gates (suggested, not formalized)
+- [ ] Dictionary/nested parser fix.
+- [ ] Published benchmark report comparing legacy reflection vs. source-generated vs. raw `System.Text.Json`.
+- [ ] Decision on in-scope vs. deferred legacy features.
+- [ ] CI job that publishes the AOT example and runs it in a container to prove end-to-end.
+- [ ] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared`.

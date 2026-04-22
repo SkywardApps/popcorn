@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Popcorn.FunctionalTests.Models;
 using Popcorn.Shared;
@@ -22,6 +23,22 @@ namespace Popcorn.FunctionalTests
     [JsonSerializable(typeof(ApiResponse<CollectionEdgeCasesModel>))]
     [JsonSerializable(typeof(ApiResponse<DictionaryTypesModel>))]
     [JsonSerializable(typeof(ApiResponse<CollectionPropertyInclusionModel>))]
+    [JsonSerializable(typeof(ApiResponse<EnumTestModel>))]
+    [JsonSerializable(typeof(ApiResponse<StringEnumTestModel>))]
+    [JsonSerializable(typeof(ApiResponse<JsonPropertyNameModel>))]
+    [JsonSerializable(typeof(ApiResponse<Vehicle>))]
+    [JsonSerializable(typeof(ApiResponse<Car>))]
+    [JsonSerializable(typeof(ApiResponse<Truck>))]
+    [JsonSerializable(typeof(ApiResponse<VehicleCollection>))]
+    [JsonSerializable(typeof(ApiResponse<List<Vehicle>>))]
+    [JsonSerializable(typeof(ApiResponse<PageModel<ItemPayload>>))]
+    [JsonSerializable(typeof(ApiResponse<ErrorHandlingModel>))]
+    [JsonSerializable(typeof(ApiResponse<SortableCollection>))]
+    [JsonSerializable(typeof(ApiResponse<OwnedResourceList>))]
+    [JsonSerializable(typeof(ApiResponse<PersonWithComputed>))]
+    [JsonSerializable(typeof(ApiResponse<CarSource>))]
+    [JsonSerializable(typeof(ApiResponse<CarProjection>))]
+    [JsonSerializable(typeof(ApiResponse<EnvelopePayload>))]
     partial class AppJsonSerializerContext : JsonSerializerContext
     {
     }

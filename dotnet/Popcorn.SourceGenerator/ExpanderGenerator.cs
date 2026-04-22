@@ -252,10 +252,27 @@ public static class PopcornJsonOptionsExtension
                 if (currentType is INamedTypeSymbol namedType)
                 {
                     var propertyTypeName = namedType.ToDisplayString().Replace("?", "");
-                    if (IgnoreTypes.Contains(propertyTypeName) 
+                    if (IgnoreTypes.Contains(propertyTypeName)
                         || NumberTypes.Contains(propertyTypeName)
                         || StringTypes.Contains(propertyTypeName)
                         || BoolTypes.Contains(propertyTypeName))
+                    {
+                        continue;
+                    }
+
+                    // Enums (and Nullable<Enum>) are handled by System.Text.Json directly.
+                    // Skipping here prevents the generator from treating them as complex objects
+                    // and keeps them out of allTypeNames, so the default JsonSerializer.Serialize
+                    // fallback in AddMemberSerializationCode handles them correctly. This also
+                    // means global options.Converters (e.g. JsonStringEnumConverter) and per-type
+                    // [JsonConverter] attributes on the enum work transparently.
+                    if (namedType.TypeKind == TypeKind.Enum)
+                    {
+                        continue;
+                    }
+                    if (namedType.OriginalDefinition?.SpecialType == SpecialType.System_Nullable_T &&
+                        namedType.TypeArguments.Length == 1 &&
+                        namedType.TypeArguments[0].TypeKind == TypeKind.Enum)
                     {
                         continue;
                     }
@@ -294,22 +311,16 @@ public static class PopcornJsonOptionsExtension
                         }
                     }
 
-                    // Process properties
-                    foreach (var member in namedType.GetMembers().OfType<IPropertySymbol>())
+                    // Walk inherited members too — GetMembers() only returns declared-on-this-type,
+                    // but [Always]/[Default] on a base class must apply to derived types.
+                    foreach (var property in GetSerializableProperties(namedType))
                     {
-                        if (member.DeclaredAccessibility == Accessibility.Public && member.GetMethod != null && !member.IsIndexer)
-                        {
-                            typesToVisit.Enqueue(member.Type);
-                        }
+                        typesToVisit.Enqueue(property.Type);
                     }
-                    
-                    // Process fields
-                    foreach (var member in namedType.GetMembers().OfType<IFieldSymbol>())
+
+                    foreach (var field in GetSerializableFields(namedType))
                     {
-                        if (member.DeclaredAccessibility == Accessibility.Public && !member.IsStatic && !member.IsConst)
-                        {
-                            typesToVisit.Enqueue(member.Type);
-                        }
+                        typesToVisit.Enqueue(field.Type);
                     }
                 }
             }
@@ -561,6 +572,42 @@ public static class PopcornJsonOptionsExtension
             return internalSerializationCode;
         }
 
+        // Yields public instance properties declared on `type` OR inherited from any base class
+        // (excluding System.Object). When a derived type redeclares a name via `new` or `override`,
+        // the derived declaration wins — we walk derived → base and dedupe on name.
+        private static IEnumerable<IPropertySymbol> GetSerializableProperties(INamedTypeSymbol type)
+        {
+            var seen = new HashSet<string>();
+            for (var current = type; current != null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
+            {
+                foreach (var member in current.GetMembers().OfType<IPropertySymbol>())
+                {
+                    if (member.DeclaredAccessibility != Accessibility.Public) continue;
+                    if (member.GetMethod == null) continue;
+                    if (member.IsIndexer) continue;
+                    if (member.IsStatic) continue;
+                    if (!seen.Add(member.Name)) continue;
+                    yield return member;
+                }
+            }
+        }
+
+        private static IEnumerable<IFieldSymbol> GetSerializableFields(INamedTypeSymbol type)
+        {
+            var seen = new HashSet<string>();
+            for (var current = type; current != null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
+            {
+                foreach (var member in current.GetMembers().OfType<IFieldSymbol>())
+                {
+                    if (member.DeclaredAccessibility != Accessibility.Public) continue;
+                    if (member.IsStatic) continue;
+                    if (member.IsConst) continue;
+                    if (!seen.Add(member.Name)) continue;
+                    yield return member;
+                }
+            }
+        }
+
         // Helper methods for member serialization
         private static bool ShouldSerializeMember(ISymbol member)
         {
@@ -587,58 +634,33 @@ public static class PopcornJsonOptionsExtension
         private static string CreateComplexObjectSerialization(INamedTypeSymbol targetType, SourceProductionContext context, HashSet<string> allTypeNames)
         {
             var propertySerializationCode = new StringBuilder();
-            
-            // Check if any member has Always or Default attribute
-            bool hasAlwaysOrDefaultAttribute = false;
-            
-            // Check properties for Always or Default attributes
-            foreach (var property in targetType.GetMembers().OfType<IPropertySymbol>()
-                .Where(p => p.DeclaredAccessibility == Accessibility.Public && p.GetMethod != null && !p.IsIndexer))
-            {
-                if (HasAttribute(property, "Popcorn.AlwaysAttribute") || 
-                    HasAttribute(property, "Popcorn.DefaultAttribute"))
-                {
-                    hasAlwaysOrDefaultAttribute = true;
-                    break;
-                }
-            }
-            
-            // If no property has Always/Default, check fields
-            if (!hasAlwaysOrDefaultAttribute)
-            {
-                foreach (var field in targetType.GetMembers().OfType<IFieldSymbol>()
-                    .Where(f => f.DeclaredAccessibility == Accessibility.Public && !f.IsStatic && !f.IsConst))
-                {
-                    if (HasAttribute(field, "Popcorn.AlwaysAttribute") || 
-                        HasAttribute(field, "Popcorn.DefaultAttribute"))
-                    {
-                        hasAlwaysOrDefaultAttribute = true;
-                        break;
-                    }
-                }
-            }
-            
-            // Process properties
-            foreach (var property in targetType.GetMembers().OfType<IPropertySymbol>()
-                .Where(p => p.DeclaredAccessibility == Accessibility.Public && p.GetMethod != null && !p.IsIndexer))
+
+            // Walk declared + inherited members so [Always]/[Default] on a base class
+            // are honored when serializing a derived type.
+            var properties = GetSerializableProperties(targetType).ToList();
+            var fields = GetSerializableFields(targetType).ToList();
+
+            bool hasAlwaysOrDefaultAttribute =
+                properties.Any(p => HasAttribute(p, "Popcorn.AlwaysAttribute") || HasAttribute(p, "Popcorn.DefaultAttribute")) ||
+                fields.Any(f => HasAttribute(f, "Popcorn.AlwaysAttribute") || HasAttribute(f, "Popcorn.DefaultAttribute"));
+
+            foreach (var property in properties)
             {
                 if (!ShouldSerializeMember(property))
                 {
                     continue;
                 }
-                
+
                 AddMemberSerializationCode(property, property.Type, property.Name, false, propertySerializationCode, context, allTypeNames, hasAlwaysOrDefaultAttribute);
             }
-            
-            // Process fields
-            foreach (var field in targetType.GetMembers().OfType<IFieldSymbol>()
-                .Where(f => f.DeclaredAccessibility == Accessibility.Public && !f.IsStatic && !f.IsConst))
+
+            foreach (var field in fields)
             {
                 if (!ShouldSerializeMember(field))
                 {
                     continue;
                 }
-                
+
                 AddMemberSerializationCode(field, field.Type, field.Name, true, propertySerializationCode, context, allTypeNames, hasAlwaysOrDefaultAttribute);
             }
             

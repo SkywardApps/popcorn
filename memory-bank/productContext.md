@@ -1,130 +1,44 @@
 # Product Context: Popcorn
 
-## Problem Space
-
-### Current API Challenges
-1. **Multiple API Calls**
-   - Retrieving related data requires multiple requests
-   - Increased latency and bandwidth usage
-   - Complex client-side orchestration
-
-2. **Over-fetching**
-   - APIs return more data than needed
-   - Wasted bandwidth
-   - Unnecessary processing
-
-3. **Under-fetching**
-   - Missing related data requires additional requests
-   - Poor performance
-   - Complex client implementations
-
-### User Pain Points
-- Mobile apps struggle with multiple API calls
-- High latency in low-bandwidth scenarios
-- Complex data relationships require many requests
-- Difficult to optimize API responses for different clients
+## Problem
+REST APIs force a tradeoff between over-fetching (big payloads nobody reads) and under-fetching (N+1 round trips for related data). Mobile + low-bandwidth clients pay the cost. GraphQL solves it but replaces REST entirely. OData solves it but is heavy and .NET-centric.
 
 ## Solution
+A thin protocol overlay on REST: the client names the fields it wants, including nested ones and collections, in a single query parameter. The server returns exactly that shape in one response.
 
-### Core Functionality
-1. **Field Selection**
-   - Clients specify exactly what fields they need
-   - Support for nested data structures
-   - Collection handling
+```
+GET /contacts?include=[Id,Name,PhoneNumbers[Number]]
+```
 
-2. **Single Request Resolution**
-   - Related data retrieved in one call
-   - Recursive field selection
-   - Optimized server-side processing
+## Functional Intent
+1. **Field selection** — per-request shape control, no schema change.
+2. **Single-request resolution** — related entities expand inline, recursively.
+3. **Attribute-driven defaults** — server declares `[Always]` / `[Default]` / `[Never]` so a bare request still returns something sensible.
+4. **Platform-agnostic** — protocol is JSON-over-HTTP; any language can provide a server or client implementation.
 
-3. **Flexible Implementation**
-   - Platform-specific providers
-   - Consistent protocol across implementations
-   - Extensible architecture
+## Implementation Evolution
+- **Legacy**: runtime reflection expander (`PopcornNetStandard`). Flexible but incompatible with AOT and trimming; allocates heavily on each request.
+- **Current (this branch)**: build-time Roslyn source generator (`Popcorn.SourceGenerator`). AOT- and trim-safe. Type-safe. Generated `JsonConverter<T>` per registered type.
 
-### Implementation Approaches
+## UX Expectations
 
-#### Runtime Reflection (Original)
-- Dynamic property resolution
-- Flexible but performance-intensive
-- Not compatible with AOT compilation
+### API consumers (client devs)
+- Human-readable include syntax: `[field,nested[field],-excluded,!all,!default]`.
+- Visible in URL → cacheable, debuggable from a browser.
+- One call replaces N calls for nested data.
 
-#### Source Generation (Current)
-- Build-time code generation
-- AOT-compatible
-- Performance optimized
-- Type-safe serialization
-
-### Key Features
-1. **Selective Field Inclusion**
-   - Include only needed fields
-   - Support for nested objects
-   - Collection handling
-
-2. **Default Field Handling**
-   - Entity-specific default fields
-   - Implicit field inclusion rules
-   - Empty selection handling
-
-3. **Attribute-Based Control**
-   - Always include specific fields
-   - Never include specific fields
-   - Default include behavior
-
-4. **Performance Optimization**
-   - Reduced bandwidth usage
-   - Fewer API calls
-   - Efficient serialization
-
-## User Experience Goals
-
-### API Consumers
-- Intuitive field selection syntax
-- Reduced implementation complexity
-- Improved application performance
-- Bandwidth optimization
-- Clear documentation and examples
-
-### API Providers
-- Easy integration with existing APIs
-- Minimal performance overhead
-- Clear implementation guidelines
-- Robust error handling
-- Flexible configuration options
-
-## Success Criteria
-1. **Performance**
-   - Reduced number of API calls
-   - Decreased bandwidth usage
-   - Improved response times
-
-2. **Developer Experience**
-   - Reduced implementation time
-   - Clear documentation
-   - Intuitive API design
-   - Strong community support
-
-3. **Platform Support**
-   - Multiple language implementations
-   - Framework integrations
-   - Tool ecosystem
+### API providers (server devs)
+- Drop-in middleware: `AddPopcorn()`, `AddPopcornOptions()` on the JSON options.
+- Declare which types to support with `[JsonSerializable(typeof(ApiResponse<Foo>))]` on a `JsonSerializerContext`.
+- Annotate models with `[Always]` / `[Default]` / `[Never]`. No runtime configuration API required for the basics.
+- Compatible with `WebApplication.CreateSlimBuilder` and `PublishAot=True`.
 
 ## Target Audience
-
-### Primary Users
-- API developers
-- Mobile application developers
-- Web application developers
-- Microservice architects
-
-### Secondary Users
-- DevOps engineers
-- System architects
-- Technical leads
-- Open source contributors
+- .NET API developers shipping to AOT / trimmed / container environments where reflection-heavy libraries fail.
+- Mobile and low-bandwidth client developers who need payload-shape control over an existing REST surface.
+- Teams that want GraphQL's selective-fetch ergonomics without leaving REST.
 
 ## Market Positioning
-- Open source protocol
-- Complementary to GraphQL and OData
-- Focus on simplicity and performance
-- RESTful API enhancement
+- Open source (Skyward App Company).
+- Complementary, not a replacement, for GraphQL/OData.
+- Differentiator vs. legacy Popcorn: AOT-first, performance-focused, no runtime reflection.

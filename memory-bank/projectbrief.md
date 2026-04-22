@@ -1,98 +1,32 @@
 # Project Brief: Popcorn
 
 ## Core Purpose
-Popcorn is a communication protocol that extends RESTful APIs to enable selective field inclusion in API responses. It allows clients to specify exactly which fields they want to receive, including nested relationships, reducing unnecessary data transfer and API calls.
+Popcorn is a communication protocol on top of RESTful APIs that lets clients specify — via an `include=[...]` query parameter — exactly which fields (including nested relationships and collections) to return. It reduces over-fetching, under-fetching, and round-trip counts while remaining plain REST/JSON.
 
-## Key Requirements
+## Current Branch: `spike/source-generator`
+This branch is a **spike**, not yet merged to `master`. Its purpose: migrate Popcorn's .NET implementation from the legacy **runtime reflection** engine (`PopcornNetStandard`, `PopcornNetStandard.WebApiCore`) to a **Roslyn source generator** (`Popcorn.SourceGenerator` + `Popcorn.Shared`) that emits `JsonConverter<T>` classes at build time.
 
-### Protocol Requirements
-- Support selective field inclusion via query parameters
-- Enable recursive field selection for nested entities
-- Allow collection handling with field selection
-- Maintain RESTful principles
-- Support standard HTTP methods (GET, POST, PUT, etc.)
+### Why the migration
+1. **Performance** — no runtime reflection on the hot serialization path; generated converters are straight code.
+2. **AOT compilation** — reflection-heavy code breaks `PublishAot=true`. Source-generated converters work under Native AOT. Validated end-to-end in `PopcornAotExample` (`WebApplication.CreateSlimBuilder`, `PublishAot=True`).
+3. **Trimming / stripping** — `PublishTrimmed=True` strips unreferenced members; reflection-based discovery gets cut. Generated code preserves the call graph so the linker keeps what's needed.
 
-### Technical Requirements
-- Platform-agnostic protocol specification
-- Extensible architecture for multiple implementations
-- Consistent field naming conventions
-- Default field handling
-- Performance optimization capabilities
-- AOT compilation support
-- Source generation for build-time optimization
+### Migration status (spike branch)
+- Core generator works: scans `JsonSerializerContext` subclasses for `[JsonSerializable(typeof(ApiResponse<T>))]`, walks referenced types, emits `<Type>JsonConverter.g.cs` + a `PopcornJsonOptionsExtension.AddPopcornOptions()` registration extension.
+- Functional test suite exists under `dotnet/Tests/Popcorn.FunctionalTests` covering primitives, value types, collections, dictionaries, nesting, attribute semantics (`[Always]` / `[Default]` / `[Never]`), include-parameter variations, circular references.
+- BenchmarkDotNet suite exists under `dotnet/benchmarks/SerializationPerformance` comparing standard `System.Text.Json` vs Popcorn across include strategies, scalability (flat + deep), circular-ref overhead, attribute processing.
+- Known gaps vs. legacy reflection engine (not yet ported): sorting, pagination, filtering, authorization, response inspectors, contexts, lazy loading, blind expansion, deserialization.
 
-### Implementation Requirements
-- Provider implementations must be fully documented
-- Backward compatibility maintenance
-- Comprehensive test coverage
-- Clear error handling and validation
-
-## Project Goals
-
-### Short Term
-1. Improve source generator implementation
-   - Add comprehensive test coverage
-   - Implement circular reference detection
-   - Fix thread safety issues
-   - Add property reference validation
-   - Implement attribute conflict detection
-2. Enhance documentation and examples
-3. Implement automatic schema generation
-4. Add automatic documentation generation
-
-### Medium Term
-1. Develop additional platform providers (PHP, .NET Framework)
-2. Implement client-side libraries (TypeScript, JavaScript)
-3. Add payload containers and pagination support
-4. Enhance filtering capabilities
-
-### Long Term
-1. Build comprehensive tooling ecosystem
-2. Support calculated properties
-3. Establish broad platform support
-4. Create developer community
-
-## Current Focus
-The source generator implementation has been substantially completed with 98.7% test coverage achieved. Performance testing infrastructure has been fully implemented. Current focus areas include:
-
-1. **Source Generator - SUBSTANTIALLY COMPLETE**
-   - ✅ Comprehensive test coverage implemented (98.7% - 76/77 tests passing)
-   - ✅ Circular reference detection added (production ready)
-   - ✅ Thread safety verified (no issues found)
-   - 🔄 Property reference validation (external dependency in shared library)
-   - ✅ Attribute conflict detection tested (no conflicts found)
-   - ❌ Property reference parsing optimization (external dependency)
-   - ❌ Generated code optimization (current performance acceptable)
-   - ❌ Error state support (not needed for current scope)
-   - ❌ Deserialization support (out of scope)
-   - ❌ XML documentation improvements (low priority)
-   - ❌ Enhanced diagnostic messages (current level sufficient)
-
-2. **Performance Testing & Benchmarking - COMPLETE**
-   - ✅ Comprehensive BenchmarkDotNet testing suite implemented
-   - ✅ SerializationComparisonBenchmarks with full Popcorn integration
-   - ✅ Include strategy performance testing (default vs all vs custom)
-   - ✅ Scalability analysis for Big O complexity (flat lists and deep nesting)
-   - ✅ Circular reference detection overhead measurement
-   - ✅ Attribute processing performance benchmarks
-   - ✅ Multiple test models and data generators with reproducible results
-   - ✅ Integration with main solution and CI/CD pipeline
-
-3. **Future Feature Parity Goals**
-   - Implementing sorting support
-   - Adding pagination capabilities
-   - Supporting filtering
-   - Re-implementing authorization system
-   - Adding response inspectors
-   - Supporting contexts
-   - Enabling lazy loading
-   - Implementing blind expansion
+## Protocol Requirements (stable across implementations)
+- Selective field inclusion via `?include=[...]` query parameter.
+- Recursive nested selection, collections.
+- Special tokens: `!all`, `!default`.
+- Negation via `-PropertyName` prefix.
+- Attribute-driven default behavior: `[Always]`, `[Default]`, `[Never]`.
+- Platform-agnostic spec; multiple provider implementations allowed.
 
 ## Success Metrics
-- Reduced API bandwidth usage
-- Decreased number of API calls needed
-- Improved developer experience
-- Growing community adoption
-- Comprehensive platform support
-- AOT compatibility
-- Performance optimization
+- Feature parity with legacy reflection engine for the features that are still in scope.
+- AOT + trimmed publish succeeds with no reflection warnings.
+- Measured throughput/allocation parity-or-better vs. standard `System.Text.Json`.
+- Generated converter output is readable and debuggable.
