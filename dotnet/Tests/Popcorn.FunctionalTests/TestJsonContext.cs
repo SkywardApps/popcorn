@@ -41,6 +41,9 @@ namespace Popcorn.FunctionalTests
     [JsonSerializable(typeof(MyTestEnvelope<EnvelopePayload>))]
     [JsonSerializable(typeof(DerivedEnvelope<EnvelopePayload>))]
     [JsonSerializable(typeof(NestedEnvelopeContainer.NestedEnvelope<EnvelopePayload>))]
+    [JsonSerializable(typeof(RecordEnvelope<EnvelopePayload>))]
+    [JsonSerializable(typeof(RenamedMarkerEnvelope<EnvelopePayload>))]
+    [JsonSerializable(typeof(AlternateEnvelope<EnvelopePayload>))]
     partial class AppJsonSerializerContext : JsonSerializerContext
     {
     }

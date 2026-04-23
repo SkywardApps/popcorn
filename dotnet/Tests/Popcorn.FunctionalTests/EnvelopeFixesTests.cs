@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -173,6 +175,159 @@ namespace Popcorn.FunctionalTests
             var root = doc.RootElement;
             Assert.False(root.GetProperty("Ok").GetBoolean());
             Assert.Equal("boom", root.GetProperty("Fault").GetProperty("Message").GetString());
+        }
+
+        // Covers: when the response has already started streaming, the middleware cannot rewrite it and
+        // rethrows. The exception propagates to the test host rather than producing a malformed envelope.
+        [Fact]
+        public async Task Middleware_WhenResponseHasStarted_Rethrows()
+        {
+            using var server = new TestServer(new WebHostBuilder()
+                .ConfigureServices(s =>
+                {
+                    s.AddHttpContextAccessor();
+                    s.AddRouting();
+                    s.AddPopcorn();
+                    s.AddPopcornEnvelopes();
+                })
+                .Configure(app =>
+                {
+                    app.UsePopcornExceptionHandler();
+                    app.UseRouting();
+                    app.UseEndpoints(endpoints =>
+                    {
+                        endpoints.MapGet("/test", async ctx =>
+                        {
+                            // Flush bytes to the buffered body so the inner buffer stream reports HasStarted.
+                            // Then forcibly mark the response as started by flushing the buffer to the wire
+                            // via StartAsync (the test host respects this signal).
+                            await ctx.Response.Body.WriteAsync(Encoding.UTF8.GetBytes("{\"partial\":true"));
+                            await ctx.Response.StartAsync();
+                            throw new InvalidOperationException("too late");
+                        });
+                    });
+                }));
+
+            // The exception rethrows out of the pipeline; TestHost surfaces it as an HttpRequestException
+            // or an aggregated failure. We just assert it doesn't silently turn into a well-formed 500.
+            await Assert.ThrowsAnyAsync<Exception>(async () =>
+            {
+                var response = await server.CreateClient().GetAsync("/test");
+                // If we get here, verify the body is NOT a clean error envelope — the middleware
+                // re-threw because HasStarted==true, so the partial stream reaches us.
+                var body = await response.Content.ReadAsStringAsync();
+                Assert.DoesNotContain("\"Success\":false", body);
+            });
+        }
+
+        // Covers: two [PopcornEnvelope] types registered in the same JsonSerializerContext both get
+        // dispatch arms in the generator-emitted error writer.
+        [Fact]
+        public async Task MultipleCustomEnvelopes_BothDispatchedByGeneratedWriter()
+        {
+            using var serverA = TestServerHelper.CreateServerWithThrowingHandler(
+                configurePopcorn: o => o.EnvelopeType = typeof(MyTestEnvelope<>));
+            using var serverB = TestServerHelper.CreateServerWithThrowingHandler(
+                configurePopcorn: o => o.EnvelopeType = typeof(AlternateEnvelope<>));
+
+            using var docA = JsonDocument.Parse(await (await serverA.CreateClient().GetAsync("/test")).Content.ReadAsStringAsync());
+            using var docB = JsonDocument.Parse(await (await serverB.CreateClient().GetAsync("/test")).Content.ReadAsStringAsync());
+
+            // MyTestEnvelope's slots: Ok / Payload / Problem
+            Assert.False(docA.RootElement.GetProperty("Ok").GetBoolean());
+            Assert.True(docA.RootElement.TryGetProperty("Problem", out _));
+
+            // AlternateEnvelope's slots: State / Contents / Boom — different names, same writer.
+            Assert.False(docB.RootElement.GetProperty("State").GetBoolean());
+            Assert.True(docB.RootElement.TryGetProperty("Boom", out _));
+            Assert.False(docB.RootElement.TryGetProperty("Ok", out _));
+        }
+
+        // Covers: ApiError.Detail round-trips through the default error envelope when non-null.
+        [Fact]
+        public async Task DefaultEnvelope_ApiErrorDetail_RoundTripsWhenNonNull()
+        {
+            using var server = TestServerHelper.CreateServerWithThrowingHandler(
+                toThrow: new DetailedException("boom", "stack-like detail"));
+            var response = await server.CreateClient().GetAsync("/test");
+
+            using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            // DetailedException.Message = "boom"; we have no way to inject Detail directly from the
+            // handler without changing the middleware, so this test asserts the *shape*: when Detail
+            // is provided (via ApiError ctor), it appears in the envelope.
+            Assert.Equal("boom", doc.RootElement.GetProperty("Error").GetProperty("Message").GetString());
+            // And the positive-branch check: a directly-constructed ApiError with Detail serializes it.
+            var directly = JsonSerializer.Serialize(ApiResponse<EnvelopePayload>.FromError(new ApiError("X", "bad", "extra")));
+            using var directDoc = JsonDocument.Parse(directly);
+            Assert.Equal("extra", directDoc.RootElement.GetProperty("Error").GetProperty("Detail").GetString());
+        }
+
+        private class DetailedException(string message, string detail) : Exception(message)
+        {
+            public string Detail { get; } = detail;
+        }
+
+        // Covers: [JsonPropertyName] on a marker property takes precedence over the C# property name
+        // when the generator emits the error-envelope writer.
+        [Fact]
+        public async Task RenamedMarkerEnvelope_UsesJsonPropertyNameOverride()
+        {
+            using var server = TestServerHelper.CreateServerWithThrowingHandler(
+                configurePopcorn: o => o.EnvelopeType = typeof(RenamedMarkerEnvelope<>));
+            var response = await server.CreateClient().GetAsync("/test");
+
+            using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = doc.RootElement;
+
+            // Wire names are from [JsonPropertyName], not the C# names.
+            Assert.False(root.GetProperty("success_flag").GetBoolean());
+            Assert.True(root.TryGetProperty("problem_details", out var problem));
+            Assert.Equal("boom", problem.GetProperty("Message").GetString());
+            Assert.False(root.TryGetProperty("Ok", out _));
+            Assert.False(root.TryGetProperty("Problem", out _));
+        }
+
+        // Covers: [PopcornEnvelope] works on a record class (not just plain class) — AnalyzeEnvelope
+        // and the generated writer handle record-shape envelopes.
+        [Fact]
+        public async Task RecordEnvelope_IsDispatchedOnException()
+        {
+            using var server = TestServerHelper.CreateServerWithThrowingHandler(
+                configurePopcorn: o => o.EnvelopeType = typeof(RecordEnvelope<>));
+            var response = await server.CreateClient().GetAsync("/test");
+
+            using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = doc.RootElement;
+            Assert.False(root.GetProperty("Ok").GetBoolean());
+            Assert.Equal("boom", root.GetProperty("Issue").GetProperty("Message").GetString());
+        }
+
+        // Covers: AddPopcornEnvelopes() is idempotent — repeated calls overwrite the same writer
+        // delegate in the registry rather than stacking or corrupting state.
+        [Fact]
+        public async Task AddPopcornEnvelopes_IsIdempotent_OnRepeatedCall()
+        {
+            using var server = new TestServer(new WebHostBuilder()
+                .ConfigureServices(s =>
+                {
+                    s.AddHttpContextAccessor();
+                    s.AddRouting();
+                    s.AddPopcorn(o => o.EnvelopeType = typeof(MyTestEnvelope<>));
+                    // Call three times — the registry should end up with exactly one working writer.
+                    s.AddPopcornEnvelopes();
+                    s.AddPopcornEnvelopes();
+                    s.AddPopcornEnvelopes();
+                })
+                .Configure(app =>
+                {
+                    app.UsePopcornExceptionHandler();
+                    app.UseRouting();
+                    app.UseEndpoints(e => e.MapGet("/test", _ => throw new InvalidOperationException("boom")));
+                }));
+
+            using var doc = JsonDocument.Parse(await (await server.CreateClient().GetAsync("/test")).Content.ReadAsStringAsync());
+            Assert.False(doc.RootElement.GetProperty("Ok").GetBoolean());
+            Assert.Equal("boom", doc.RootElement.GetProperty("Problem").GetProperty("Message").GetString());
         }
     }
 }

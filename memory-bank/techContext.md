@@ -13,20 +13,28 @@
 ```
 dotnet/
 ├── Popcorn.sln
-├── Popcorn.Shared/              # Runtime attrs, ApiResponse<T>, Pop<T>, PropertyReference, PopcornAccessor
+├── Popcorn.Shared/              # Runtime attrs, ApiResponse<T>, ApiError, Pop<T>, PropertyReference,
+│                                #   PopcornAccessor, PopcornOptions, PopcornErrorWriterRegistry,
+│                                #   ApplicationBuilderExtensions (UsePopcornExceptionHandler)
 ├── Popcorn.SourceGenerator/     # IIncrementalGenerator — ExpanderGenerator.cs, Plan.md
 ├── PopcornAotExample/           # AOT/trim smoke test: minimal API, CreateSlimBuilder, PublishAot=True, PublishTrimmed=True
 ├── PopcornNetStandard/          # LEGACY reflection-based expander (Abstractions, Expanders, Externals, Internals) — being replaced
 ├── PopcornNetStandard.WebApiCore/ # LEGACY middleware (ExpandResultAttribute, ExpandServiceFilter) — being replaced
 ├── Tests/
-│   ├── Popcorn.FunctionalTests/ # NEW — xUnit tests for the source generator
+│   ├── Popcorn.FunctionalTests/ # xUnit tests for the source generator (22 files, 140+ tests)
 │   │   ├── *Tests.cs            # PrimitiveTypes, ValueTypes, BasicCollectionTypes, CollectionEdgeCases,
 │   │   │                        #   CollectionPropertyInclusion, DictionaryTypes, AlwaysAttribute,
 │   │   │                        #   NestedAlwaysAttribute, CollectionAlwaysAttribute, ConflictingAttributes,
-│   │   │                        #   DefaultBehavior, IncludeParameterVariation, BasicSerialization
-│   │   ├── Models/              # 15+ test model classes
+│   │   │                        #   DefaultBehavior, IncludeParameterVariation, BasicSerialization,
+│   │   │                        #   Enum, JsonPropertyName, Polymorphism, Generic, IncludeParserEdge,
+│   │   │                        #   ErrorHandling, Translator, SubPropertyDefault, CustomEnvelope,
+│   │   │                        #   EnvelopeFixes, BlindHandler, ExpandFrom
+│   │   ├── Models/              # 20+ test model classes incl. EnvelopeModel (MyTestEnvelope, DerivedEnvelope, NestedEnvelopeContainer)
 │   │   ├── TestJsonContext.cs   # JsonSerializerContext with [JsonSerializable] attrs for every test model
 │   │   └── TestPlan.md
+│   ├── Popcorn.SourceGenerator.Tests/ # Generator unit tests (CSharpGeneratorDriver)
+│   │   ├── GeneratorTestHarness.cs    # In-memory compilation + generator-driver harness
+│   │   └── EnvelopeDiagnosticsTests.cs# JSG003–JSG007 assertions + positive control
 │   └── PopcornSpecTests/        # Protocol-level spec tests
 ├── benchmarks/
 │   ├── ParsingIncludes/         # Include-string parser benchmarks
@@ -50,13 +58,18 @@ From `Popcorn.SourceGenerator.csproj`:
 - Packs `Popcorn.SourceGenerator.dll` and `Popcorn.Shared.dll` under `analyzers/dotnet/cs` (so the generator sees the attribute types) AND `Popcorn.Shared.dll` under `lib/netstandard2.0` (so consumers get the attributes at runtime).
 
 ## Source Generator Entry Points (`ExpanderGenerator.cs`)
-- `Initialize()` — pipeline: `ForAttributeWithMetadataName(JsonSerializableAttribute)` → filter to `JsonSerializerContext` subclasses → filter to `ApiResponse<T>` target types → emit converter + registrar.
+- `Initialize()` — pipeline: `ForAttributeWithMetadataName(JsonSerializableAttribute)` → filter to `JsonSerializerContext` subclasses → filter to `ApiResponse<T>` or `[PopcornEnvelope]` target types → emit converter + registrar.
 - `GetJsonSerializerContextClass` — confirms base class is `System.Text.Json.Serialization.JsonSerializerContext`.
-- `GetJsonSerializableTypes` — pulls `[JsonSerializable(typeof(ApiResponse<…>))]` attrs.
+- `GetJsonSerializableTypes` — pulls `[JsonSerializable(typeof(Envelope<…>))]` attrs where the envelope is either `ApiResponse<T>` (or inherits) or decorated with `[PopcornEnvelope]`.
+- `HasPopcornEnvelopeAttribute` — identifies user-declared custom envelopes.
+- `AnalyzeEnvelope` — walks the envelope's base chain (via `GetSerializableProperties`) to collect `[PopcornSuccess]` / `[PopcornPayload]` / `[PopcornError]` slot names, detect duplicates, and record locations for diagnostics.
+- `ReportEnvelopeDiagnostics` — emits JSG003–JSG007 for malformed envelopes.
 - `InheritsOrImplements(typeSymbol, "Popcorn.Shared.ApiResponse<T>")` — used for both response filtering and for `IEnumerable<T>`/`IDictionary<K,V>` detection when walking properties.
+- `IsPopOfT`, `IsApiError` — type predicates for JSG005 / JSG006 payload/error-slot validation.
+- `OpenGenericCSharpName` — emits the open-generic C# syntax for `typeof(...)` (handles nested types inside non-generic outers; flags generic-outer nesting via JSG007).
 - `GetReferencedTypes` — BFS over property types; handles arrays, dictionaries (walks value type), enumerables (walks item type), skips primitives/ignored types.
 - `GenerateJsonConverter` → `CreateComplexObjectSerialization` — emits per-property write logic with attribute + property-reference gating.
-- Registration: emits `Popcorn.Shared.PopcornJsonOptionsExtension.AddPopcornOptions(JsonSerializerOptions)` that installs every generated converter and sets `NumberHandling = AllowNamedFloatingPointLiterals`.
+- Registration: emits `Popcorn.Shared.PopcornJsonOptionsExtension.AddPopcornOptions(JsonSerializerOptions)` which installs every generated converter, sets `NumberHandling = AllowNamedFloatingPointLiterals`, and (if any `[PopcornEnvelope]` types exist) registers `WriteCustomErrorEnvelope` in `PopcornErrorWriterRegistry`. Also emits `AddPopcornEnvelopes(IServiceCollection)` — the DI-time hook that registers the writer without requiring a `JsonSerializerOptions` call. Writer signature: `(Utf8JsonWriter, Type, ApiError, JsonNamingPolicy?)` — generator emits naming-policy-aware field names so error responses match success-path casing.
 
 ## Type Handling Buckets (`ExpanderGenerator.cs`)
 - **Numbers**: all integer types and `decimal` (floats are in `IgnoreTypes`).
@@ -73,7 +86,8 @@ From `Popcorn.SourceGenerator.csproj`:
 - Recent `master` commits: CI pipeline for NuGet publishing (#72), unrelated bugfix `ELUM-3318_ErrorsReturnedAsOK` (#71).
 
 ## Testing Strategy
-- **Functional tests** (`Popcorn.FunctionalTests`) use `TestJsonContext` — a single `JsonSerializerContext` that declares `[JsonSerializable(typeof(ApiResponse<Model>))]` for every test model. The source generator runs against this and produces real converters, which the tests invoke via `JsonSerializer.Serialize`. To inspect generated output, look in `$(BaseIntermediateOutputPath)Generated` (csproj sets `EmitCompilerGeneratedFiles=true`).
+- **Functional tests** (`Popcorn.FunctionalTests`) use `TestJsonContext` — a single `JsonSerializerContext` that declares `[JsonSerializable(typeof(ApiResponse<Model>))]` (and `[JsonSerializable(typeof(CustomEnvelope<Model>))]` for envelope fixtures) for every test model. The source generator runs against this and produces real converters, which the tests invoke via `JsonSerializer.Serialize` and real `TestServer` pipelines. To inspect generated output, look in `$(BaseIntermediateOutputPath)Generated` (csproj sets `EmitCompilerGeneratedFiles=true`).
+- **Generator diagnostic tests** (`Popcorn.SourceGenerator.Tests`) use Roslyn's `CSharpGeneratorDriver` against synthetic in-memory source. `GeneratorTestHarness.Run(source)` returns a `Result` of `Diagnostics + RunResult` for assertions. Covers JSG003–JSG007 plus a positive control.
 - **No mocking** of the generator or the serializer — tests exercise the real pipeline.
 - **Snapshot tests** (Verify.SourceGenerators/Verify.Xunit, as declared in previous notes) — referenced in prior memory, but current branch leans on functional-output assertions rather than snapshot files.
 

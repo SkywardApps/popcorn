@@ -5,32 +5,74 @@
 ### Runtime pipeline (new, source-generated path)
 ```
 Client → HTTP GET ?include=[...] → ASP.NET pipeline
+  → (optional) UsePopcornExceptionHandler buffers the response body
   → PopcornAccessor parses include → PropertyReference[] (cached per request)
-  → Endpoint returns ApiResponse<T> (wraps Pop<T> = { Data, PropertyReferences })
-  → System.Text.Json uses generated JsonConverter<T>
+  → Endpoint returns ApiResponse<T> (or custom envelope) wrapping Pop<T> = { Data, PropertyReferences }
+  → System.Text.Json uses generated JsonConverter<Pop<T>>
   → Converter walks properties, applies attributes + PropertyReferences, writes only selected fields
+  → On exception: middleware consults PopcornOptions.EnvelopeType and writes a structured error envelope
+    via the default shape or a generator-emitted writer registered in PopcornErrorWriterRegistry
 ```
 
 ### Build-time pipeline
 ```
-User's JsonSerializerContext subclass with [JsonSerializable(typeof(ApiResponse<T>))] attrs
+User's JsonSerializerContext subclass with [JsonSerializable(typeof(ApiResponse<T>))] and/or
+[JsonSerializable(typeof(MyEnvelope<T>))] attrs (MyEnvelope<T> decorated with [PopcornEnvelope])
   → ExpanderGenerator (IIncrementalGenerator)
     ├ finds JsonSerializerContext classes
-    ├ filters JsonSerializable attrs whose T inherits ApiResponse<>
+    ├ filters JsonSerializable attrs whose T inherits ApiResponse<> OR carries [PopcornEnvelope]
     ├ walks referenced types transitively (GetReferencedTypes)
-    └ emits <Type>JsonConverter.g.cs per type + RegisterConverters.g.cs
-  → User calls options.AddPopcornOptions() to register them all
+    ├ analyzes each envelope (AnalyzeEnvelope walks base chain for marker attrs)
+    │   and emits diagnostics JSG003–JSG007 for malformed shapes
+    └ emits <Type>JsonConverter.g.cs per type + RegisterConverters.g.cs (which provides
+      AddPopcornOptions JSON-hook + AddPopcornEnvelopes DI-hook, and a per-envelope error writer)
+  → User calls options.AddPopcornOptions() and/or services.AddPopcornEnvelopes() to register them
 ```
+
+### Envelope dispatch architecture (custom envelope + exception middleware)
+Custom envelopes are declared at build time (markers) and dispatched at runtime (registry + middleware).
+The generator does everything statically; the middleware does nothing reflection-based.
+
+```
+Build time:
+  MyEnvelope<T> with [PopcornEnvelope] + marker properties
+    → Generator extracts slot names + walks Pop<T> payload type
+    → Emits WriteCustomErrorEnvelope method with a `switch (envelopeType)` arm per envelope
+    → Emits AddPopcornEnvelopes / AddPopcornOptions hooks that call
+      PopcornErrorWriterRegistry.Register(WriteCustomErrorEnvelope)
+
+Startup (AOT-friendly):
+  services.AddPopcorn(o => o.EnvelopeType = typeof(MyEnvelope<>));
+  services.AddPopcornEnvelopes();   // installs the writer at DI time
+  app.UsePopcornExceptionHandler(); // buffers response, catches exceptions
+
+Request path:
+  Normal success: endpoint returns MyEnvelope<T> { Payload = Pop<T>{...} },
+    generated Pop<T> converter renders include-filtered JSON inside user-named slots.
+  Exception: middleware resolves PopcornOptions, calls PopcornErrorWriterRegistry.TryWrite
+    with the configured envelope type + ApiError; generator-emitted writer picks the matching
+    envelope arm and emits {slotName: false, errorSlot: {...}} using Utf8JsonWriter
+    (naming-policy-applied, reflection-free).
+```
+
+Fallback: when `PopcornOptions.EnvelopeType == typeof(ApiResponse<>)` the middleware writes
+the default shape directly without consulting the registry. Users who never configure a custom
+envelope pay no generator cost for this path.
 
 ## Key Components
 
 ### `Popcorn.Shared` (runtime, netstandard2.0)
-- `ApiResponse<T>` — response envelope, implicit-converts from `Pop<T>`.
+- `ApiResponse<T>` — default response envelope, implicit-converts from `Pop<T>`. Has `Success`, `Data: Pop<T>`, `Error: ApiError?`. Parameterless ctor is `internal` so external callers cannot construct a "success-with-no-data" shape; use the `Pop<T>` overload, the `PropertyReference` overload, or `FromError(ApiError)`.
+- `ApiError(Code, Message, Detail?)` — structured error record emitted by the exception middleware.
 - `Pop<T>` — `{ Data: T, PropertyReferences: IReadOnlyList<PropertyReference> }`.
 - `PropertyReference` — parsed include node: `Name`, `Negated`, `Children`. Parser in `ParseIncludeStatement`.
-- `AlwaysAttribute`, `NeverAttribute`, `DefaultAttribute` — in `Popcorn` namespace, on properties.
+- `AlwaysAttribute`, `NeverAttribute`, `DefaultAttribute` — on properties. In `Popcorn` namespace.
+- `PopcornEnvelopeAttribute` (on class/struct) + `PopcornPayloadAttribute`, `PopcornErrorAttribute`, `PopcornSuccessAttribute` (on properties) — marker attributes that opt a user type into custom-envelope dispatch.
+- `PopcornOptions` — `{ EnvelopeType (default typeof(ApiResponse<>)), DefaultNamingPolicy }`. Consumed by `UsePopcornExceptionHandler`.
+- `PopcornErrorWriterRegistry` — process-global static, `Volatile`-guarded. `Register(writer)` installs the generator-emitted writer; `TryWrite(...)` is called by the middleware on the error path.
 - `IPopcornAccessor` / `PopcornAccessor` — scoped service, reads `include` from current `HttpContext.Request.Query`, caches parse result, exposes `CreateResponse<T>(T)`.
-- `HttpContextExtensions.Respond<T>`, `ServiceCollectionExtensions.AddPopcorn()`.
+- `ApplicationBuilderExtensions.UsePopcornExceptionHandler()` — middleware; buffers the response body (so exceptions during serialization can still be captured), strips stale `Content-Length`, preserves custom headers, applies `PopcornOptions.DefaultNamingPolicy` when writing the error envelope.
+- `HttpContextExtensions.Respond<T>`, `ServiceCollectionExtensions.AddPopcorn()` (idempotent) / `AddPopcorn(Action<PopcornOptions>)`.
 
 ### `Popcorn.SourceGenerator` (build-time, netstandard2.0, `IsRoslynComponent`)
 - `ExpanderGenerator : IIncrementalGenerator` — single entry point.
@@ -87,14 +129,46 @@ To opt a type into Popcorn serialization:
    ```
 5. Return `contextAccess.CreateResponse(data)` from endpoints (endpoints receive `IPopcornAccessor` via DI).
 
+### Discovery contract for a custom envelope + exception middleware
+Additional steps when you want a non-default envelope shape and/or structured error handling:
+1. Declare your envelope with marker attributes:
+   ```csharp
+   [PopcornEnvelope]
+   public record class MyEnvelope<T>
+   {
+       [PopcornSuccess] public bool Ok { get; init; } = true;
+       [PopcornPayload] public Pop<T> Payload { get; init; }
+       [PopcornError]   public ApiError? Problem { get; init; }
+   }
+   ```
+2. Register it as the app envelope (and wire the exception middleware):
+   ```csharp
+   builder.Services.AddPopcorn(o => {
+       o.EnvelopeType = typeof(MyEnvelope<>);
+       o.DefaultNamingPolicy = JsonNamingPolicy.CamelCase; // optional
+   });
+   builder.Services.AddPopcornEnvelopes(); // DI-time hook that registers the generator-emitted writer
+   app.UsePopcornExceptionHandler();       // buffers body + catches exceptions
+   ```
+3. Return `new MyEnvelope<T> { Payload = new Pop<T>{ Data = model, PropertyReferences = accessor.PropertyReferences } }` from endpoints.
+
+The generator enforces: exactly one `[PopcornPayload]` property (otherwise JSG003), unique markers (JSG004), `Pop<T>`-typed payload (JSG005 warning), `ApiError`-typed error (JSG006 warning), and no nesting inside a generic outer type (JSG007 — the C# open-generic `typeof(...)` expression can't be emitted for that case).
+
 ## Future/Planned Transport
 - Header-based include via `POPCORN-INCLUDE` header — not implemented. Would remove URL length limits and clean up URLs for POST/PUT.
 
 ## Deferred or Out-of-Scope for This Spike
-- **Deferred (intend to port from legacy)**: sorting, pagination, filtering, authorization, response inspectors, contexts, lazy loading, blind expansion.
+- **Dropped from v2 scope**: sorting, pagination, filtering, authorizers (never used in practice; see migrationAnalysis.md).
+- **Deferred (intend to port from legacy)**: response inspectors (superseded by exception middleware + custom envelope), contexts (superseded by DI), lazy loading (supported by construction), blind expansion (superseded by IPopcornBlindHandler — Tier-2).
 - **Out of scope**: deserialization (generated converters are write-only), runtime-configurable projection API, multi-target (non-.NET) providers.
+
+## Middleware Constraints
+- `UsePopcornExceptionHandler` buffers the entire response body in memory until the inner handler completes. This is correct for bounded JSON payloads (which Popcorn envelopes always are) but breaks streaming endpoints (SSE, chunked, long-polling). Scope the middleware to Popcorn routes; do not mount it globally if streaming endpoints coexist.
+- Exceptions that occur after `Response.HasStarted == true` cannot be converted to an envelope (the client has already received a partial response). The middleware re-throws in that case, matching ASP.NET Core default behavior.
 
 ## Error Surfaces
 - Generator diagnostic `JSG001` — source generation failure (emitted at build time, doesn't fail build catastrophically).
+- Generator diagnostics `JSG003`–`JSG007` — malformed envelope: missing `[PopcornPayload]` (JSG003), duplicate marker (JSG004), non-`Pop<T>` payload (JSG005, warning), non-`ApiError` error slot (JSG006, warning), envelope nested inside a generic outer type (JSG007, warning — no valid open-generic `typeof` syntax possible).
 - Invalid include strings → `PropertyReference.Default` fallback.
 - Missing `JsonSerializable` attr for a type at runtime → standard `System.Text.Json` "no metadata" error.
+- Unhandled exception in a handler → `UsePopcornExceptionHandler` rewrites the response as a structured envelope (default shape or custom via registry), status 500.
