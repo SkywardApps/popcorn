@@ -35,7 +35,7 @@ Already supported by construction: lazy loading, blind expansion of user-declare
 Genuine non-starter under AOT: polymorphic unknown-at-build-time types (trimmer removes the metadata). Document the requirement, emit a generator diagnostic.
 
 ## Known Issues
-- *No open parser / dictionary bugs.* The previously-suspected parser bug was a mis-diagnosis — the real bug lived in `ExpanderGenerator.CreateDictionarySerializer`, which dropped sibling includes when descending into a dictionary's value type. Fixed; covered by four new tests in `DictionaryTypesTests.cs` plus an un-skipped parser test.
+- *No open parser / dictionary / nullability bugs.* Recent fixes: (1) dictionary complex-value include passthrough (value.PropertyReferences now passed verbatim to dictionary value types). (2) Four-bug nullability cleanup — NRT-annotation normalization at every `Pop<T>` callsite, primitive-at-root no longer cross-contaminates `allTypeNames`, `IDictionary<K,V>` / `ReadOnlyDictionary<K,V>` target-type dispatch works (was failing due to whitespace mismatch in a constant), `RegisterConverters.g.cs` has `#nullable enable`. Generated-code warning count dropped from 64 CS86xx to 0.
 
 ## Open Questions
 - Header-based include (`POPCORN-INCLUDE`) — implement in this spike or defer?

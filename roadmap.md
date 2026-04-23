@@ -8,7 +8,7 @@ Last updated: 2026-04-23.
 
 - Core protocol (include parsing, attribute semantics, nested expansion, collections, dictionaries, enums, polymorphism-basic, circular refs): **working**.
 - Custom response envelope + `UsePopcornExceptionHandler` exception middleware: **shipped**.
-- Test suite: 151 passing / 17 skipped / 0 failing in `Popcorn.FunctionalTests`. 6 passing in `Popcorn.SourceGenerator.Tests`.
+- Test suite: 178 passing / 17 skipped / 0 failing in `Popcorn.FunctionalTests`. 14 passing in `Popcorn.SourceGenerator.Tests`.
 - AOT/trim smoke: `PopcornAotExample` builds with `PublishAot=True`; now exercises a custom `[PopcornEnvelope]` shape.
 - Legacy reflection engine (`PopcornNetStandard*`): still in the tree, unchanged. Planned removal after v2 ships side-by-side for a release or two.
 
@@ -53,7 +53,15 @@ Last updated: 2026-04-23.
 
 *No open bugs in this list.*
 
-The previous entry blaming `PropertyReference.ParseIncludeStatement` for dictionary-value misbehavior was a mis-diagnosis. The parser was fine; the real bug was in [`ExpanderGenerator.CreateDictionarySerializer`](dotnet/Popcorn.SourceGenerator/ExpanderGenerator.cs), which took `firstRef.Children` instead of `value.PropertyReferences` when descending into a dictionary's value type. Siblings were dropped and the `PropertyReference.Default` placeholder was mistaken for a real include list — so `?include=[Dict[Id,Name]]` silently fell back to `!default` and looked fine against weak assertions. Fixed by passing `value.PropertyReferences` through verbatim, covered by four new tests in `DictionaryTypesTests.cs` (explicit subset, wildcard, negation, and nested-dictionary propagation). Parser test un-skipped and strengthened.
+Recent bug work (all FIXED):
+
+- **Dictionary complex-value include passthrough.** Initial mis-diagnosis blamed the include parser; the real bug was in [`ExpanderGenerator.CreateDictionarySerializer`](dotnet/Popcorn.SourceGenerator/ExpanderGenerator.cs) using `firstRef.Children` instead of `value.PropertyReferences`. Fixed; 4 new tests.
+- **Nullability cluster (bugs 3, 4, 5, 6).** Four related generator defects uncovered during the nullability-matrix audit:
+  - Bug 3 — 62 CS8620 warnings from `Pop<T?>` / `Pop<T>` mismatch at callsite vs. registered signature. Fixed by routing all `Pop<T>` type-argument emissions through a normalizing `TypeNameForPop` helper that strips NRT `?` on reference types while preserving `Nullable<T>` on value types.
+  - Bug 4 — root-level primitive registration (e.g. `ApiResponse<int?>`) added primitive names to `allTypeNames` without emitting matching `Pop<primitive>` bodies, cascading into compile errors in unrelated converters. Fixed by filtering primitives/enums/ignored types from `allTypeNames` and emitting a direct `JsonSerializer.Serialize` path for blind-serializable root types.
+  - Bug 5 — `IDictionary<K,V>` / `ReadOnlyDictionary<K,V>` as target types fell through to the IEnumerable branch due to a whitespace mismatch in the `IDictionaryTypeName` constant. Fixed with a one-character edit.
+  - Bug 6 — `RegisterConverters.g.cs` referenced `JsonNamingPolicy?` without a `#nullable enable` directive (2 × CS8669). Fixed by prepending the directive.
+  - Coverage: new `NullabilityCoverageModel` + 26 functional tests span the full (type-kind × position × container-nullability × element-nullability) matrix; new generator-driver tests in `NullabilityDiagnosticsTests` lock the no-CS86xx-in-generated-code invariant and the type-identity invariants (NRT-annotated ref types collapse; `Nullable<value-type>` does not).
 
 ## Polymorphism — partial (2 skipped)
 
@@ -115,6 +123,7 @@ Adjust based on what any real consumer blocks on first.
 - [x] Decision on in-scope vs. deferred legacy features.
 - [x] Custom envelope + exception middleware (Tier-1).
 - [x] Dictionary complex-value include passthrough fix.
+- [x] Nullability cluster (CS8620 / CS8669 / primitive-at-root / IDictionary dispatch) — zero CS86xx in generated code.
 - [ ] `[SubPropertyDefault]` (Tier-1 remaining).
 - [ ] Published benchmark report (legacy reflection vs source-gen vs raw `System.Text.Json`).
 - [ ] CI job that publishes the AOT example and runs it in a container.
