@@ -319,9 +319,97 @@ namespace Popcorn.FunctionalTests
 
             // Assert StringComplexItemDictionary with specific properties
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("StringComplexItemDictionary", out stringComplexItemDictionary), "StringComplexItemDictionary property is present");
-                        
-            Assert.True(item1.TryGetProperty("Description", out var description), "Property 'Description' is included");
+            Assert.True(stringComplexItemDictionary.TryGetProperty("item1", out item1));
+            Assert.True(item1.TryGetProperty("Id", out _), "Requested property 'Id' must be included");
+            Assert.True(item1.TryGetProperty("Name", out _), "Requested property 'Name' must be included");
+            Assert.True(item1.TryGetProperty("Description", out var description), "Requested property 'Description' must be included");
+            Assert.True(item1.TryGetProperty("CreatedDate", out _), "[Always] property 'CreatedDate' must be included");
             Assert.Equal("Description 1", description.GetString());
+        }
+
+        // Regression: the generator used to look at firstRef.Children instead of value.PropertyReferences
+        // when descending into a dictionary value type, which silently dropped every requested sibling and
+        // fell back to the Default include list. These tests exercise the subset / wildcard / negation paths
+        // through a complex-valued dictionary to prevent that regression.
+        [Fact]
+        public async Task DictionaryTypes_ComplexValueDictionary_ExplicitSubsetInclude_DropsNonRequestedProperties()
+        {
+            var model = new DictionaryTypesModel
+            {
+                StringComplexItemDictionary = new Dictionary<string, ComplexItem>
+                {
+                    { "a", new ComplexItem { Id = 1, Name = "n1", Description = "d1", CreatedDate = new DateTime(2025,1,1) } }
+                }
+            };
+            using var server = TestServerHelper.CreateServer(model);
+            var doc = await TestServerHelper.GetJsonAsync(server.CreateClient(), "/test?include=[StringComplexItemDictionary[Id,Name]]");
+
+            var dict = doc.GetData().GetProperty("StringComplexItemDictionary");
+            var item = dict.GetProperty("a");
+            Assert.True(item.HasProperty("Id"));
+            Assert.True(item.HasProperty("Name"));
+            Assert.False(item.HasProperty("Description"), "Description is [Default] but not in the explicit subset, so it must be excluded");
+            // [Always] still wins
+            Assert.True(item.HasProperty("CreatedDate"));
+        }
+
+        [Fact]
+        public async Task DictionaryTypes_ComplexValueDictionary_WildcardInclude_EmitsAllProperties()
+        {
+            var model = new DictionaryTypesModel
+            {
+                StringComplexItemDictionary = new Dictionary<string, ComplexItem>
+                {
+                    { "a", new ComplexItem { Id = 7, Name = "n", Description = "d", CreatedDate = new DateTime(2025,1,1) } }
+                }
+            };
+            using var server = TestServerHelper.CreateServer(model);
+            var doc = await TestServerHelper.GetJsonAsync(server.CreateClient(), "/test?include=[StringComplexItemDictionary[!all]]");
+
+            var item = doc.GetData().GetProperty("StringComplexItemDictionary").GetProperty("a");
+            Assert.True(item.HasProperty("Id"));
+            Assert.True(item.HasProperty("Name"));
+            Assert.True(item.HasProperty("Description"));
+            Assert.True(item.HasProperty("CreatedDate"));
+        }
+
+        [Fact]
+        public async Task DictionaryTypes_ComplexValueDictionary_NegatedInclude_ExcludesNamedProperty()
+        {
+            var model = new DictionaryTypesModel
+            {
+                StringComplexItemDictionary = new Dictionary<string, ComplexItem>
+                {
+                    { "a", new ComplexItem { Id = 1, Name = "n", Description = "d", CreatedDate = new DateTime(2025,1,1) } }
+                }
+            };
+            using var server = TestServerHelper.CreateServer(model);
+            var doc = await TestServerHelper.GetJsonAsync(server.CreateClient(), "/test?include=[StringComplexItemDictionary[!all,-Name]]");
+
+            var item = doc.GetData().GetProperty("StringComplexItemDictionary").GetProperty("a");
+            Assert.True(item.HasProperty("Id"));
+            Assert.False(item.HasProperty("Name"), "Name was negated and must be excluded");
+            Assert.True(item.HasProperty("Description"));
+            Assert.True(item.HasProperty("CreatedDate"));
+        }
+
+        [Fact]
+        public async Task DictionaryTypes_NestedDictionary_PropagatesIncludeTreeDownEachLevel()
+        {
+            var model = new DictionaryTypesModel
+            {
+                NestedStringIntDictionary = new Dictionary<string, Dictionary<string, int>>
+                {
+                    { "outer1", new Dictionary<string, int> { { "i", 1 }, { "j", 2 } } }
+                }
+            };
+            using var server = TestServerHelper.CreateServer(model);
+            var doc = await TestServerHelper.GetJsonAsync(server.CreateClient(), "/test?include=[NestedStringIntDictionary]");
+
+            var outer = doc.GetData().GetProperty("NestedStringIntDictionary");
+            Assert.True(outer.TryGetProperty("outer1", out var inner));
+            Assert.Equal(1, inner.GetProperty("i").GetInt32());
+            Assert.Equal(2, inner.GetProperty("j").GetInt32());
         }
 
         [Fact]

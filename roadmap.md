@@ -8,7 +8,7 @@ Last updated: 2026-04-23.
 
 - Core protocol (include parsing, attribute semantics, nested expansion, collections, dictionaries, enums, polymorphism-basic, circular refs): **working**.
 - Custom response envelope + `UsePopcornExceptionHandler` exception middleware: **shipped**.
-- Test suite: 146 passing / 18 skipped / 0 failing in `Popcorn.FunctionalTests`. 6 passing in `Popcorn.SourceGenerator.Tests`.
+- Test suite: 151 passing / 17 skipped / 0 failing in `Popcorn.FunctionalTests`. 6 passing in `Popcorn.SourceGenerator.Tests`.
 - AOT/trim smoke: `PopcornAotExample` builds with `PublishAot=True`; now exercises a custom `[PopcornEnvelope]` shape.
 - Legacy reflection engine (`PopcornNetStandard*`): still in the tree, unchanged. Planned removal after v2 ships side-by-side for a release or two.
 
@@ -51,14 +51,9 @@ Last updated: 2026-04-23.
 
 ## Known bugs (in-scope)
 
-### `PropertyReference.ParseIncludeStatement` mishandles nested includes inside dictionary values
-- **Location**: `Popcorn.Shared/PropertyReference.cs`.
-- **Test**: 1 skipped in [`IncludeParserEdgeTests.cs:108`](dotnet/Tests/Popcorn.FunctionalTests/IncludeParserEdgeTests.cs#L108). Also cross-cuts `DictionaryTypes_ComplexValueDictionary_SerializesCorrectly`.
-- **Symptom**: An include like `[Dict[KeyA[Nested]]]` produces a malformed `PropertyReference` tree when `Dict`'s value type itself has nested properties. The parser needs a pass over the nested-structure logic.
-- **Scope**: small, confined to `Popcorn.Shared`. Fix + un-skip the 2 tests.
+*No open bugs in this list.*
 
-### Dictionary complex-value attribute application is imperfect on deep shapes
-- **Related to the parser bug above** but may have additional generator-side issues in how `[Default]`/`[Always]` propagate through dictionary value types. Re-evaluate once the parser is fixed.
+The previous entry blaming `PropertyReference.ParseIncludeStatement` for dictionary-value misbehavior was a mis-diagnosis. The parser was fine; the real bug was in [`ExpanderGenerator.CreateDictionarySerializer`](dotnet/Popcorn.SourceGenerator/ExpanderGenerator.cs), which took `firstRef.Children` instead of `value.PropertyReferences` when descending into a dictionary's value type. Siblings were dropped and the `PropertyReference.Default` placeholder was mistaken for a real include list — so `?include=[Dict[Id,Name]]` silently fell back to `!default` and looked fine against weak assertions. Fixed by passing `value.PropertyReferences` through verbatim, covered by four new tests in `DictionaryTypesTests.cs` (explicit subset, wildcard, negation, and nested-dictionary propagation). Parser test un-skipped and strengthened.
 
 ## Polymorphism — partial (2 skipped)
 
@@ -105,14 +100,13 @@ Last updated: 2026-04-23.
 
 A defensible order that minimizes dependency chains and maximizes incremental merge-readiness:
 
-1. **Fix the `ParseIncludeStatement` dictionary-value bug.** Small, self-contained, un-blocks two tests.
-2. **Ship `[SubPropertyDefault]`.** Closes Tier-1.
-3. **Publish a benchmark baseline.** Uses the current generator; doesn't depend on any Tier-2 feature. Makes the perf claim verifiable.
-4. **Ship `[ExpandFrom]`.** Pure code-gen, no runtime wiring — the lowest-risk Tier-2.
-5. **Ship `[Translator]` with DI, then `IPopcornBlindHandler<TFrom,TTo>`.** These share the "generator emits DI resolution" infrastructure; doing them together reduces duplication.
-6. **AOT CI job + NuGet preview.** Once the feature set is stable.
-7. **Polymorphism dispatch** (if a consumer requests it; otherwise defer to v2.1).
-8. **Header-based include** (opportunistic; ship whenever convenient).
+1. **Ship `[SubPropertyDefault]`.** Closes Tier-1.
+2. **Publish a benchmark baseline.** Uses the current generator; doesn't depend on any Tier-2 feature. Makes the perf claim verifiable.
+3. **Ship `[ExpandFrom]`.** Pure code-gen, no runtime wiring — the lowest-risk Tier-2.
+4. **Ship `[Translator]` with DI, then `IPopcornBlindHandler<TFrom,TTo>`.** These share the "generator emits DI resolution" infrastructure; doing them together reduces duplication.
+5. **AOT CI job + NuGet preview.** Once the feature set is stable.
+6. **Polymorphism dispatch** (if a consumer requests it; otherwise defer to v2.1).
+7. **Header-based include** (opportunistic; ship whenever convenient).
 
 Adjust based on what any real consumer blocks on first.
 
@@ -120,8 +114,8 @@ Adjust based on what any real consumer blocks on first.
 
 - [x] Decision on in-scope vs. deferred legacy features.
 - [x] Custom envelope + exception middleware (Tier-1).
+- [x] Dictionary complex-value include passthrough fix.
 - [ ] `[SubPropertyDefault]` (Tier-1 remaining).
-- [ ] Dictionary/nested parser fix.
 - [ ] Published benchmark report (legacy reflection vs source-gen vs raw `System.Text.Json`).
 - [ ] CI job that publishes the AOT example and runs it in a container.
 - [ ] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared`.

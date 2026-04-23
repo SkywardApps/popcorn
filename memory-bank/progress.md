@@ -18,7 +18,7 @@
 
 ### Functional test suite (`dotnet/Tests/Popcorn.FunctionalTests`)
 - xUnit, 22 test files (after deprecation cleanup + review-fix coverage).
-- **158 tests total**: 140 passing, 0 failing, 18 skipped (TDD-pending features). Sorting/Pagination/Filtering/Authorizer test files were deleted as part of the v2 scope decision; their 30 skipped tests are gone. Custom envelope + exception middleware shipped: 5 more tests flipped from skipped to passing. Review-driven fixes added `EnvelopeFixesTests.cs` with 9 new passing tests covering naming-policy conversion, header preservation, idempotency, inheritance, and nested envelopes.
+- **168 tests total**: 151 passing, 0 failing, 17 skipped (TDD-pending features). Sorting/Pagination/Filtering/Authorizer test files were deleted as part of the v2 scope decision; their 30 skipped tests are gone. Custom envelope + exception middleware shipped: 5 more tests flipped from skipped to passing. Review-driven fixes added `EnvelopeFixesTests.cs` with 9 new passing tests covering naming-policy conversion, header preservation, idempotency, inheritance, and nested envelopes. Dictionary complex-value passthrough bug fixed and covered by four new tests in `DictionaryTypesTests.cs`; the skipped parser test was a false alarm and is now un-skipped.
 - Covers attribute semantics, include-parameter variations, primitives, value types, basic + advanced collections, dictionaries, nesting, conflicting attributes, default-behavior rules, enums, `JsonPropertyName`, inheritance, generics, include-parser edge cases, error handling, middleware integration, computed-property translators, custom envelope shape + exception wrapping.
 - Single `TestJsonContext` drives the generator over 30+ `ApiResponse<Model>` and `MyTestEnvelope<Model>` declarations.
 - Generated sources visible at `$(BaseIntermediateOutputPath)Generated` for debugging.
@@ -27,17 +27,18 @@
 ### Bugs surfaced by new test coverage
 1. **Enum serialization — FIXED.** Generator was treating enum types as POCOs in `GetReferencedTypes`, registering them in `allTypeNames`, which caused `AddMemberSerializationCode` to recurse through a broken `PopEnumType` converter that emitted `{}`. Fix: added an early `continue` in `GetReferencedTypes` for `TypeKind.Enum` and `Nullable<Enum>`, so enum members fall through to the default `JsonSerializer.Serialize(writer, value, options)` path. This path honors global `JsonStringEnumConverter` registrations and per-type `[JsonConverter(typeof(JsonStringEnumConverter))]` attributes transparently — no Popcorn-specific API needed. Covered by `EnumTests` (10 tests: numeric default, nullable, flags, in-collection, global string converter, camelCase naming policy, per-type attribute).
 2. **Inheritance: base-class attributes ignored on derived types — FIXED.** `[Default]` / `[Always]` on a base class were dropped when serializing a derived runtime type because `INamedTypeSymbol.GetMembers()` only returns members declared directly on the type. Fix: introduced `GetSerializableProperties` / `GetSerializableFields` helpers that walk derived → base up to `System.Object`, dedupe by name (so `new`/`override` shadows resolve to the derived declaration), and reused them at every member-enumeration site in the generator (`GetReferencedTypes` + `CreateComplexObjectSerialization`). Covered by `PolymorphismTests.DerivedType_InheritedAttributesApply` and `DerivedType_SerializedAsBaseType_EmitsBaseProperties`.
+3. **Dictionary complex-value include passthrough — FIXED.** `CreateDictionarySerializer` was reading `firstRef.Children` on the first sibling of `value.PropertyReferences` to decide what include list to pass to each dictionary value. The parser eagerly sets `Children = PropertyReference.Default` on every name it parses, so the old code couldn't distinguish "no children" from "real sibling list with 1+ entries" and silently collapsed to `Default`. `?include=[Dict[Id,Name]]` therefore rendered each value with `Default` rules, not `[Id, Name]`. Fix: pass `value.PropertyReferences` through verbatim. Covered by four new tests in `DictionaryTypesTests.cs` (explicit subset, wildcard, negation, nested-dictionary propagation) that all fail against the old code. The skipped parser test in `IncludeParserEdgeTests.cs` was a false alarm (parser is correct) — un-skipped and its assertions strengthened to walk the full tree.
 
 ### Established Contract: `?include=` uses wire names only
 The include list is part of the API contract — it uses the wire name (from `[JsonPropertyName]` if present, otherwise the C# name). The C# name is an implementation detail the client has no visibility into. A client sees `{"display_name":...}` in responses and must request `?include=[display_name]`; `?include=[DisplayName]` is treated as an unknown name and the property is not emitted. This matches how the generator currently behaves and is the correct design. Tests in `JsonPropertyNameTests.cs` assert this contract explicitly (both positive: `IncludeMatchesWireName`, and negative: `IncludeByCSharpName_DoesNotMatch`).
 
-### TDD-pending test ledger (18 skipped)
+### TDD-pending test ledger (17 skipped)
 Every in-scope planned feature from `apiDesign.md` has corresponding skipped tests. When implementation lands, remove the `Skip=` attribute and the test becomes active. Files:
 - `CustomEnvelopeTests.cs` — **0 skipped, 4 passing** (Tier-1 SHIPPED).
 - `ErrorHandlingTests.cs` — **0 skipped, 6 passing** (includes new `SerializationException_ProducesErrorEnvelope`).
 - `SubPropertyDefaultTests.cs` (4) — Tier-1 remaining work.
 - `TranslatorTests.cs` (3 skipped, 3 passing for computed properties), `BlindHandlerTests.cs` (4), `ExpandFromTests.cs` (4) — Tier-2.
-- `PolymorphismTests.cs` (2 skipped), `IncludeParserEdgeTests.cs` (1 skipped — the known dictionary-value parser bug).
+- `PolymorphismTests.cs` (2 skipped). `IncludeParserEdgeTests.cs` previously had 1 skipped for an alleged parser bug — un-skipped after the dictionary-value bug was traced to the generator instead.
 
 **Deleted test files (v2 scope decision):** `SortingTests.cs`, `PaginationTests.cs`, `FilteringTests.cs`, `AuthorizerTests.cs`. Corresponding model files (`SortingModel.cs`, `AuthorizationModel.cs`) deleted. See `migrationAnalysis.md` for the scope rationale.
 
@@ -53,7 +54,7 @@ Every in-scope planned feature from `apiDesign.md` has corresponding skipped tes
 ## What's Broken or Incomplete
 
 ### Known failing / flaky
-- `DictionaryTypes_ComplexValueDictionary_SerializesCorrectly` — root cause is `PropertyReference.ParseIncludeStatement` mishandling nested structures within dictionary value types. Fix belongs in `Popcorn.Shared`.
+- *None.*
 
 ### Dropped from v2 scope (explicitly not porting)
 - Sorting

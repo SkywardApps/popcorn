@@ -823,29 +823,25 @@ public static class PopcornJsonOptionsExtension
                         // DICTIONARY COMPLEX PATH - Recursive dictionary serialization for {propertyTypeName}
                         Func<string, string> naming = options.PropertyNamingPolicy != null ? options.PropertyNamingPolicy.ConvertName : (a) => a;
                         writer.WriteStartObject();
-                        
-                        // For dictionaries, extract the children property references if they exist
-                        // If the dictionary has child references (e.g., [Dict[Prop1,Prop2]]), use those
-                        // Otherwise, use PropertyReference.Default to get default attribute-based behavior
-                        var hasPropertyReferences = value.PropertyReferences.Any();
-                        var firstRef = hasPropertyReferences ? value.PropertyReferences.First() : null;
-                        var hasChildren = firstRef?.Children != null;
-                        var childrenCount = hasChildren ? firstRef.Children.Count : 0;
-                        
-                        var dictionaryValueReferences = hasPropertyReferences && hasChildren && childrenCount > 0 ? 
-                            firstRef.Children : 
-                            global::Popcorn.Shared.PropertyReference.Default;
-                            
+
+                        // value.PropertyReferences is the sibling list the outer converter drilled into
+                        // for this dictionary property — i.e. the include list for each dictionary value.
+                        // Pass it through verbatim; do NOT descend into firstRef.Children (that would lose
+                        // siblings and confuse the parser's Default placeholder for a real child list).
+                        var dictionaryValueReferences = value.PropertyReferences.Any()
+                            ? value.PropertyReferences
+                            : global::Popcorn.Shared.PropertyReference.Default;
+
                         foreach(var kv in value.Data)
                         {{
                                 writer.WritePropertyName(naming(kv.Key));
                                 Pop{NameType(valueType)}(
-                                    writer, 
-                                    new global::Popcorn.Shared.Pop<{valueType.ToDisplayString()}> {{ 
-                                        Data = kv.Value, 
+                                    writer,
+                                    new global::Popcorn.Shared.Pop<{valueType.ToDisplayString()}> {{
+                                        Data = kv.Value,
                                         PropertyReferences = dictionaryValueReferences
                                 }}, options, visitedObjects);
-                        }}  
+                        }}
                         writer.WriteEndObject();
 ";
             }

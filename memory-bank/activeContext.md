@@ -35,8 +35,7 @@ Already supported by construction: lazy loading, blind expansion of user-declare
 Genuine non-starter under AOT: polymorphic unknown-at-build-time types (trimmer removes the metadata). Document the requirement, emit a generator diagnostic.
 
 ## Known Issues
-- `PropertyReference.ParseIncludeStatement` in `Popcorn.Shared` has a parsing issue around nested dictionary values — surfaced by one failing functional test. Fix required in shared library, not in the generator itself.
-- Dictionary complex-value attribute application still imperfect for some nested shapes.
+- *No open parser / dictionary bugs.* The previously-suspected parser bug was a mis-diagnosis — the real bug lived in `ExpanderGenerator.CreateDictionarySerializer`, which dropped sibling includes when descending into a dictionary's value type. Fixed; covered by four new tests in `DictionaryTypesTests.cs` plus an un-skipped parser test.
 
 ## Open Questions
 - Header-based include (`POPCORN-INCLUDE`) — implement in this spike or defer?

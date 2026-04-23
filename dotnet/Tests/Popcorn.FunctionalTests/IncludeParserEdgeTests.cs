@@ -105,12 +105,24 @@ namespace Popcorn.FunctionalTests
             Assert.Equal(2, refs.Count);
         }
 
-        [Fact(Skip = "Pending: parser currently mishandles dictionary-value subtrees; see migrationAnalysis.md / PropertyReference.ParseIncludeStatement bug.")]
+        [Fact]
         public void Parser_DictionaryValueNestedInclude_BuildsCorrectTree()
         {
+            // Regression: three levels of nesting (e.g. Dict[Value[Name]]) must preserve every level,
+            // even when "Value" would be a legal sibling name rather than a keyword.
             var refs = PropertyReference.ParseIncludeStatement("[MyDictionary[Value[Name]]]");
             Assert.Single(refs);
+            Assert.Equal("MyDictionary", refs[0].Name.ToString());
             Assert.NotNull(refs[0].Children);
+            Assert.Single(refs[0].Children!);
+
+            var valueNode = refs[0].Children![0];
+            Assert.Equal("Value", valueNode.Name.ToString());
+            Assert.NotNull(valueNode.Children);
+            Assert.Single(valueNode.Children!);
+
+            var nameNode = valueNode.Children![0];
+            Assert.Equal("Name", nameNode.Name.ToString());
         }
 
         [Fact]
