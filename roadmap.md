@@ -1,15 +1,15 @@
 # Popcorn Roadmap
 
-Living document for work left on the `spike/source-generator` branch before it is ready to merge to `master` and ship as v2.
+Outstanding work on the `spike/source-generator` branch before it is ready to merge to `master` and ship as v2. For historical bug/fix context see `memory-bank/progress.md` and git log.
 
 Last updated: 2026-04-23.
 
 ## Status snapshot
 
-- Core protocol (include parsing, attribute semantics, nested expansion, collections, dictionaries, enums, polymorphism-basic, circular refs): **working**.
+- Core protocol (include parsing, attribute semantics, nested expansion, collections, dictionaries, enums, polymorphism-basic, circular refs, full nullability matrix): **working**.
 - Custom response envelope + `UsePopcornExceptionHandler` exception middleware: **shipped**.
-- Test suite: 178 passing / 17 skipped / 0 failing in `Popcorn.FunctionalTests`. 14 passing in `Popcorn.SourceGenerator.Tests`.
-- AOT/trim smoke: `PopcornAotExample` builds with `PublishAot=True`; now exercises a custom `[PopcornEnvelope]` shape.
+- Test suite: 178 passing / 17 skipped / 0 failing in `Popcorn.FunctionalTests`. 14 passing in `Popcorn.SourceGenerator.Tests`. Zero CS86xx warnings in generated code.
+- AOT/trim smoke: `PopcornAotExample` builds with `PublishAot=True` and exercises a custom `[PopcornEnvelope]` shape.
 - Legacy reflection engine (`PopcornNetStandard*`): still in the tree, unchanged. Planned removal after v2 ships side-by-side for a release or two.
 
 ## Tier 1 — blocks v2.0 merge
@@ -43,32 +43,17 @@ Last updated: 2026-04-23.
 - **Generator work**: purely code-gen; emit a static `From(TSource)` method on the projection type that copies properties whose names match. Respect inheritance. No runtime wiring.
 - **Scope**: small–medium. No DI, no middleware.
 
+### Polymorphism — partial (2 skipped)
+- **Test ledger**: 2 skipped in [`PolymorphismTests.cs`](dotnet/Tests/Popcorn.FunctionalTests/PolymorphismTests.cs).
+  - `PolymorphicCollection_EmitsDiscriminator_WhenConfigured`: abstract/interface base + registered derived types via `[JsonDerivedType]`; generator needs to emit per-item type-dispatch.
+  - The "unknown at build time" case is documented as the only genuine AOT non-starter (trimmer strips the metadata). Ship a clear generator diagnostic for that case rather than trying to support it.
+- **Scope**: medium, mostly generator-side. Defer unless a consumer blocks on it.
+
 ## Tier 3 — v2.x or drop
 
 - **Factories** — moot until deserialization ships. `[Factory]`-tagged static method for instantiating types during read.
 - **Deserialization** — out of scope for v2.0. Generator currently emits write-only converters.
 - **Legacy `Dictionary<string, object>` contexts** — dropped (superseded by DI).
-
-## Known bugs (in-scope)
-
-*No open bugs in this list.*
-
-Recent bug work (all FIXED):
-
-- **Dictionary complex-value include passthrough.** Initial mis-diagnosis blamed the include parser; the real bug was in [`ExpanderGenerator.CreateDictionarySerializer`](dotnet/Popcorn.SourceGenerator/ExpanderGenerator.cs) using `firstRef.Children` instead of `value.PropertyReferences`. Fixed; 4 new tests.
-- **Nullability cluster (bugs 3, 4, 5, 6).** Four related generator defects uncovered during the nullability-matrix audit:
-  - Bug 3 — 62 CS8620 warnings from `Pop<T?>` / `Pop<T>` mismatch at callsite vs. registered signature. Fixed by routing all `Pop<T>` type-argument emissions through a normalizing `TypeNameForPop` helper that strips NRT `?` on reference types while preserving `Nullable<T>` on value types.
-  - Bug 4 — root-level primitive registration (e.g. `ApiResponse<int?>`) added primitive names to `allTypeNames` without emitting matching `Pop<primitive>` bodies, cascading into compile errors in unrelated converters. Fixed by filtering primitives/enums/ignored types from `allTypeNames` and emitting a direct `JsonSerializer.Serialize` path for blind-serializable root types.
-  - Bug 5 — `IDictionary<K,V>` / `ReadOnlyDictionary<K,V>` as target types fell through to the IEnumerable branch due to a whitespace mismatch in the `IDictionaryTypeName` constant. Fixed with a one-character edit.
-  - Bug 6 — `RegisterConverters.g.cs` referenced `JsonNamingPolicy?` without a `#nullable enable` directive (2 × CS8669). Fixed by prepending the directive.
-  - Coverage: new `NullabilityCoverageModel` + 26 functional tests span the full (type-kind × position × container-nullability × element-nullability) matrix; new generator-driver tests in `NullabilityDiagnosticsTests` lock the no-CS86xx-in-generated-code invariant and the type-identity invariants (NRT-annotated ref types collapse; `Nullable<value-type>` does not).
-
-## Polymorphism — partial (2 skipped)
-
-- **Test ledger**: 2 skipped in [`PolymorphismTests.cs`](dotnet/Tests/Popcorn.FunctionalTests/PolymorphismTests.cs).
-  - `PolymorphicCollection_EmitsDiscriminator_WhenConfigured`: abstract/interface base + registered derived types via `[JsonDerivedType]`; generator needs to emit per-item type-dispatch.
-  - The "unknown at build time" case is documented as the only genuine AOT non-starter (trimmer strips the metadata). Ship a clear generator diagnostic for that case rather than trying to support it.
-- **Scope**: medium, mostly generator-side. Deferred to Tier-2-after-Translator unless a consumer specifically blocks on it.
 
 ## Non-functional / infrastructure
 
@@ -81,7 +66,7 @@ Recent bug work (all FIXED):
 - **Why**: merge gate item — "perf parity or better" is a load-bearing thesis claim.
 
 ### CI: publish + run AOT example in a container
-- Add a GitHub Actions job to `.github/workflows/main.yml` that runs `dotnet publish dotnet/PopcornAotExample -c Release -r linux-x64` with `PublishAot=True`, builds a container, runs it, and hits the three existing endpoints (`/todos`, `/null`, `/sub`) plus the new `/boom` endpoint (which should return a 500 with the custom envelope shape).
+- Add a GitHub Actions job to `.github/workflows/main.yml` that runs `dotnet publish dotnet/PopcornAotExample -c Release -r linux-x64` with `PublishAot=True`, builds a container, runs it, and hits the three existing endpoints (`/todos`, `/null`, `/sub`) plus the `/boom` endpoint (which should return a 500 with the custom envelope shape).
 - **Why**: merge gate item — prevents regressions in the AOT code path between PRs.
 
 ### NuGet packaging story
@@ -118,12 +103,8 @@ A defensible order that minimizes dependency chains and maximizes incremental me
 
 Adjust based on what any real consumer blocks on first.
 
-## Merge-to-master gates
+## Remaining merge-to-master gates
 
-- [x] Decision on in-scope vs. deferred legacy features.
-- [x] Custom envelope + exception middleware (Tier-1).
-- [x] Dictionary complex-value include passthrough fix.
-- [x] Nullability cluster (CS8620 / CS8669 / primitive-at-root / IDictionary dispatch) — zero CS86xx in generated code.
 - [ ] `[SubPropertyDefault]` (Tier-1 remaining).
 - [ ] Published benchmark report (legacy reflection vs source-gen vs raw `System.Text.Json`).
 - [ ] CI job that publishes the AOT example and runs it in a container.
