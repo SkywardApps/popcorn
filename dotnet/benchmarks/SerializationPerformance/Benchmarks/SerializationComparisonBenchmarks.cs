@@ -1,7 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using SerializationPerformance.Models;
 using System.Text.Json;
-using Popcorn.Shared; 
+using Popcorn.Shared;
 
 namespace SerializationPerformance.Benchmarks;
 
@@ -14,9 +14,25 @@ public class SerializationComparisonBenchmarks
     private ComplexNestedModel _complexModel = null!;
     private List<ComplexNestedModel> _complexModelList = null!;
 
-    private readonly JsonSerializerOptions _standardJsonOptions = new()
+    // Reflection-based System.Text.Json options. Establishes the "pre-source-gen" baseline.
+    private readonly JsonSerializerOptions _reflectionJsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    // Stock System.Text.Json + generated metadata context (BenchmarkJsonContext). Matches what
+    // an AOT-targeting app would use without Popcorn. Fair-fight comparison point for Popcorn.
+    private readonly JsonSerializerOptions _stjSourceGenOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        TypeInfoResolver = BenchmarkJsonContext.Default,
+    };
+
+    // Popcorn options — BenchmarkJsonContext plus AddPopcornOptions (registers generated converters).
+    private readonly JsonSerializerOptions _popcornJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        TypeInfoResolver = BenchmarkJsonContext.Default,
     };
 
     private List<PropertyReference> _emptyIncludes = new ();
@@ -71,7 +87,7 @@ public class SerializationComparisonBenchmarks
         _complexModel = TestDataGenerator.CreateComplexNestedModel(1);
         _complexModelList = TestDataGenerator.CreateComplexNestedModelList(25);
 
-        _standardJsonOptions.AddPopcornOptions();
+        _popcornJsonOptions.AddPopcornOptions();
 
         _simpleModelDefaultResponse = new ApiResponse<SimpleModel>(new Pop<SimpleModel>
         {
@@ -135,103 +151,87 @@ public class SerializationComparisonBenchmarks
         });
     }
 
-    // Simple Model Benchmarks
+    // Simple Model
     [Benchmark(Baseline = true)]
-    public string SimpleModel_StandardJson()
-    {
-        return JsonSerializer.Serialize(_simpleModel, _standardJsonOptions);
-    }
+    public string SimpleModel_Stj_Reflection() =>
+        JsonSerializer.Serialize(_simpleModel, _reflectionJsonOptions);
 
     [Benchmark]
-    public string SimpleModel_PopcornDefault()
-    {
-        return JsonSerializer.Serialize(_simpleModelDefaultResponse, _standardJsonOptions);
-    }
+    public string SimpleModel_Stj_SourceGen() =>
+        JsonSerializer.Serialize(_simpleModel, _stjSourceGenOptions);
 
     [Benchmark]
-    public string SimpleModel_PopcornAll()
-    {
-        return JsonSerializer.Serialize(_simpleModelAllResponse, _standardJsonOptions);
-    }
+    public string SimpleModel_PopcornDefault() =>
+        JsonSerializer.Serialize(_simpleModelDefaultResponse, _popcornJsonOptions);
 
     [Benchmark]
-    public string SimpleModel_PopcornCustom()
-    {
-        return JsonSerializer.Serialize(_simpleModelCustomResponse, _standardJsonOptions);
-    }
-
-    // Simple Model List Benchmarks
-    [Benchmark]
-    public string SimpleModelList_StandardJson()
-    {
-        return JsonSerializer.Serialize(_simpleModelList, _standardJsonOptions);
-    }
+    public string SimpleModel_PopcornAll() =>
+        JsonSerializer.Serialize(_simpleModelAllResponse, _popcornJsonOptions);
 
     [Benchmark]
-    public string SimpleModelList_PopcornDefault()
-    {
-        return JsonSerializer.Serialize(_simpleModelListDefaultResponse, _standardJsonOptions);
-    }
+    public string SimpleModel_PopcornCustom() =>
+        JsonSerializer.Serialize(_simpleModelCustomResponse, _popcornJsonOptions);
+
+    // Simple Model List
+    [Benchmark]
+    public string SimpleModelList_Stj_Reflection() =>
+        JsonSerializer.Serialize(_simpleModelList, _reflectionJsonOptions);
 
     [Benchmark]
-    public string SimpleModelList_PopcornAll()
-    {
-        return JsonSerializer.Serialize(_simpleModelListAllResponse, _standardJsonOptions);
-    }
+    public string SimpleModelList_Stj_SourceGen() =>
+        JsonSerializer.Serialize(_simpleModelList, _stjSourceGenOptions);
 
     [Benchmark]
-    public string SimpleModelList_PopcornCustom()
-    {
-        return JsonSerializer.Serialize(_simpleModelListCustomResponse, _standardJsonOptions);
-    }
-
-    // Complex Model Benchmarks
-    [Benchmark]
-    public string ComplexModel_StandardJson()
-    {
-        return JsonSerializer.Serialize(_complexModel, _standardJsonOptions);
-    }
+    public string SimpleModelList_PopcornDefault() =>
+        JsonSerializer.Serialize(_simpleModelListDefaultResponse, _popcornJsonOptions);
 
     [Benchmark]
-    public string ComplexModel_PopcornDefault()
-    {
-        return JsonSerializer.Serialize(_complexModelDefaultResponse, _standardJsonOptions);
-    }
+    public string SimpleModelList_PopcornAll() =>
+        JsonSerializer.Serialize(_simpleModelListAllResponse, _popcornJsonOptions);
 
     [Benchmark]
-    public string ComplexModel_PopcornAll()
-    {
-        return JsonSerializer.Serialize(_complexModelAllResponse, _standardJsonOptions);
-    }
+    public string SimpleModelList_PopcornCustom() =>
+        JsonSerializer.Serialize(_simpleModelListCustomResponse, _popcornJsonOptions);
+
+    // Complex Model
+    [Benchmark]
+    public string ComplexModel_Stj_Reflection() =>
+        JsonSerializer.Serialize(_complexModel, _reflectionJsonOptions);
 
     [Benchmark]
-    public string ComplexModel_PopcornCustom()
-    {
-        return JsonSerializer.Serialize(_complexModelCustomResponse, _standardJsonOptions);
-    }
-
-    // Complex Model List Benchmarks
-    [Benchmark]
-    public string ComplexModelList_StandardJson()
-    {
-        return JsonSerializer.Serialize(_complexModelList, _standardJsonOptions);
-    }
+    public string ComplexModel_Stj_SourceGen() =>
+        JsonSerializer.Serialize(_complexModel, _stjSourceGenOptions);
 
     [Benchmark]
-    public string ComplexModelList_PopcornDefault()
-    {
-        return JsonSerializer.Serialize(_complexModelListDefaultResponse, _standardJsonOptions);
-    }
+    public string ComplexModel_PopcornDefault() =>
+        JsonSerializer.Serialize(_complexModelDefaultResponse, _popcornJsonOptions);
 
     [Benchmark]
-    public string ComplexModelList_PopcornAll()
-    {
-        return JsonSerializer.Serialize(_complexModelListAllResponse, _standardJsonOptions);
-    }
+    public string ComplexModel_PopcornAll() =>
+        JsonSerializer.Serialize(_complexModelAllResponse, _popcornJsonOptions);
 
     [Benchmark]
-    public string ComplexModelList_PopcornCustom()
-    {
-        return JsonSerializer.Serialize(_complexModelListCustomResponse, _standardJsonOptions);
-    }
+    public string ComplexModel_PopcornCustom() =>
+        JsonSerializer.Serialize(_complexModelCustomResponse, _popcornJsonOptions);
+
+    // Complex Model List
+    [Benchmark]
+    public string ComplexModelList_Stj_Reflection() =>
+        JsonSerializer.Serialize(_complexModelList, _reflectionJsonOptions);
+
+    [Benchmark]
+    public string ComplexModelList_Stj_SourceGen() =>
+        JsonSerializer.Serialize(_complexModelList, _stjSourceGenOptions);
+
+    [Benchmark]
+    public string ComplexModelList_PopcornDefault() =>
+        JsonSerializer.Serialize(_complexModelListDefaultResponse, _popcornJsonOptions);
+
+    [Benchmark]
+    public string ComplexModelList_PopcornAll() =>
+        JsonSerializer.Serialize(_complexModelListAllResponse, _popcornJsonOptions);
+
+    [Benchmark]
+    public string ComplexModelList_PopcornCustom() =>
+        JsonSerializer.Serialize(_complexModelListCustomResponse, _popcornJsonOptions);
 }

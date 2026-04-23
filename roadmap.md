@@ -50,12 +50,10 @@ Last updated: 2026-04-23.
 ## Non-functional / infrastructure
 
 ### Published benchmark report
-- Run the BenchmarkDotNet suite in `dotnet/benchmarks/SerializationPerformance` and produce a report comparing:
-  - Stock `System.Text.Json` with generated metadata.
-  - Popcorn (source generator) with various include strategies.
-  - Legacy `PopcornNetStandard` (reflection).
-- Commit the report as `benchmarks/results/v2-baseline.md` (or similar).
-- **Why**: merge gate item — "perf parity or better" is a load-bearing thesis claim.
+- Initial baseline committed: [`benchmarks/results/v2-baseline/`](benchmarks/results/v2-baseline/README.md). Covers Stj (reflection) vs Stj (source-gen) vs Popcorn (source-gen) across SimpleModel, SimpleModelList[100], ComplexNestedModel, ComplexNestedModelList[25].
+- Headline: Popcorn-default is ~8× faster / ~10× less alloc than STJ on ComplexModelList (selective-fetch thesis validated); Popcorn-all is at parity (0.97× time) when emitting everything; flat-simple with `!all` is 1.8× (acceptable tax for the selective-fetch value).
+- **Still outstanding**: add legacy `PopcornNetStandard` (reflection engine) to the comparison for a 3-way report. Requires wiring `PopcornFactory` + `.Expand()` into the benchmark project and configuring it for the same models.
+- **Why**: merge gate item — "perf parity or better" is a load-bearing thesis claim. 2-way baseline is in; 3-way is nice-to-have.
 
 ### CI: publish + run AOT example in a container
 - Add a GitHub Actions job to `.github/workflows/main.yml` that runs `dotnet publish dotnet/PopcornAotExample -c Release -r linux-x64` with `PublishAot=True`, builds a container, runs it, and hits the three existing endpoints (`/todos`, `/null`, `/sub`) plus the `/boom` endpoint (which should return a 500 with the custom envelope shape).
@@ -96,6 +94,6 @@ Adjust based on what any real consumer blocks on first.
 
 ## Remaining merge-to-master gates
 
-- [ ] Published benchmark report (legacy reflection vs source-gen vs raw `System.Text.Json`).
+- [~] Published benchmark report. 2-way (Stj reflection vs Stj source-gen vs Popcorn source-gen) committed under `benchmarks/results/v2-baseline/`. Legacy `PopcornNetStandard` comparison still pending.
 - [ ] CI job that publishes the AOT example and runs it in a container.
 - [ ] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared`.

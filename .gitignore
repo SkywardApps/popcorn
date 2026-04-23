@@ -18,6 +18,9 @@
 [Rr]elease/
 [Rr]eleases/
 x64/
+
+# BenchmarkDotNet working-dir artifacts. Curated baselines live under /benchmarks/results/ instead.
+**/BenchmarkDotNet.Artifacts/
 x86/
 bld/
 [Bb]in/

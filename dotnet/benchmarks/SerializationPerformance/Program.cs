@@ -56,8 +56,12 @@ class Program
                 break;
         }
 
-        Console.WriteLine("Benchmark completed. Press any key to exit.");
-        Console.ReadKey();
+        Console.WriteLine("Benchmark completed.");
+        if (!Console.IsInputRedirected && Environment.UserInteractive)
+        {
+            Console.WriteLine("Press any key to exit.");
+            Console.ReadKey();
+        }
     }
 
     private static void ShowMenu()

@@ -105,7 +105,7 @@ Never used in practice with the legacy engine. Callers that need these behaviors
 - `PopcornNetStandard` and `PopcornNetStandard.WebApiCore` remain in the tree unchanged — this spike does not delete the legacy engine. Legacy packages on NuGet (`Skyward.Api.Popcorn`) continue shipping from `master`.
 
 ## Migration Thesis (validation status)
-1. **Perf parity or better vs System.Text.Json** — benchmark suite exists; numbers have not been captured in a committed report yet.
+1. **Perf parity or better vs System.Text.Json** — 2-way baseline committed under `benchmarks/results/v2-baseline/`. Popcorn-default is ~8× faster / ~10× less alloc than STJ on ComplexModelList; Popcorn-all is at parity (0.97× time, 0.84× alloc) when emitting everything. Legacy reflection engine comparison still pending.
 2. **Native AOT works** — `PopcornAotExample` builds with `PublishAot=True`. End-to-end runtime validation: done locally per recent commits, no CI job yet.
 3. **Trimming works** — `PublishTrimmed=True` set alongside AOT. No separate trim-only run documented.
 
