@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Popcorn.Shared\Popcorn.Shared.csproj" />
     <ProjectReference Include="..\..\Popcorn.SourceGenerator\Popcorn.SourceGenerator.csproj" OutputItemType="Analyzer" />
+    <ProjectReference Include="..\..\PopcornNetStandard\PopcornNetStandard.csproj" />
   </ItemGroup>
 
 </Project>

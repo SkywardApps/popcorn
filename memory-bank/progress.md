@@ -105,7 +105,7 @@ Never used in practice with the legacy engine. Callers that need these behaviors
 - `PopcornNetStandard` and `PopcornNetStandard.WebApiCore` remain in the tree unchanged — this spike does not delete the legacy engine. Legacy packages on NuGet (`Skyward.Api.Popcorn`) continue shipping from `master`.
 
 ## Migration Thesis (validation status)
-1. **Perf parity or better vs System.Text.Json** — 2-way baseline committed under `benchmarks/results/v2-baseline/`. Popcorn-default is ~8× faster / ~10× less alloc than STJ on ComplexModelList; Popcorn-all is at parity (0.97× time, 0.84× alloc) when emitting everything. Legacy reflection engine comparison still pending.
+1. **Perf parity or better vs System.Text.Json AND vs legacy reflection engine** — 3-way baseline committed under `benchmarks/results/v2-baseline/`. Popcorn source-gen beats legacy reflection in every scenario (3–8× faster for `All`, ~4.7× faster for `Default` on ComplexModelList). Popcorn-default is ~10× faster / ~5× less alloc than STJ on ComplexModelList; Popcorn-all is at parity (0.97× time, 1.03× alloc) when emitting everything. Legacy-all is 3.4× slower than STJ on the same shape — the v2 migration has no regression scenario. Benchmark project now has a direct `ProjectReference` to `PopcornNetStandard`; 12 `*_Legacy_*` benchmarks run alongside the existing 20 Popcorn/STJ methods. Caveat: host rolled forward to .NET 9.0.15 for this run (was .NET 10 in the prior 2-way); numbers are internally consistent but ~20% slower absolute than the .NET 10 run.
 2. **Native AOT works** — `PopcornAotExample` builds with `PublishAot=True`. End-to-end runtime validation: done locally per recent commits, no CI job yet.
 3. **Trimming works** — `PublishTrimmed=True` set alongside AOT. No separate trim-only run documented.
 
@@ -114,6 +114,6 @@ Never used in practice with the legacy engine. Callers that need these behaviors
 - [x] Custom envelope + exception middleware (Tier-1).
 - [x] `[SubPropertyDefault]` (Tier-1 complete).
 - [x] Dictionary/nested parser fix.
-- [ ] Published benchmark report comparing legacy reflection vs. source-generated vs. raw `System.Text.Json`.
+- [x] Published benchmark report comparing legacy reflection vs. source-generated vs. raw `System.Text.Json`. 3-way baseline under `benchmarks/results/v2-baseline/`.
 - [ ] CI job that publishes the AOT example and runs it in a container to prove end-to-end.
 - [ ] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared`.

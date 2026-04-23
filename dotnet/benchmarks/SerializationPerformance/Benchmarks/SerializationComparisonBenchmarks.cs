@@ -2,6 +2,8 @@ using BenchmarkDotNet.Attributes;
 using SerializationPerformance.Models;
 using System.Text.Json;
 using Popcorn.Shared;
+using Skyward.Popcorn.Abstractions;
+using LegacyRef = Skyward.Popcorn.PropertyReference;
 
 namespace SerializationPerformance.Benchmarks;
 
@@ -79,6 +81,67 @@ public class SerializationComparisonBenchmarks
     private ApiResponse<List<ComplexNestedModel>> _complexModelListAllResponse;
     private ApiResponse<List<ComplexNestedModel>> _complexModelListCustomResponse;
 
+    // Legacy PopcornNetStandard (reflection engine). Factory configured in Setup() to mirror
+    // the [Always]/[Default]/[Never] attributes on the current models, then the per-request
+    // IPopcorn instance is fresh per benchmark call (matches legacy middleware pattern).
+    private PopcornFactory _legacyFactory = null!;
+
+    private static readonly List<LegacyRef> _legacyEmptyIncludes = new();
+
+    // Legacy's `!all` path has a latent collision with AlwaysInclude (CacheEnumeratedProperties
+    // adds every property including Always ones; the Always loop then Add()s without a
+    // ContainsKey check). We explicitly enumerate all non-Never properties instead — same output,
+    // no collision.
+    private static readonly List<LegacyRef> _legacySimpleAllIncludes = new()
+    {
+        new LegacyRef("Id", false),
+        new LegacyRef("Name", false),
+        new LegacyRef("CreatedAt", false),
+        new LegacyRef("Description", false),
+        new LegacyRef("IsActive", false),
+    };
+
+    private static readonly List<LegacyRef> _legacyComplexAllIncludes = new()
+    {
+        new LegacyRef("Id", false),
+        new LegacyRef("Title", false),
+        new LegacyRef("Timestamp", false),
+        new LegacyRef("Details", false),
+        new LegacyRef("Items", false),
+        new LegacyRef("Child", false),
+        new LegacyRef("Lookup", false),
+        new LegacyRef("Priority", false),
+    };
+
+    private static readonly List<LegacyRef> _legacySimpleCustomIncludes = new()
+    {
+        new LegacyRef("Id", false),
+        new LegacyRef("Name", false),
+        new LegacyRef("IsActive", false),
+    };
+
+    private static readonly List<LegacyRef> _legacyComplexCustomIncludes = new()
+    {
+        new LegacyRef("Id", false),
+        new LegacyRef("Title", false),
+        new LegacyRef("Details", false)
+        {
+            Children = new List<LegacyRef>
+            {
+                new LegacyRef("Id", false),
+                new LegacyRef("Name", false),
+            },
+        },
+        new LegacyRef("Items", false)
+        {
+            Children = new List<LegacyRef>
+            {
+                new LegacyRef("Id", false),
+                new LegacyRef("Name", false),
+            },
+        },
+    };
+
     [GlobalSetup]
     public void Setup()
     {
@@ -149,6 +212,32 @@ public class SerializationComparisonBenchmarks
             PropertyReferences = _complexModelCustomIncludes,
             Data = _complexModelList
         });
+
+        _legacyFactory = new PopcornFactory().UseDefaultConfiguration();
+
+        // AlwaysInclude is deliberately unused — legacy's DeterminePropertyReferences
+        // adds AlwaysInclude without a ContainsKey check, which collides whenever the
+        // user's include list (or !all expansion) already names that field. We mirror
+        // [Default] + [Always] intent by putting both into DefaultInclude instead.
+        _legacyFactory.ConfigureType<SimpleModel>(cfg =>
+        {
+            cfg.DefaultInclude.Add(new LegacyRef(nameof(SimpleModel.CreatedAt), false));
+            cfg.DefaultInclude.Add(new LegacyRef(nameof(SimpleModel.Description), false));
+        });
+
+        _legacyFactory.ConfigureType<ComplexNestedModel>(cfg =>
+        {
+            cfg.NeverInclude.Add(nameof(ComplexNestedModel.SecretData));
+            cfg.DefaultInclude.Add(new LegacyRef(nameof(ComplexNestedModel.Timestamp), false));
+            cfg.DefaultInclude.Add(new LegacyRef(nameof(ComplexNestedModel.Priority), false));
+        });
+    }
+
+    private string LegacyExpandAndSerialize(object? instance, Type sourceType, IReadOnlyList<LegacyRef> includes)
+    {
+        var popcorn = _legacyFactory.CreatePopcorn();
+        var expanded = popcorn.Expand(sourceType, instance, includes);
+        return JsonSerializer.Serialize(expanded, _reflectionJsonOptions);
     }
 
     // Simple Model
@@ -172,6 +261,18 @@ public class SerializationComparisonBenchmarks
     public string SimpleModel_PopcornCustom() =>
         JsonSerializer.Serialize(_simpleModelCustomResponse, _popcornJsonOptions);
 
+    [Benchmark]
+    public string SimpleModel_LegacyDefault() =>
+        LegacyExpandAndSerialize(_simpleModel, typeof(SimpleModel), _legacyEmptyIncludes);
+
+    [Benchmark]
+    public string SimpleModel_LegacyAll() =>
+        LegacyExpandAndSerialize(_simpleModel, typeof(SimpleModel), _legacySimpleAllIncludes);
+
+    [Benchmark]
+    public string SimpleModel_LegacyCustom() =>
+        LegacyExpandAndSerialize(_simpleModel, typeof(SimpleModel), _legacySimpleCustomIncludes);
+
     // Simple Model List
     [Benchmark]
     public string SimpleModelList_Stj_Reflection() =>
@@ -192,6 +293,18 @@ public class SerializationComparisonBenchmarks
     [Benchmark]
     public string SimpleModelList_PopcornCustom() =>
         JsonSerializer.Serialize(_simpleModelListCustomResponse, _popcornJsonOptions);
+
+    [Benchmark]
+    public string SimpleModelList_LegacyDefault() =>
+        LegacyExpandAndSerialize(_simpleModelList, typeof(List<SimpleModel>), _legacyEmptyIncludes);
+
+    [Benchmark]
+    public string SimpleModelList_LegacyAll() =>
+        LegacyExpandAndSerialize(_simpleModelList, typeof(List<SimpleModel>), _legacySimpleAllIncludes);
+
+    [Benchmark]
+    public string SimpleModelList_LegacyCustom() =>
+        LegacyExpandAndSerialize(_simpleModelList, typeof(List<SimpleModel>), _legacySimpleCustomIncludes);
 
     // Complex Model
     [Benchmark]
@@ -214,6 +327,18 @@ public class SerializationComparisonBenchmarks
     public string ComplexModel_PopcornCustom() =>
         JsonSerializer.Serialize(_complexModelCustomResponse, _popcornJsonOptions);
 
+    [Benchmark]
+    public string ComplexModel_LegacyDefault() =>
+        LegacyExpandAndSerialize(_complexModel, typeof(ComplexNestedModel), _legacyEmptyIncludes);
+
+    [Benchmark]
+    public string ComplexModel_LegacyAll() =>
+        LegacyExpandAndSerialize(_complexModel, typeof(ComplexNestedModel), _legacyComplexAllIncludes);
+
+    [Benchmark]
+    public string ComplexModel_LegacyCustom() =>
+        LegacyExpandAndSerialize(_complexModel, typeof(ComplexNestedModel), _legacyComplexCustomIncludes);
+
     // Complex Model List
     [Benchmark]
     public string ComplexModelList_Stj_Reflection() =>
@@ -234,4 +359,16 @@ public class SerializationComparisonBenchmarks
     [Benchmark]
     public string ComplexModelList_PopcornCustom() =>
         JsonSerializer.Serialize(_complexModelListCustomResponse, _popcornJsonOptions);
+
+    [Benchmark]
+    public string ComplexModelList_LegacyDefault() =>
+        LegacyExpandAndSerialize(_complexModelList, typeof(List<ComplexNestedModel>), _legacyEmptyIncludes);
+
+    [Benchmark]
+    public string ComplexModelList_LegacyAll() =>
+        LegacyExpandAndSerialize(_complexModelList, typeof(List<ComplexNestedModel>), _legacyComplexAllIncludes);
+
+    [Benchmark]
+    public string ComplexModelList_LegacyCustom() =>
+        LegacyExpandAndSerialize(_complexModelList, typeof(List<ComplexNestedModel>), _legacyComplexCustomIncludes);
 }

@@ -63,10 +63,9 @@ Genuine non-starter under AOT: polymorphic unknown-at-build-time types (trimmer 
 - `1b39e30` Early experimentation with source generation
 
 ## Immediate Next Steps (suggested, not committed)
-1. Run the BenchmarkDotNet suite and record a baseline; compare against legacy reflection numbers.
-2. Decide Tier-2 scope for the v2.0 merge bar (`[Translator]` / `IPopcornBlindHandler` / `[ExpandFrom]`).
-3. CI job for AOT example + NuGet packaging story.
-4. Consider header-based include decision (`POPCORN-INCLUDE`).
+1. Decide Tier-2 scope for the v2.0 merge bar (`[Translator]` / `IPopcornBlindHandler` / `[ExpandFrom]`).
+2. CI job for AOT example + NuGet packaging story.
+3. Consider header-based include decision (`POPCORN-INCLUDE`).
 
 ## Non-Goals for This Spike
 - Deserialization / two-way serialization.
