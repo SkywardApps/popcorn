@@ -7,18 +7,10 @@ Last updated: 2026-04-23.
 ## Status snapshot
 
 - Core protocol (include parsing, attribute semantics, nested expansion, collections, dictionaries, enums, polymorphism-basic, circular refs, full nullability matrix): **working**.
-- Custom response envelope + `UsePopcornExceptionHandler` exception middleware: **shipped**.
-- Test suite: 178 passing / 17 skipped / 0 failing in `Popcorn.FunctionalTests`. 14 passing in `Popcorn.SourceGenerator.Tests`. Zero CS86xx warnings in generated code.
+- Tier-1 feature set — custom envelope + `UsePopcornExceptionHandler` + `[SubPropertyDefault]`: **shipped**.
+- Test suite: 182 passing / 13 skipped / 0 failing in `Popcorn.FunctionalTests`. 14 passing in `Popcorn.SourceGenerator.Tests`. Zero CS86xx warnings in generated code.
 - AOT/trim smoke: `PopcornAotExample` builds with `PublishAot=True` and exercises a custom `[PopcornEnvelope]` shape.
 - Legacy reflection engine (`PopcornNetStandard*`): still in the tree, unchanged. Planned removal after v2 ships side-by-side for a release or two.
-
-## Tier 1 — blocks v2.0 merge
-
-### `[SubPropertyDefault]` attribute
-- **Why**: last Tier-1 feature not yet implemented. Common include ergonomic — "when this property is included without sub-includes, use this include list as its default".
-- **Test ledger**: 4 skipped in [`SubPropertyDefaultTests.cs`](dotnet/Tests/Popcorn.FunctionalTests/SubPropertyDefaultTests.cs).
-- **Shape**: `[SubPropertyDefault("[Make,Model]")] public List<Car> Vehicles`. Parser already handles the grammar (reuses existing `PropertyReference.ParseIncludeStatement`). Generator change: read the attribute argument at emit time and inject it as the default include list when the caller's include has no children for this property.
-- **Scope**: small. 1–2 days. No runtime types, no DI, no middleware.
 
 ## Tier 2 — should ship with v2.0 or soon after
 
@@ -93,19 +85,17 @@ Last updated: 2026-04-23.
 
 A defensible order that minimizes dependency chains and maximizes incremental merge-readiness:
 
-1. **Ship `[SubPropertyDefault]`.** Closes Tier-1.
-2. **Publish a benchmark baseline.** Uses the current generator; doesn't depend on any Tier-2 feature. Makes the perf claim verifiable.
-3. **Ship `[ExpandFrom]`.** Pure code-gen, no runtime wiring — the lowest-risk Tier-2.
-4. **Ship `[Translator]` with DI, then `IPopcornBlindHandler<TFrom,TTo>`.** These share the "generator emits DI resolution" infrastructure; doing them together reduces duplication.
-5. **AOT CI job + NuGet preview.** Once the feature set is stable.
-6. **Polymorphism dispatch** (if a consumer requests it; otherwise defer to v2.1).
-7. **Header-based include** (opportunistic; ship whenever convenient).
+1. **Publish a benchmark baseline.** Uses the current generator; doesn't depend on any Tier-2 feature. Makes the perf claim verifiable.
+2. **Ship `[ExpandFrom]`.** Pure code-gen, no runtime wiring — the lowest-risk Tier-2.
+3. **Ship `[Translator]` with DI, then `IPopcornBlindHandler<TFrom,TTo>`.** These share the "generator emits DI resolution" infrastructure; doing them together reduces duplication.
+4. **AOT CI job + NuGet preview.** Once the feature set is stable.
+5. **Polymorphism dispatch** (if a consumer requests it; otherwise defer to v2.1).
+6. **Header-based include** (opportunistic; ship whenever convenient).
 
 Adjust based on what any real consumer blocks on first.
 
 ## Remaining merge-to-master gates
 
-- [ ] `[SubPropertyDefault]` (Tier-1 remaining).
 - [ ] Published benchmark report (legacy reflection vs source-gen vs raw `System.Text.Json`).
 - [ ] CI job that publishes the AOT example and runs it in a container.
 - [ ] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared`.

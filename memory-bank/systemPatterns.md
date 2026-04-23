@@ -67,6 +67,7 @@ envelope pay no generator cost for this path.
 - `Pop<T>` — `{ Data: T, PropertyReferences: IReadOnlyList<PropertyReference> }`.
 - `PropertyReference` — parsed include node: `Name`, `Negated`, `Children`. Parser in `ParseIncludeStatement`.
 - `AlwaysAttribute`, `NeverAttribute`, `DefaultAttribute` — on properties. In `Popcorn` namespace.
+- `SubPropertyDefaultAttribute` — on properties or fields; `[SubPropertyDefault("[Make,Model]")]` declares the include list used when the property is included without explicit sub-children. Generator pre-parses the string once per process into a `private static readonly` field and substitutes it at nested-`Pop<T>` callsites; explicit sub-children override, `[Always]` / `[Never]` on the sub-type still win.
 - `PopcornEnvelopeAttribute` (on class/struct) + `PopcornPayloadAttribute`, `PopcornErrorAttribute`, `PopcornSuccessAttribute` (on properties) — marker attributes that opt a user type into custom-envelope dispatch.
 - `PopcornOptions` — `{ EnvelopeType (default typeof(ApiResponse<>)), DefaultNamingPolicy }`. Consumed by `UsePopcornExceptionHandler`.
 - `PopcornErrorWriterRegistry` — process-global static, `Volatile`-guarded. `Register(writer)` installs the generator-emitted writer; `TryWrite(...)` is called by the middleware on the error path.

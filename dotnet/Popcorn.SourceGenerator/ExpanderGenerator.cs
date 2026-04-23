@@ -711,6 +711,11 @@ public static class PopcornJsonOptionsExtension
             // Logging statement for allTypeNames
             Show($"{targetType.ToDisplayString()}: All registered type names: {string.Join(", ", allTypeNames)}", context);
 
+            // Accumulates `private static readonly` declarations for [SubPropertyDefault(...)]
+            // includes — one per attributed member in this target type. Emitted inline in the
+            // partial-class fragment below so they co-locate with the Pop{T} method.
+            var subPropertyDefaultFields = new StringBuilder();
+
             string internalSerializationCode = "";
 
             // Bug 4 fix: root-level primitive / ignored / enum registration
@@ -776,7 +781,7 @@ public static class PopcornJsonOptionsExtension
                 }
                 else
                 {
-                    internalSerializationCode = CreateComplexObjectSerialization(namedTypeNonNullable, context, allTypeNames);
+                    internalSerializationCode = CreateComplexObjectSerialization(namedTypeNonNullable, context, allTypeNames, subPropertyDefaultFields);
                 }
             }
             else
@@ -836,6 +841,7 @@ public static class PopcornJsonOptionsExtension
         {(classSymbol.ContainingNamespace.IsGlobalNamespace ? "" : $"namespace {classSymbol.ContainingNamespace} {{")}
         {classSymbol.DeclaredAccessibility.ToString().ToLower()} partial class {classSymbol.Name}
         {{
+        {subPropertyDefaultFields}
         public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
         {{
             Pop{NameType(targetType)}(writer, value, options, new HashSet<object>());
@@ -992,9 +998,26 @@ public static class PopcornJsonOptionsExtension
             return member.GetAttributes().Any(a => a.AttributeClass?.ToDisplayString() == attributeTypeName);
         }
 
-        private static string CreateComplexObjectSerialization(INamedTypeSymbol targetType, SourceProductionContext context, HashSet<string> allTypeNames)
+        /// <summary>
+        /// Returns the literal include-string argument of [SubPropertyDefault(...)] on the member,
+        /// or null if the attribute isn't present or the argument isn't a string.
+        /// </summary>
+        private static string? GetSubPropertyDefaultIncludes(ISymbol member)
+        {
+            var attr = member.GetAttributes().FirstOrDefault(a =>
+                a.AttributeClass?.ToDisplayString() == "Popcorn.SubPropertyDefaultAttribute");
+            if (attr?.ConstructorArguments.Length > 0
+                && attr.ConstructorArguments[0].Value is string s)
+            {
+                return s;
+            }
+            return null;
+        }
+
+        private static string CreateComplexObjectSerialization(INamedTypeSymbol targetType, SourceProductionContext context, HashSet<string> allTypeNames, StringBuilder subPropertyDefaultFields)
         {
             var propertySerializationCode = new StringBuilder();
+            var parentDiscriminator = NameType(targetType);
 
             // Walk declared + inherited members so [Always]/[Default] on a base class
             // are honored when serializing a derived type.
@@ -1012,7 +1035,7 @@ public static class PopcornJsonOptionsExtension
                     continue;
                 }
 
-                AddMemberSerializationCode(property, property.Type, property.Name, false, propertySerializationCode, context, allTypeNames, hasAlwaysOrDefaultAttribute);
+                AddMemberSerializationCode(property, property.Type, property.Name, false, propertySerializationCode, context, allTypeNames, hasAlwaysOrDefaultAttribute, parentDiscriminator, subPropertyDefaultFields);
             }
 
             foreach (var field in fields)
@@ -1022,7 +1045,7 @@ public static class PopcornJsonOptionsExtension
                     continue;
                 }
 
-                AddMemberSerializationCode(field, field.Type, field.Name, true, propertySerializationCode, context, allTypeNames, hasAlwaysOrDefaultAttribute);
+                AddMemberSerializationCode(field, field.Type, field.Name, true, propertySerializationCode, context, allTypeNames, hasAlwaysOrDefaultAttribute, parentDiscriminator, subPropertyDefaultFields);
             }
             
             var internalSerializationCode = $@"
@@ -1057,14 +1080,16 @@ public static class PopcornJsonOptionsExtension
         }
 
         private static void AddMemberSerializationCode(
-            ISymbol member, 
-            ITypeSymbol memberType, 
-            string memberName, 
+            ISymbol member,
+            ITypeSymbol memberType,
+            string memberName,
             bool isField,
-            StringBuilder codeBuilder, 
-            SourceProductionContext context, 
+            StringBuilder codeBuilder,
+            SourceProductionContext context,
             HashSet<string> allTypeNames,
-            bool hasAlwaysOrDefaultAttribute)
+            bool hasAlwaysOrDefaultAttribute,
+            string? parentDiscriminator,
+            StringBuilder subPropertyDefaultFields)
         {
             var serializedName = GetSerializedName(member);
             var originalName = memberName;
@@ -1072,10 +1097,29 @@ public static class PopcornJsonOptionsExtension
             var serializeLine = @$"
                 // 646: Just serialize the field normally
                 JsonSerializer.Serialize(writer, {referenceName}, options);";
-            
+
             var memberTypeName = memberType.ToDisplayString().Replace("?", "");
             var handleNullable = IsNullableType(memberType);
             Show($"Will Render {memberTypeName} {(isField ? "field" : "property")}", context);
+
+            // SubPropertyDefault: when the member carries [SubPropertyDefault("[X,Y]")] we emit a
+            // process-level static readonly field holding the pre-parsed include list, and we
+            // substitute the "no explicit children" fallback so it resolves to that list instead
+            // of the PropertyReference.Default singleton. Still allocates nothing per-request.
+            var subPropertyDefaultIncludes = GetSubPropertyDefaultIncludes(member);
+            string subPropertyDefaultFieldName = null!;
+            string childReferencesExpression =
+                "propertyReference?.Children ?? global::Popcorn.Shared.PropertyReference.Default";
+            if (subPropertyDefaultIncludes != null && parentDiscriminator != null)
+            {
+                subPropertyDefaultFieldName = $"__SubDefault_{parentDiscriminator}_{originalName}";
+                var escaped = subPropertyDefaultIncludes.Replace("\\", "\\\\").Replace("\"", "\\\"");
+                subPropertyDefaultFields.AppendLine($@"
+        private static readonly global::System.Collections.Generic.IReadOnlyList<global::Popcorn.Shared.PropertyReference> {subPropertyDefaultFieldName} =
+            global::Popcorn.Shared.PropertyReference.ParseIncludeStatement(""{escaped}"");");
+                childReferencesExpression =
+                    $"(propertyReference == null || object.ReferenceEquals(propertyReference.Children, global::Popcorn.Shared.PropertyReference.Default)) ? {subPropertyDefaultFieldName} : propertyReference.Children";
+            }
             
             // Serialization logic for different types
             if (IgnoreTypes.Contains(memberTypeName))
@@ -1116,11 +1160,11 @@ public static class PopcornJsonOptionsExtension
                 {
                     // We need to recurse into each element of the array
                     serializeLine = $@"
-                    if({referenceName} == null) {{ 
-                        writer.WriteNullValue(); 
-                    }} 
-                    else 
-                    {{ 
+                    if({referenceName} == null) {{
+                        writer.WriteNullValue();
+                    }}
+                    else
+                    {{
                         // 695: We need to recurse into this type, and treat it as an array of bundles
                         writer.WriteStartArray();
                         foreach(var item in {referenceName})
@@ -1129,9 +1173,9 @@ public static class PopcornJsonOptionsExtension
                                 writer,
                                 new global::Popcorn.Shared.Pop<{TypeNameForPop(arrayType.ElementType)}> {{
                                     Data = item,
-                                    PropertyReferences = propertyReference?.Children ?? global::Popcorn.Shared.PropertyReference.Default
+                                    PropertyReferences = {childReferencesExpression}
                                 }}, options, visitedObjects);
-                        }}  
+                        }}
                         writer.WriteEndArray();
                     }}";
                 }
@@ -1155,14 +1199,14 @@ public static class PopcornJsonOptionsExtension
                         ";
                 }
                 serializeLine = $@"{nullCheck}
-                {{ 
+                {{
                     // 730: We need to recurse into this type, and treat it as a bundle
                     Pop{NameType(memberNamedType)}(
                         writer,
                         new global::Popcorn.Shared.Pop<{TypeNameForPop(memberType)}>
                         {{
                             Data = ({TypeNameForPop(memberType)}){referenceName},
-                            PropertyReferences = propertyReference?.Children ?? global::Popcorn.Shared.PropertyReference.Default
+                            PropertyReferences = {childReferencesExpression}
                         }},
                         options, visitedObjects);
                 }}";

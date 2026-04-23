@@ -18,7 +18,7 @@
 
 ### Functional test suite (`dotnet/Tests/Popcorn.FunctionalTests`)
 - xUnit, 22 test files (after deprecation cleanup + review-fix coverage).
-- **195 tests total**: 178 passing, 0 failing, 17 skipped (TDD-pending features). Sorting/Pagination/Filtering/Authorizer test files were deleted as part of the v2 scope decision; their 30 skipped tests are gone. Custom envelope + exception middleware shipped: 5 more tests flipped from skipped to passing. Review-driven fixes added `EnvelopeFixesTests.cs` with 9 new passing tests. Dictionary complex-value passthrough bug fixed + 4 new tests. Nullability coverage model (`NullabilityCoverageModel` + `NullabilityCoverageTests.cs`) added: 26 tests spanning every (type-kind × position × container-nullability × element-nullability) cell, all passing after the four-bug nullability fix landed.
+- **195 tests total**: 182 passing, 0 failing, 13 skipped (TDD-pending Tier-2 features). Sorting/Pagination/Filtering/Authorizer test files were deleted as part of the v2 scope decision; their 30 skipped tests are gone. Custom envelope + exception middleware shipped: 5 more tests flipped from skipped to passing. Review-driven fixes added `EnvelopeFixesTests.cs` with 9 new passing tests. Dictionary complex-value passthrough bug fixed + 4 new tests. Nullability coverage model (`NullabilityCoverageModel` + `NullabilityCoverageTests.cs`) added: 26 tests spanning every (type-kind × position × container-nullability × element-nullability) cell, all passing after the four-bug nullability fix landed. `[SubPropertyDefault]` shipped (Tier-1 complete): 4 more tests flipped from skipped to passing.
 - Covers attribute semantics, include-parameter variations, primitives, value types, basic + advanced collections, dictionaries, nesting, conflicting attributes, default-behavior rules, enums, `JsonPropertyName`, inheritance, generics, include-parser edge cases, error handling, middleware integration, computed-property translators, custom envelope shape + exception wrapping.
 - Single `TestJsonContext` drives the generator over 30+ `ApiResponse<Model>` and `MyTestEnvelope<Model>` declarations.
 - Generated sources visible at `$(BaseIntermediateOutputPath)Generated` for debugging.
@@ -36,11 +36,11 @@
 ### Established Contract: `?include=` uses wire names only
 The include list is part of the API contract — it uses the wire name (from `[JsonPropertyName]` if present, otherwise the C# name). The C# name is an implementation detail the client has no visibility into. A client sees `{"display_name":...}` in responses and must request `?include=[display_name]`; `?include=[DisplayName]` is treated as an unknown name and the property is not emitted. This matches how the generator currently behaves and is the correct design. Tests in `JsonPropertyNameTests.cs` assert this contract explicitly (both positive: `IncludeMatchesWireName`, and negative: `IncludeByCSharpName_DoesNotMatch`).
 
-### TDD-pending test ledger (17 skipped)
+### TDD-pending test ledger (13 skipped)
 Every in-scope planned feature from `apiDesign.md` has corresponding skipped tests. When implementation lands, remove the `Skip=` attribute and the test becomes active. Files:
 - `CustomEnvelopeTests.cs` — **0 skipped, 4 passing** (Tier-1 SHIPPED).
 - `ErrorHandlingTests.cs` — **0 skipped, 6 passing** (includes new `SerializationException_ProducesErrorEnvelope`).
-- `SubPropertyDefaultTests.cs` (4) — Tier-1 remaining work.
+- `SubPropertyDefaultTests.cs` — **0 skipped, 4 passing** (Tier-1 SHIPPED).
 - `TranslatorTests.cs` (3 skipped, 3 passing for computed properties), `BlindHandlerTests.cs` (4), `ExpandFromTests.cs` (4) — Tier-2.
 - `PolymorphismTests.cs` (2 skipped). `IncludeParserEdgeTests.cs` previously had 1 skipped for an alleged parser bug — un-skipped after the dictionary-value bug was traced to the generator instead.
 
@@ -69,8 +69,16 @@ Every in-scope planned feature from `apiDesign.md` has corresponding skipped tes
 Never used in practice with the legacy engine. Callers that need these behaviors implement them at the endpoint level with standard ASP.NET tools. See `migrationAnalysis.md` > "Scope Decision" for full rationale.
 
 ### Not yet ported (still in scope)
-- `[SubPropertyDefault]` (Tier-1)
 - `[Translator]` methods with DI, `IPopcornBlindHandler<TFrom,TTo>`, `[ExpandFrom]` (Tier-2)
+
+### Shipped: `[SubPropertyDefault]` (Tier-1 complete)
+- `SubPropertyDefaultAttribute` in `Popcorn.Shared/PopAttribute.cs` — `[AttributeUsage(Property | Field)]`, constructor takes the include string.
+- Generator reads the attribute in `AddMemberSerializationCode`; when present:
+  - Emits a process-level `private static readonly IReadOnlyList<PropertyReference> __SubDefault_{parentDisc}_{memberName}` field with `PropertyReference.ParseIncludeStatement(...)` so the parse happens once per process.
+  - Rewrites the "fall back to `PropertyReference.Default`" expression at the two nested-`Pop<T>` callsites (complex member + complex array element) to use `ReferenceEquals(propertyReference.Children, PropertyReference.Default)` as the signal that the client gave no explicit sub-children, falling back to the attribute's list instead.
+- Recursive by construction — each `Pop<T>` call threads the substituted list into the child serializer, which applies its own `SubPropertyDefault` at each level.
+- `[Always]` / `[Never]` on the sub-type still win; `SubPropertyDefault` only replaces what the "default set" for that property is.
+- Dictionary values handled transparently: if the outer property has `[SubPropertyDefault("[X,Y]")]`, the substituted list flows into the dictionary-value serializer via its existing `value.PropertyReferences.Any()` branch.
 
 ### Shipped in the Tier-1 envelope work
 - `ApiError` record in `Popcorn.Shared` (`ApiError.cs`).
@@ -104,8 +112,8 @@ Never used in practice with the legacy engine. Callers that need these behaviors
 ## Merge-to-master Gates (suggested, not formalized)
 - [x] Decision on in-scope vs. deferred legacy features. **Resolved:** sorting/pagination/filtering/authorizers dropped; custom envelope + `[SubPropertyDefault]` remain as Tier-1.
 - [x] Custom envelope + exception middleware (Tier-1).
-- [ ] `[SubPropertyDefault]` (Tier-1 remaining).
-- [ ] Dictionary/nested parser fix.
+- [x] `[SubPropertyDefault]` (Tier-1 complete).
+- [x] Dictionary/nested parser fix.
 - [ ] Published benchmark report comparing legacy reflection vs. source-generated vs. raw `System.Text.Json`.
 - [ ] CI job that publishes the AOT example and runs it in a container to prove end-to-end.
 - [ ] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared`.

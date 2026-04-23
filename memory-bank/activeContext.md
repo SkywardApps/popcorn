@@ -24,7 +24,7 @@ See `apiDesign.md` for the v2 API plan and `migrationAnalysis.md` for the feasib
 
 **Dropped from v2 scope (will NOT be implemented)**: sorting, filtering, pagination, authorizers. Never used in practice with the legacy engine; complexity not justified. Callers that need these behaviors implement them at the endpoint level.
 
-Tier-1 (MUST ship before v2.0 merge): custom envelope + exception middleware, `[SubPropertyDefault]`.
+Tier-1 (MUST ship before v2.0 merge): custom envelope + exception middleware (shipped), `[SubPropertyDefault]` (shipped). **Tier-1 complete.**
 
 Tier-2 (SHOULD ship with v2.0): `[Translator]` methods with DI, `IPopcornBlindHandler<TFrom,TTo>`, `[ExpandFrom]`.
 
@@ -63,11 +63,10 @@ Genuine non-starter under AOT: polymorphic unknown-at-build-time types (trimmer 
 - `1b39e30` Early experimentation with source generation
 
 ## Immediate Next Steps (suggested, not committed)
-1. Land `[SubPropertyDefault]` (Tier-1 remaining).
-2. Fix `PropertyReference.ParseIncludeStatement` nested-structure bug and re-run dictionary complex-value test.
-3. Run the BenchmarkDotNet suite and record a baseline; compare against legacy reflection numbers.
-4. Decide Tier-2 scope for the v2.0 merge bar (`[Translator]` / `IPopcornBlindHandler` / `[ExpandFrom]`).
-5. Consider header-based include decision (`POPCORN-INCLUDE`).
+1. Run the BenchmarkDotNet suite and record a baseline; compare against legacy reflection numbers.
+2. Decide Tier-2 scope for the v2.0 merge bar (`[Translator]` / `IPopcornBlindHandler` / `[ExpandFrom]`).
+3. CI job for AOT example + NuGet packaging story.
+4. Consider header-based include decision (`POPCORN-INCLUDE`).
 
 ## Non-Goals for This Spike
 - Deserialization / two-way serialization.

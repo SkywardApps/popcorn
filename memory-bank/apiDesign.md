@@ -14,7 +14,7 @@
 - `[Never]` — never emitted, even if explicitly requested.
 
 ### New attributes
-- `[SubPropertyDefault("[Make,Model]")]` — when this property's type appears as a sub-property, use this include list as its default. Replaces `[SubPropertyIncludeByDefault]`.
+- `[SubPropertyDefault("[Make,Model]")]` — when this property is included without explicit sub-children, use this include list as its default. Replaces `[SubPropertyIncludeByDefault]`. **Implemented.** Pre-parsed once per process into a generator-emitted static readonly field and substituted at the two nested-`Pop<T>` callsites (complex member, complex-array element). Explicit sub-children override the attribute; `[Always]` / `[Never]` on the sub-type still win.
 - `[ExpandFrom(typeof(SourceType))]` — on a projection class; generator emits `ProjectionType.From(SourceType)` copy logic. Optional — most users serialize source types directly.
 
 ### Envelope marker attributes
@@ -144,7 +144,7 @@ Replaces the legacy `SetInspector((data, ctx, exception) => wrapper)` pattern. E
 | Blind expansion (external types) | ✅ runtime reflection | ✅ via `IPopcornBlindHandler<TFrom,TTo>` | Registered DI handler |
 | Blind expansion (runtime-unknown polymorphic) | ✅ | ❌ non-starter under AOT | Live with the break |
 | `[InternalOnly]` | ✅ | ✅ (as `[Never]`) | Existing |
-| `[SubPropertyIncludeByDefault]` | ✅ | ✅ (as `[SubPropertyDefault]`) | New attribute, existing parser |
+| `[SubPropertyIncludeByDefault]` | ✅ | ✅ (as `[SubPropertyDefault]`, shipped) | New attribute, existing parser, pre-parsed-once static field |
 | Optional property `?` prefix | ✅ | ✅ by construction | Generator silently skips unknown include names |
 | Sorting | ✅ runtime reflection | ❌ **Dropped from V2 scope** | Never used in practice; complexity not justified |
 | Pagination | ✅ | ❌ **Dropped from V2 scope** | Never used in practice; complexity not justified |

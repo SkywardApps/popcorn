@@ -38,6 +38,9 @@ namespace Popcorn.FunctionalTests
     [JsonSerializable(typeof(ApiResponse<CarSource>))]
     [JsonSerializable(typeof(ApiResponse<CarProjection>))]
     [JsonSerializable(typeof(ApiResponse<NullabilityCoverageModel>))]
+    [JsonSerializable(typeof(ApiResponse<OwnerWithVehicles>))]
+    [JsonSerializable(typeof(ApiResponse<RecursiveSubDefaultRoot>))]
+    [JsonSerializable(typeof(ApiResponse<OwnerWithMarkedVehicle>))]
     // Root-level nullability edge cases. Exercise:
     //   - Nullable<int> at root (distinct CLR type from int; needs its own Pop<int?> body).
     //   - Nullable<NullStruct> at root (user-defined struct wrapped in Nullable<T>).
