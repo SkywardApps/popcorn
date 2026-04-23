@@ -28,6 +28,8 @@
   + #### [Internal Only](dotnet/DotNetTutorialInternalOnly)
   + #### [Inspectors](dotnet/DotNetTutorialInspectors.md)
   
++ ### [Performance](Performance.md)
+
 + ### [Roadmap](Roadmap.md)
 
 + ### [Releases and Release Notes](Releases.md)

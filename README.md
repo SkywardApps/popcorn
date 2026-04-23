@@ -144,6 +144,22 @@ Asp.Net Core and EntityFramework Core, but many more platforms are on the roadma
 + You don't get to write as much code
 + Your consumers don't get to write as much code
 
+## Performance
+
+The upcoming v2 (.NET source-generator) build has been benchmarked against both the v1 reflection
+engine and raw `System.Text.Json`.  Highlights (vs raw STJ, on a 25-item list of complex nested
+objects):
+
++ When the client asks for a subset, v2 is **~10× faster and allocates ~10× less** than raw STJ.
++ When the client asks for everything, v2 is **0.87× the time of raw STJ** — faster than STJ even
+  without using selectivity, with no "Popcorn tax" to pay for keeping the feature available.
++ v2 beats the v1 legacy engine in every cell we measured — 3–8× on apples-to-apples "emit
+  everything" comparisons, ~5.8× on the selective-fetch case that matters most.
++ v2 works under `PublishAot=True` and `PublishTrimmed=True` (no runtime reflection on the hot
+  path). v1 does not.
+
+Full methodology, per-shape ratios, and reproduction instructions: **[Performance](docs/Performance.md)**.
+
 ## How can I use it in my project?
 
 First you need to figure out if you're working with a platform that has a provider implemented in 
@@ -160,6 +176,7 @@ to contribute any platform-specific providers you come up with!
 
 + [Quick Start](docs/QuickStart.md)
 + [Documentation](docs/Documentation.md)
++ [Performance](docs/Performance.md)
 + [Roadmap](docs/Roadmap.md)
 + [Releases and Release Notes](docs/Releases.md)
 + [Contributing](docs/Contributing.md)
