@@ -3,9 +3,9 @@
 Captured 2026-04-23. Baseline in [`../README.md`](../README.md) (commit `9168c4c`, .NET 9.0.15). Each step below is an isolated generator change, tested against the full functional suite (182 passing, 13 skipped throughout), benchmarked with the same BDN configuration.
 
 Raw logs:
-- [step1-linq-removed.log](step1-linq-removed.log)
-- [step2-flags-hoisted.log](step2-flags-hoisted.log)
-- [step3-hashset-elided.log](step3-hashset-elided.log)
+- [step1-linq-removed.txt](step1-linq-removed.txt)
+- [step2-flags-hoisted.txt](step2-flags-hoisted.txt)
+- [step3-hashset-elided.txt](step3-hashset-elided.txt)
 
 ## The three changes
 
