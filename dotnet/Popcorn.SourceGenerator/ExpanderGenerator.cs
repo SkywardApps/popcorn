@@ -749,14 +749,14 @@ public static class PopcornJsonOptionsExtension
             }
             else if (targetType is INamedTypeSymbol namedDictionaryTypeNonNullable && InheritsOrImplements(namedDictionaryTypeNonNullable, IDictionaryTypeName))
             {
+                // Covers Dictionary<K,V>, IDictionary<K,V>, ReadOnlyDictionary<K,V>, and any user
+                // subclass that implements IDictionary<TKey, TValue>. A previous secondary check
+                // keyed on Dictionary<K,V>'s OriginalDefinition existed to work around a whitespace
+                // bug in IDictionaryTypeName that made this branch dead; the constant is now
+                // correct ("IDictionary<TKey, TValue>" with the same ", " Roslyn emits), so the
+                // secondary check is redundant and has been removed.
                 var valueType = namedDictionaryTypeNonNullable.TypeArguments[1] as INamedTypeSymbol;
                 Show($"DICTIONARY DETECTED: {namedDictionaryTypeNonNullable} Is an IDictionary of {valueType?.ToDisplayString()}", context);
-                internalSerializationCode = CreateDictionarySerializer(allTypeNames, valueType, context);
-            }
-            else if (targetType is INamedTypeSymbol namedTypeDictTest && namedTypeDictTest.OriginalDefinition?.ToDisplayString() == "System.Collections.Generic.Dictionary<TKey, TValue>")
-            {
-                var valueType = namedTypeDictTest.TypeArguments[1] as INamedTypeSymbol;
-                Show($"DICTIONARY BY ORIGINAL DEFINITION: {namedTypeDictTest} with value type {valueType?.ToDisplayString()}", context);
                 internalSerializationCode = CreateDictionarySerializer(allTypeNames, valueType, context);
             }
             // If this targetType implement IEnumerable, write out as an array and use the item type as target type instead for each element.

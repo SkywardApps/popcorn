@@ -80,6 +80,17 @@ envelope pay no generator cost for this path.
 - Collection handling: detects `IEnumerable<T>` and `IDictionary<K,V>` via `InheritsOrImplements`. For dictionaries only the value type is walked; keys are written as-is.
 - Circular reference handling: generator emits runtime code that tracks visited objects in a `HashSet<object>` and writes `{"$ref":"circular"}` on recursion.
 
+### Load-bearing generator conventions (don't work around)
+Two helpers in `ExpanderGenerator` are load-bearing — any future code that emits `Pop<T>` or adds to the `allTypeNames` set must route through them or the generator will silently re-introduce defects we've already fixed.
+
+- **`TypeNameForPop(ITypeSymbol)`** — the ONLY way to render a type name inside `Pop<...>` (both at registered-signature sites and at every callsite). Uses a `SymbolDisplayFormat` without `IncludeNullableReferenceTypeModifier`, so NRT `?` on reference types is stripped (callsites and signatures converge) while `Nullable<T>` on value types is preserved (distinct CLR identity). Using `ToDisplayString()` directly re-introduces CS8620 "Argument of type 'Pop<T?>' cannot be used for parameter 'Pop<T>'" warnings across every consumer build.
+- **`IsBlindSerializableType(ITypeSymbol)`** — the gate for "do we emit a `Pop<T>` body for this type?". Returns true for primitives, string, bool, `Guid`/`DateTime`/etc. (the `IgnoreTypes` set), enums, and `Nullable<T>` wrappers of any of those. Two usage sites:
+  1. Filter `allTypeNames` when assembling it at the top of `GenerateJsonConverter` — blind types MUST NOT appear there, or every downstream list/dict/array converter that checks `allTypeNames.Contains(...)` will decide to emit a call to a `Pop<primitive>` method that never exists. One bad root-level `ApiResponse<int?>` registration used to cascade into compile errors across unrelated converters.
+  2. Branch at the top of `GenerateJsonConverter` — if the target type itself is blind, emit `JsonSerializer.Serialize(writer, value.Data, options)` directly instead of trying to recurse.
+
+### Constants that must match Roslyn's `ToDisplayString` format verbatim
+`InheritsOrImplements` compares symbols via `OriginalDefinition.ToDisplayString()`, which emits generic argument lists with `", "` (comma + space). Type-name constants (`IEnumerableTypeName`, `IDictionaryTypeName`) MUST use that exact spacing. A no-space form silently fails the match and the type falls through to a less-specific dispatch branch — historically this is how `IDictionary<K,V>` and `ReadOnlyDictionary<K,V>` got routed through the IEnumerable path and emitted broken iterators.
+
 ## Include Syntax
 
 ### Grammar

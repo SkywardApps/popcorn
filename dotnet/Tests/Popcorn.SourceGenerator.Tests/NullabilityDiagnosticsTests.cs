@@ -210,14 +210,21 @@ namespace DedupRef
         // `using System.Linq`, so compiles are always noisy. Generated-tree count is the invariant.
         var result = GeneratorTestHarness.RunAndCompile(BothClassAndNullableClassSource);
 
-        var thingConverters = result.RunResult.GeneratedTrees
-            .Select(t => t.FilePath)
-            .Where(p => p.EndsWith("JsonConverter.g.cs", StringComparison.Ordinal))
-            .Where(p => p.Contains("Thing", StringComparison.Ordinal))
+        var thingConverterTrees = result.RunResult.GeneratedTrees
+            .Where(t => t.FilePath.EndsWith("JsonConverter.g.cs", StringComparison.Ordinal))
+            .Where(t => t.FilePath.Contains("Thing", StringComparison.Ordinal))
             .ToArray();
-        foreach (var c in thingConverters) _output.WriteLine(c);
+        foreach (var c in thingConverterTrees) _output.WriteLine(c.FilePath);
 
-        Assert.Single(thingConverters);
+        Assert.Single(thingConverterTrees);
+
+        // Content invariant: the registered method signature and the JsonConverter<Pop<T>> base
+        // class must use the NRT-stripped form `Pop<...Thing>`, never `Pop<...Thing?>`. If a future
+        // regression picks the annotated form, consumer builds re-introduce CS8620 at every
+        // callsite that's already using the stripped form — and this test catches it before ship.
+        var source = thingConverterTrees[0].GetText().ToString();
+        Assert.Contains("Pop<DedupRef.Thing>", source);
+        Assert.DoesNotContain("Pop<DedupRef.Thing?>", source);
     }
 
     [Fact]
@@ -258,16 +265,21 @@ namespace DedupL
         var result = GeneratorTestHarness.RunAndCompile(BothListRefAndListQRefSource);
 
         // Exactly one List<Th> converter — NRT on element type doesn't split the registration.
-        // Namespace is DedupL (no "List" in it) so the file-name match is unambiguous.
-        var files = result.RunResult.GeneratedTrees.Select(t => t.FilePath).ToArray();
-        var listConverters = files
-            .Where(p => p.EndsWith("JsonConverter.g.cs", StringComparison.Ordinal))
-            .Where(p => p.Contains("SystemCollectionsGenericList", StringComparison.Ordinal)
-                     && p.EndsWith("DedupLThJsonConverter.g.cs", StringComparison.Ordinal))
+        // File-name disambiguation: the List<Th> file starts with SystemCollectionsGenericList;
+        // the standalone Th converter is just `DedupLThJsonConverter.g.cs` with no List prefix.
+        var listConverterTrees = result.RunResult.GeneratedTrees
+            .Where(t => t.FilePath.EndsWith("JsonConverter.g.cs", StringComparison.Ordinal))
+            .Where(t => System.IO.Path.GetFileName(t.FilePath).StartsWith("SystemCollectionsGenericList", StringComparison.Ordinal))
+            .Where(t => t.FilePath.Contains("DedupLTh", StringComparison.Ordinal))
             .ToArray();
-        foreach (var c in listConverters) _output.WriteLine(c);
+        foreach (var c in listConverterTrees) _output.WriteLine(c.FilePath);
 
-        Assert.Single(listConverters);
+        Assert.Single(listConverterTrees);
+
+        // Content invariant: the element type inside Pop<List<...>> must be `Th`, never `Th?`.
+        var source = listConverterTrees[0].GetText().ToString();
+        Assert.Contains("Pop<System.Collections.Generic.List<DedupL.Th>>", source);
+        Assert.DoesNotContain("List<DedupL.Th?>", source);
     }
 
     // ---------- Value-type nullable MUST NOT be collapsed: List<int> vs List<int?> ----------
