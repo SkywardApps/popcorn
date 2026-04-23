@@ -17,10 +17,10 @@
 - `AddPopcorn()` DI registration, `HttpContextExtensions.Respond<T>`.
 
 ### Functional test suite (`dotnet/Tests/Popcorn.FunctionalTests`)
-- xUnit, 25 test files.
-- **177 tests total**: 126 passing, 0 failing, 51 skipped (TDD-pending features).
-- Covers attribute semantics, include-parameter variations, primitives, value types, basic + advanced collections, dictionaries, nesting, conflicting attributes, default-behavior rules, enums, `JsonPropertyName`, inheritance, generics, include-parser edge cases, error handling, middleware integration, computed-property translators.
-- Single `TestJsonContext` drives the generator over 30+ `ApiResponse<Model>` declarations.
+- xUnit, 22 test files (after deprecation cleanup + review-fix coverage).
+- **158 tests total**: 140 passing, 0 failing, 18 skipped (TDD-pending features). Sorting/Pagination/Filtering/Authorizer test files were deleted as part of the v2 scope decision; their 30 skipped tests are gone. Custom envelope + exception middleware shipped: 5 more tests flipped from skipped to passing. Review-driven fixes added `EnvelopeFixesTests.cs` with 9 new passing tests covering naming-policy conversion, header preservation, idempotency, inheritance, and nested envelopes.
+- Covers attribute semantics, include-parameter variations, primitives, value types, basic + advanced collections, dictionaries, nesting, conflicting attributes, default-behavior rules, enums, `JsonPropertyName`, inheritance, generics, include-parser edge cases, error handling, middleware integration, computed-property translators, custom envelope shape + exception wrapping.
+- Single `TestJsonContext` drives the generator over 30+ `ApiResponse<Model>` and `MyTestEnvelope<Model>` declarations.
 - Generated sources visible at `$(BaseIntermediateOutputPath)Generated` for debugging.
 - `TestServerHelper` reduces per-test boilerplate to ~5 lines.
 
@@ -31,12 +31,15 @@
 ### Established Contract: `?include=` uses wire names only
 The include list is part of the API contract — it uses the wire name (from `[JsonPropertyName]` if present, otherwise the C# name). The C# name is an implementation detail the client has no visibility into. A client sees `{"display_name":...}` in responses and must request `?include=[display_name]`; `?include=[DisplayName]` is treated as an unknown name and the property is not emitted. This matches how the generator currently behaves and is the correct design. Tests in `JsonPropertyNameTests.cs` assert this contract explicitly (both positive: `IncludeMatchesWireName`, and negative: `IncludeByCSharpName_DoesNotMatch`).
 
-### TDD-pending test ledger (51 skipped)
-Every planned feature from `apiDesign.md` has corresponding skipped tests. When implementation lands, remove the `Skip=` attribute and the test becomes active. Files:
-- `SortingTests.cs` (7), `PaginationTests.cs` (7), `FilteringTests.cs` (8) — Tier-1 query surface.
-- `AuthorizerTests.cs` (5), `CustomEnvelopeTests.cs` (5), `SubPropertyDefaultTests.cs` (4) — Tier-1 extensibility.
+### TDD-pending test ledger (18 skipped)
+Every in-scope planned feature from `apiDesign.md` has corresponding skipped tests. When implementation lands, remove the `Skip=` attribute and the test becomes active. Files:
+- `CustomEnvelopeTests.cs` — **0 skipped, 4 passing** (Tier-1 SHIPPED).
+- `ErrorHandlingTests.cs` — **0 skipped, 6 passing** (includes new `SerializationException_ProducesErrorEnvelope`).
+- `SubPropertyDefaultTests.cs` (4) — Tier-1 remaining work.
 - `TranslatorTests.cs` (3 skipped, 3 passing for computed properties), `BlindHandlerTests.cs` (4), `ExpandFromTests.cs` (4) — Tier-2.
-- `PolymorphismTests.cs` (2 skipped), `ErrorHandlingTests.cs` (1 skipped), `IncludeParserEdgeTests.cs` (1 skipped — the known dictionary-value parser bug).
+- `PolymorphismTests.cs` (2 skipped), `IncludeParserEdgeTests.cs` (1 skipped — the known dictionary-value parser bug).
+
+**Deleted test files (v2 scope decision):** `SortingTests.cs`, `PaginationTests.cs`, `FilteringTests.cs`, `AuthorizerTests.cs`. Corresponding model files (`SortingModel.cs`, `AuthorizationModel.cs`) deleted. See `migrationAnalysis.md` for the scope rationale.
 
 ### AOT smoke test (`PopcornAotExample`)
 - `WebApplication.CreateSlimBuilder`, `PublishAot=True`, `PublishTrimmed=True`, Dockerfile.
@@ -52,15 +55,30 @@ Every planned feature from `apiDesign.md` has corresponding skipped tests. When 
 ### Known failing / flaky
 - `DictionaryTypes_ComplexValueDictionary_SerializesCorrectly` — root cause is `PropertyReference.ParseIncludeStatement` mishandling nested structures within dictionary value types. Fix belongs in `Popcorn.Shared`.
 
-### Not yet ported from legacy reflection engine
+### Dropped from v2 scope (explicitly not porting)
 - Sorting
 - Pagination
 - Filtering
 - Authorization / permissioning
-- Response inspectors
-- Contexts
-- Lazy loading
-- Blind expansion
+
+Never used in practice with the legacy engine. Callers that need these behaviors implement them at the endpoint level with standard ASP.NET tools. See `migrationAnalysis.md` > "Scope Decision" for full rationale.
+
+### Not yet ported (still in scope)
+- `[SubPropertyDefault]` (Tier-1)
+- `[Translator]` methods with DI, `IPopcornBlindHandler<TFrom,TTo>`, `[ExpandFrom]` (Tier-2)
+
+### Shipped in the Tier-1 envelope work
+- `ApiError` record in `Popcorn.Shared` (`ApiError.cs`).
+- `ApiResponse<T>` extended with `Error: ApiError?` slot + `FromError(ApiError)` factory (`ApiResponse.cs`). Parameterless ctor is `internal` to prevent construction of the "Success=true / no Data" shape.
+- Marker attributes: `[PopcornEnvelope]`, `[PopcornPayload]`, `[PopcornError]`, `[PopcornSuccess]` in `Popcorn.Shared/PopAttribute.cs`.
+- `PopcornOptions` class with `EnvelopeType` (default `typeof(ApiResponse<>)`) and `DefaultNamingPolicy` (honored by the exception middleware). `AddPopcorn(Action<PopcornOptions>)` is idempotent — repeated calls mutate the single options singleton.
+- `PopcornErrorWriterRegistry` static registry with `Volatile` read/write; generator registers a writer via two hooks: `AddPopcornOptions()` (JSON-options-level) and `AddPopcornEnvelopes()` (DI-time, AOT-friendly). The writer signature accepts a `JsonNamingPolicy?` so custom envelope field names are policy-converted to match the success path.
+- `UsePopcornExceptionHandler()` middleware in `Popcorn.Shared/ApplicationBuilderExtensions.cs` — buffers the response, strips `Content-Length` from the aborted inner handler, preserves custom response headers, applies the configured naming policy, writes a structured envelope on exception (default shape or custom via registry). XML docs document the buffering tradeoff (no streaming).
+- Source generator (`ExpanderGenerator.cs`) now recognizes `[PopcornEnvelope]`-decorated types in `[JsonSerializable]` attributes alongside `ApiResponse<T>`, walks the `[PopcornPayload]` type for inner references, walks the envelope's base chain for markers, supports envelopes nested inside non-generic outer types, and emits the per-envelope error writer. Emits diagnostics JSG003–JSG007 for malformed envelopes (missing payload, duplicate markers, wrong payload/error type, generic-outer nesting).
+
+### Supported by construction (no porting needed)
+- Lazy loading (generator never touches excluded properties)
+- Blind expansion of user-declared types (generator walks reachable types from `[JsonSerializable]`)
 
 ### Out of scope for this spike (explicit)
 - Deserialization (generated converters are write-only).
@@ -79,8 +97,10 @@ Every planned feature from `apiDesign.md` has corresponding skipped tests. When 
 3. **Trimming works** — `PublishTrimmed=True` set alongside AOT. No separate trim-only run documented.
 
 ## Merge-to-master Gates (suggested, not formalized)
+- [x] Decision on in-scope vs. deferred legacy features. **Resolved:** sorting/pagination/filtering/authorizers dropped; custom envelope + `[SubPropertyDefault]` remain as Tier-1.
+- [x] Custom envelope + exception middleware (Tier-1).
+- [ ] `[SubPropertyDefault]` (Tier-1 remaining).
 - [ ] Dictionary/nested parser fix.
 - [ ] Published benchmark report comparing legacy reflection vs. source-generated vs. raw `System.Text.Json`.
-- [ ] Decision on in-scope vs. deferred legacy features.
 - [ ] CI job that publishes the AOT example and runs it in a container to prove end-to-end.
 - [ ] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared`.

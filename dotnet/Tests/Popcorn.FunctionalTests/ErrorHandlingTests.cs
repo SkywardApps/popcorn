@@ -68,11 +68,20 @@ namespace Popcorn.FunctionalTests
             Assert.True(data.HasProperty("Name"));
         }
 
-        [Fact(Skip = "Pending: structured error envelope (ApiError type + exception middleware) per apiDesign.md.")]
+        [Fact]
         public async Task SerializationException_ProducesErrorEnvelope()
         {
-            await Task.CompletedTask;
-            Assert.Fail("Pending: when generator+middleware produce an Error property on ApiResponse, exceptions in the write path should be captured and returned as structured error JSON rather than HTTP 500.");
+            var model = new ExplodingModel { Id = 42 };
+            using var server = TestServerHelper.CreateServerWithWritePathException(model);
+            var response = await server.CreateClient().GetAsync("/test?include=[!all]");
+
+            Assert.Equal(System.Net.HttpStatusCode.InternalServerError, response.StatusCode);
+            var body = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(body);
+
+            Assert.False(doc.RootElement.GetProperty("Success").GetBoolean());
+            Assert.Contains("exploded during serialization",
+                doc.RootElement.GetProperty("Error").GetProperty("Message").GetString());
         }
     }
 }

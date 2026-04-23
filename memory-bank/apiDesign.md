@@ -3,7 +3,7 @@
 ## Design Philosophy
 1. **Attributes over fluent config.** Model + endpoint declare their contract in code. The legacy fluent-lambda builder (`popcornConfig.Authorize<Car>(...).Translate(...).SetContext(...)`) is fundamentally incompatible with source generation — lambdas live at runtime, the generator needs inputs at build time. Not a technical roadblock; a mandatory API rewrite.
 2. **DI over static context dictionaries.** Where the legacy used `.SetContext(Dictionary<string,object>)` to pass ambient data into lambdas, v2 injects DI services into attribute-tagged methods. This is both AOT-safe and idiomatic modern ASP.NET Core.
-3. **Source generator emits all dispatch.** Sorting, filtering, authorization lookups, translator calls — all resolved at build time via generated switch statements or DI resolution calls. No runtime reflection on the hot path.
+3. **Source generator emits all dispatch.** Translator calls, blind-handler conversions, envelope wrapping — all resolved at build time via generated calls. No runtime reflection on the hot path.
 4. **Intentional v2 break.** No source compatibility with the legacy `PopcornNetStandard` config API. New NuGet package ID (`Skyward.Api.Popcorn.SourceGen` or similar), parallel shipping until legacy is deprecated.
 
 ## Attribute Surface (on model properties)
@@ -15,9 +15,13 @@
 
 ### New attributes
 - `[SubPropertyDefault("[Make,Model]")]` — when this property's type appears as a sub-property, use this include list as its default. Replaces `[SubPropertyIncludeByDefault]`.
-- `[Sortable]` — opts a property into sort-by-name eligibility. Generator emits typed comparator dispatch.
-- `[Filterable(FilterOps.Equals | FilterOps.Contains | FilterOps.GreaterThan)]` — opts a property into filter eligibility. Generator emits typed predicate dispatch.
 - `[ExpandFrom(typeof(SourceType))]` — on a projection class; generator emits `ProjectionType.From(SourceType)` copy logic. Optional — most users serialize source types directly.
+
+### Envelope marker attributes
+- `[PopcornEnvelope]` — marks a type as the application-wide response envelope. One per app.
+- `[PopcornPayload]` — marks the property that carries the `Pop<T>` payload. Required on any `[PopcornEnvelope]` type.
+- `[PopcornError]` — marks the optional `ApiError?` property used by the exception middleware.
+- `[PopcornSuccess]` — marks the optional `bool` property set to `false` on error paths.
 
 ## Attribute Surface (on methods — translators)
 
@@ -56,22 +60,10 @@ Generator wires `DisplayName = ComputeDisplayName(this)` into the write path. Us
 
 ```csharp
 services.AddHttpContextAccessor();
-services.AddPopcorn();                                       // existing
-services.AddPopcornAuthorizer<Car, CarAuthorizer>();         // NEW
-services.AddPopcornBlindHandler<Geometry, string>(           // NEW — external type → simpler form
+services.AddPopcorn(o => o.EnvelopeType = typeof(MyEnvelope<>));   // existing + envelope option
+services.AddPopcornBlindHandler<Geometry, string>(                  // NEW — external type → simpler form
     (g, svc) => svc.GetRequiredService<IWktWriter>().Write(g));
-services.AddPopcornInspector<ApiResponse<object>, MyInspector>(); // NEW — post-serialize envelope rewriter
 ```
-
-### IPopcornAuthorizer<T>
-```csharp
-public interface IPopcornAuthorizer<T>
-{
-    bool AuthorizeInclude(T source, string propertyName, object? value);
-    bool AuthorizeItem(T source); // collection-item gate
-}
-```
-Registered per type. Generator's emitted converter resolves the authorizer from DI once per request and calls it during property and item emission.
 
 ### IPopcornBlindHandler<TFrom, TTo>
 ```csharp
@@ -86,51 +78,55 @@ For externally-defined types (e.g. NetTopologySuite `Geometry`) where you can't 
 
 | Parameter | Purpose | Example |
 |---|---|---|
-| `include` | Field selection (existing) | `?include=[Id,Name,Items[Name]]` |
-| `sort` | Sort by a `[Sortable]` property | `?sort=Model` |
-| `sortDirection` | `Ascending` \| `Descending` (default Ascending) | `?sortDirection=Descending` |
-| `filter` | One or more `[Filterable]` predicates | `?filter=[Year:gt:2000,Make:eq:Ferrari]` |
-| `page` | 1-based page index | `?page=2` |
-| `pageSize` | Items per page (default 50, max TBD) | `?pageSize=100` |
+| `include` | Field selection | `?include=[Id,Name,Items[Name]]` |
 
-**Note on `filter` grammar.** Mirror the bracket syntax of `include` for consistency: `[Field:op:value,Field:op:value]`. Operators: `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `contains`, `startsWith`, `endsWith`, `in`. Value parsing is type-driven (int `"2000"` → `2000`, string literal for string props). No free-form expressions (keep AOT-safe).
+v2 has no other query parameters. Sorting, pagination, and filtering were explicitly dropped from v2 scope (never used in practice with the legacy engine; complexity not justified).
 
 ## Response Envelope Surface
 
-### Default envelope (existing, refined)
+### Default envelope
 ```csharp
 public record ApiResponse<T>
 {
     public bool Success { get; init; } = true;
     public Pop<T> Data { get; init; }
-    public ApiError? Error { get; init; }     // NEW
-    public PageInfo? Page { get; init; }      // NEW (only present when pagination active)
+    public ApiError? Error { get; init; }     // set by UsePopcornExceptionHandler on error paths
 }
-public record ApiError(string Code, string Message, string? Detail);
-public record PageInfo(int Page, int PageSize, long TotalItems, long TotalPages);
+
+public record ApiError(string Code, string Message, string? Detail = null);
 ```
 
-### Custom envelope
+### Custom envelope (marker-attribute design)
 ```csharp
 [PopcornEnvelope]
 public record MyEnvelope<T>
 {
-    public bool Ok { get; init; } = true;
-    public T? Payload { get; init; }
+    [PopcornSuccess] public bool Ok { get; init; } = true;
+    [PopcornPayload] public T? Payload { get; init; }
+    [PopcornError]   public ApiError? Problem { get; init; }
+
+    // Free-form user fields — passed through as-is
     public List<string> Messages { get; init; } = new();
 }
 
-// Register as the default
+// Register as the app-wide envelope
 services.AddPopcorn(options => options.EnvelopeType = typeof(MyEnvelope<>));
 ```
-Generator sees `[PopcornEnvelope]`, emits wrapping code around the `Pop<T>` payload. One envelope per application; multi-envelope support is out of scope.
+
+Rules enforced by the generator:
+- Exactly one property carries each marker; multiple markers of the same kind → diagnostic.
+- `[PopcornPayload]` is required on any `[PopcornEnvelope]` type; absence → diagnostic.
+- `[PopcornError]` property type must be `ApiError?` (or compatible).
+- One envelope per application; multi-envelope support is out of scope.
+
+Generator sees `[PopcornEnvelope]` and emits typed `CreateSuccess<T>(Pop<T>)` / `CreateError<T>(ApiError)` factories on a generated `PopcornEnvelopeFactory` class. Middleware uses these factories.
 
 ## Middleware Surface
 
 ### Exception → envelope conversion
 ```csharp
-app.UsePopcornExceptionHandler(); // NEW — catches unhandled exceptions, writes
-                                   // the configured envelope with Success=false / Error populated
+app.UsePopcornExceptionHandler(); // catches unhandled exceptions, writes
+                                  // the configured envelope with Success=false / Error populated
 ```
 Replaces the legacy `SetInspector((data, ctx, exception) => wrapper)` pattern. Exception wrapping is a middleware concern; the type-level envelope is a source-gen concern. Clean separation.
 
@@ -150,16 +146,17 @@ Replaces the legacy `SetInspector((data, ctx, exception) => wrapper)` pattern. E
 | `[InternalOnly]` | ✅ | ✅ (as `[Never]`) | Existing |
 | `[SubPropertyIncludeByDefault]` | ✅ | ✅ (as `[SubPropertyDefault]`) | New attribute, existing parser |
 | Optional property `?` prefix | ✅ | ✅ by construction | Generator silently skips unknown include names |
-| Sorting | ✅ runtime reflection | ✅ | Generator emits `switch(sortField)` → typed comparator |
-| Pagination | ✅ | ✅ | Middleware concern; applies `Skip/Take`; emits `PageInfo` |
-| Filtering | ✅ | ✅ | Generator emits `switch(filterField)` → typed predicate |
-| Authorizers | ✅ lambda config | ✅ via `IPopcornAuthorizer<T>` | DI-registered interface |
+| Sorting | ✅ runtime reflection | ❌ **Dropped from V2 scope** | Never used in practice; complexity not justified |
+| Pagination | ✅ | ❌ **Dropped from V2 scope** | Never used in practice; complexity not justified |
+| Filtering | ✅ | ❌ **Dropped from V2 scope** | Never used in practice; complexity not justified |
+| Authorizers | ✅ lambda config | ❌ **Dropped from V2 scope** | Never used in practice; complexity not justified |
 | Translators / advanced projections | ✅ lambda config | ✅ via `[Translator]` method + DI | Attribute-tagged static method |
 | Factories | ✅ lambda config | ⏸ moot until deserialization | Write path doesn't instantiate |
 | Contexts (dictionary) | ✅ | ❌ superseded by DI | Drop the dictionary concept entirely |
 | Inspectors | ✅ lambda config | ✅ via envelope type + middleware | Split: type for shape, middleware for exceptions |
 | Lazy loading | ✅ | ✅ by construction | Generator never touches excluded props |
 | `ExpandFrom` | ✅ | ✅ via `[ExpandFrom]` | Generator emits copy logic |
+| Custom envelope + exception middleware | ✅ lambda config | ✅ via `[PopcornEnvelope]` markers + `UsePopcornExceptionHandler` | Generator emits factories; middleware dispatches |
 | Deserialization | ❌ | ⏸ deferred | Out of scope for v2.0 |
 
 ## Breaking Changes from V1
@@ -168,11 +165,12 @@ Replaces the legacy `SetInspector((data, ctx, exception) => wrapper)` pattern. E
 - `SetContext(Dictionary<string,object>)` removed — use DI.
 - `SetInspector(lambda)` removed — use envelope type + middleware.
 - `MapEntityFramework<TSource,TProjection,TContext>` removed — projections are now either direct-serialize-the-source or `[ExpandFrom]` on a projection class.
+- Sorting, pagination, filtering, authorization: **dropped entirely**. Callers that depended on `?sort=`, `?page=`, `?filter=`, or `.Authorize<T>(...)` must implement these themselves at the endpoint level.
 - Package ID change (TBD) to allow side-by-side install with the legacy package during transition.
 
 ## Out of Scope for V2.0
+- **Sorting, pagination, filtering, authorizers** — dropped from v2 scope permanently.
 - Deserialization (generator emits read-only converters).
 - Polymorphic unknown-at-build-time types (requires reflection, incompatible with AOT).
 - Multi-envelope support (one envelope per app).
-- Free-form filter expression grammar (stick to typed operators).
 - Cross-language providers (PHP, JS client) — protocol only; no shared code.

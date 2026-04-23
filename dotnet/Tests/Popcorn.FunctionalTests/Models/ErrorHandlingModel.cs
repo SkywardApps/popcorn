@@ -18,4 +18,13 @@ namespace Popcorn.FunctionalTests.Models
         [Default]
         public string Label { get; set; } = string.Empty;
     }
+
+    public class ExplodingModel
+    {
+        [Always]
+        public int Id { get; set; }
+
+        [Default]
+        public string ExplodeOnAccess => throw new InvalidOperationException("exploded during serialization");
+    }
 }

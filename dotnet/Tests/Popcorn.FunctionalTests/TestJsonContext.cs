@@ -33,12 +33,14 @@ namespace Popcorn.FunctionalTests
     [JsonSerializable(typeof(ApiResponse<List<Vehicle>>))]
     [JsonSerializable(typeof(ApiResponse<PageModel<ItemPayload>>))]
     [JsonSerializable(typeof(ApiResponse<ErrorHandlingModel>))]
-    [JsonSerializable(typeof(ApiResponse<SortableCollection>))]
-    [JsonSerializable(typeof(ApiResponse<OwnedResourceList>))]
+    [JsonSerializable(typeof(ApiResponse<ExplodingModel>))]
     [JsonSerializable(typeof(ApiResponse<PersonWithComputed>))]
     [JsonSerializable(typeof(ApiResponse<CarSource>))]
     [JsonSerializable(typeof(ApiResponse<CarProjection>))]
     [JsonSerializable(typeof(ApiResponse<EnvelopePayload>))]
+    [JsonSerializable(typeof(MyTestEnvelope<EnvelopePayload>))]
+    [JsonSerializable(typeof(DerivedEnvelope<EnvelopePayload>))]
+    [JsonSerializable(typeof(NestedEnvelopeContainer.NestedEnvelope<EnvelopePayload>))]
     partial class AppJsonSerializerContext : JsonSerializerContext
     {
     }

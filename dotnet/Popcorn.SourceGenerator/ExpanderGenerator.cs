@@ -125,7 +125,70 @@ namespace Popcorn.SourceGenerator
 
                 try
                 {
-                    // Now add the top-level extension method for registering all our converters to the WebApi pipeline
+                    // Collect custom envelope open-generic definitions from the JsonSerializable attrs.
+                    var customEnvelopes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+                    foreach (var attr in data.Attributes)
+                    {
+                        if (attr.ConstructorArguments[0].Value is INamedTypeSymbol envType
+                            && HasPopcornEnvelopeAttribute(envType))
+                        {
+                            customEnvelopes.Add(envType.OriginalDefinition);
+                        }
+                    }
+
+                    var errorWriterBody = new StringBuilder();
+                    foreach (var envelope in customEnvelopes)
+                    {
+                        var analysis = AnalyzeEnvelope(envelope);
+                        ReportEnvelopeDiagnostics(spc, envelope, analysis);
+                        if (analysis.PayloadName == null)
+                        {
+                            // Missing payload already reported as JSG003; skip emission for this envelope.
+                            continue;
+                        }
+                        if (HasGenericContainingType(envelope))
+                        {
+                            // Nested inside a generic outer — open-generic typeof syntax can't be expressed.
+                            // Reported as JSG007; skip emission.
+                            continue;
+                        }
+                        errorWriterBody.Append($@"
+            if (envelopeType == typeof({OpenGenericCSharpName(envelope)}))
+            {{
+                writer.WriteStartObject();
+                {(analysis.SuccessName != null ? $@"writer.WriteBoolean(Convert(""{analysis.SuccessName}""), false);" : "")}
+                {(analysis.ErrorName != null ? $@"writer.WriteStartObject(Convert(""{analysis.ErrorName}""));
+                writer.WriteString(Convert(""Code""), error.Code);
+                writer.WriteString(Convert(""Message""), error.Message);
+                if (error.Detail != null) writer.WriteString(Convert(""Detail""), error.Detail);
+                writer.WriteEndObject();" : "")}
+                writer.WriteEndObject();
+                return;
+            }}");
+                    }
+
+                    var envelopeRegistrationCall = customEnvelopes.Count == 0
+                        ? ""
+                        : $@"
+        global::Popcorn.Shared.PopcornErrorWriterRegistry.Register(WriteCustomErrorEnvelope);";
+
+                    var envelopeWriterMethod = customEnvelopes.Count == 0 || errorWriterBody.Length == 0
+                        ? ""
+                        : $@"
+
+    private static void WriteCustomErrorEnvelope(
+        global::System.Text.Json.Utf8JsonWriter writer,
+        global::System.Type envelopeType,
+        global::Popcorn.Shared.ApiError error,
+        global::System.Text.Json.JsonNamingPolicy? namingPolicy)
+    {{
+        string Convert(string name) => namingPolicy?.ConvertName(name) ?? name;{errorWriterBody}
+    }}";
+
+                    // Now add the top-level extension method for registering all our converters to the WebApi pipeline.
+                    // Both AddPopcornOptions (JsonSerializerOptions-level) and AddPopcornEnvelopes (IServiceCollection-level)
+                    // register the error-envelope writer. AddPopcornEnvelopes is the AOT-friendly DI-time hook; AddPopcornOptions
+                    // remains the JSON-level hook that was added alongside the converter registration.
                     spc.AddSource("RegisterConverters.g.cs", SourceText.From($@"
 namespace Popcorn.Shared;
 
@@ -136,9 +199,15 @@ public static class PopcornJsonOptionsExtension
         options.NumberHandling = global::System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals;
         {String.Join("", targetTypes.Select(targetType => $@"
         options.Converters.Add(new global::Popcorn.Generated.Converters.{NameType(targetType)}JsonConverter());")
-            )}
+            )}{envelopeRegistrationCall}
     }}
-}}    
+
+    public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddPopcornEnvelopes(
+        this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+    {{{envelopeRegistrationCall}
+        return services;
+    }}{envelopeWriterMethod}
+}}
 ", Encoding.UTF8));
                 }
                 catch (Exception ex)
@@ -173,7 +242,227 @@ public static class PopcornJsonOptionsExtension
                 .Where(attr => attr.AttributeClass?.ToDisplayString() == JsonSerializableAttributeTypeName &&
                     attr.ConstructorArguments.Length > 0
                     && attr.ConstructorArguments[0].Value is INamedTypeSymbol typeSymbol
-                    && InheritsOrImplements(typeSymbol, "Popcorn.Shared.ApiResponse<T>"));
+                    && (InheritsOrImplements(typeSymbol, "Popcorn.Shared.ApiResponse<T>")
+                        || HasPopcornEnvelopeAttribute(typeSymbol)));
+        }
+
+        private static bool HasPopcornEnvelopeAttribute(INamedTypeSymbol typeSymbol)
+        {
+            return typeSymbol.GetAttributes().Any(a =>
+                a.AttributeClass?.ToDisplayString() == "Popcorn.PopcornEnvelopeAttribute");
+        }
+
+        private class EnvelopeAnalysis
+        {
+            public string? SuccessName;
+            public string? PayloadName;
+            public string? ErrorName;
+            public ITypeSymbol? PayloadType;
+            public ITypeSymbol? ErrorType;
+            public Location? EnvelopeLocation;
+            public Location? PayloadLocation;
+            public Location? ErrorLocation;
+            public List<Location> DuplicateSuccessLocations = new List<Location>();
+            public List<Location> DuplicatePayloadLocations = new List<Location>();
+            public List<Location> DuplicateErrorLocations = new List<Location>();
+        }
+
+        private static EnvelopeAnalysis AnalyzeEnvelope(INamedTypeSymbol envelope)
+        {
+            var analysis = new EnvelopeAnalysis
+            {
+                EnvelopeLocation = envelope.Locations.FirstOrDefault(),
+            };
+
+            // Walk the base chain so markers on a base envelope class are honored.
+            foreach (var prop in GetSerializableProperties(envelope))
+            {
+                var wireName = GetJsonPropertyNameOverride(prop) ?? prop.Name;
+                foreach (var attr in prop.GetAttributes())
+                {
+                    var attrName = attr.AttributeClass?.ToDisplayString();
+                    var location = prop.Locations.FirstOrDefault();
+                    if (attrName == "Popcorn.PopcornSuccessAttribute")
+                    {
+                        if (analysis.SuccessName != null) analysis.DuplicateSuccessLocations.Add(location ?? Location.None);
+                        analysis.SuccessName = wireName;
+                    }
+                    else if (attrName == "Popcorn.PopcornPayloadAttribute")
+                    {
+                        if (analysis.PayloadName != null) analysis.DuplicatePayloadLocations.Add(location ?? Location.None);
+                        analysis.PayloadName = wireName;
+                        analysis.PayloadType = prop.Type;
+                        analysis.PayloadLocation = location;
+                    }
+                    else if (attrName == "Popcorn.PopcornErrorAttribute")
+                    {
+                        if (analysis.ErrorName != null) analysis.DuplicateErrorLocations.Add(location ?? Location.None);
+                        analysis.ErrorName = wireName;
+                        analysis.ErrorType = prop.Type;
+                        analysis.ErrorLocation = location;
+                    }
+                }
+            }
+            return analysis;
+        }
+
+        private static string? GetJsonPropertyNameOverride(IPropertySymbol prop)
+        {
+            var attr = prop.GetAttributes().FirstOrDefault(a =>
+                a.AttributeClass?.ToDisplayString() == "System.Text.Json.Serialization.JsonPropertyNameAttribute");
+            if (attr?.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is string name)
+            {
+                return name;
+            }
+            return null;
+        }
+
+        private static bool IsPopOfT(ITypeSymbol? type)
+        {
+            if (type is not INamedTypeSymbol named) return false;
+            return named.OriginalDefinition.ToDisplayString() == "Popcorn.Shared.Pop<T>";
+        }
+
+        private static bool IsApiError(ITypeSymbol? type)
+        {
+            if (type is null) return false;
+            // Accept ApiError and ApiError? (Nullable<T> for value types, or annotated reference)
+            if (type is INamedTypeSymbol nullable
+                && nullable.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+                && nullable.TypeArguments.Length == 1)
+            {
+                type = nullable.TypeArguments[0];
+            }
+            return type.ToDisplayString().TrimEnd('?') == "Popcorn.Shared.ApiError";
+        }
+
+        /// <summary>
+        /// Emits the C# open-generic syntax for <c>typeof(...)</c>, walking the containing-type chain so
+        /// nested types render as <c>Outer.Inner&lt;&gt;</c>. Generic outer types are not supported and
+        /// will produce code that does not compile — flagged by diagnostic JSG007.
+        /// </summary>
+        private static string OpenGenericCSharpName(INamedTypeSymbol type)
+        {
+            var parts = new List<string>();
+            var cursor = (INamedTypeSymbol?)type;
+            while (cursor != null)
+            {
+                var name = cursor.Name;
+                if (cursor.Arity == 0)
+                {
+                    parts.Insert(0, name);
+                }
+                else
+                {
+                    var commas = new string(',', cursor.Arity - 1);
+                    parts.Insert(0, $"{name}<{commas}>");
+                }
+                cursor = cursor.ContainingType;
+            }
+
+            var ns = type.ContainingNamespace?.IsGlobalNamespace == true
+                ? null
+                : type.ContainingNamespace?.ToDisplayString();
+            var joined = string.Join(".", parts);
+            return string.IsNullOrEmpty(ns) ? $"global::{joined}" : $"global::{ns}.{joined}";
+        }
+
+        private static bool HasGenericContainingType(INamedTypeSymbol type)
+        {
+            for (var c = type.ContainingType; c != null; c = c.ContainingType)
+            {
+                if (c.Arity > 0) return true;
+            }
+            return false;
+        }
+
+        private static readonly DiagnosticDescriptor EnvelopeMissingPayloadDescriptor = new DiagnosticDescriptor(
+            id: "JSG003",
+            title: "Envelope missing [PopcornPayload]",
+            messageFormat: "Envelope '{0}' is marked with [PopcornEnvelope] but has no [PopcornPayload] property. The exception middleware will fall back to the default ApiResponse shape for this envelope type.",
+            category: "SourceGenerator",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
+        private static readonly DiagnosticDescriptor EnvelopeDuplicateMarkerDescriptor = new DiagnosticDescriptor(
+            id: "JSG004",
+            title: "Envelope has duplicate marker",
+            messageFormat: "Envelope '{0}' has multiple properties marked with [Popcorn{1}]. Only the last one is used.",
+            category: "SourceGenerator",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
+        private static readonly DiagnosticDescriptor EnvelopePayloadTypeDescriptor = new DiagnosticDescriptor(
+            id: "JSG005",
+            title: "Envelope [PopcornPayload] should be Pop<T>",
+            messageFormat: "Property '{0}' on envelope '{1}' is marked with [PopcornPayload] but is typed as '{2}' instead of Pop<T>. Property-reference filtering will not be applied to this payload.",
+            category: "SourceGenerator",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
+        private static readonly DiagnosticDescriptor EnvelopeErrorTypeDescriptor = new DiagnosticDescriptor(
+            id: "JSG006",
+            title: "Envelope [PopcornError] should be ApiError",
+            messageFormat: "Property '{0}' on envelope '{1}' is marked with [PopcornError] but is typed as '{2}' instead of ApiError or ApiError?. The exception middleware may produce a shape that does not round-trip to your envelope type.",
+            category: "SourceGenerator",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
+        private static readonly DiagnosticDescriptor EnvelopeGenericOuterDescriptor = new DiagnosticDescriptor(
+            id: "JSG007",
+            title: "Envelope nested in a generic outer type is not supported",
+            messageFormat: "Envelope '{0}' is nested inside a generic outer type. The generator cannot emit the open-generic typeof expression required to dispatch error envelopes for this shape. Move the envelope to the top level or inside a non-generic container.",
+            category: "SourceGenerator",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
+        private static void ReportEnvelopeDiagnostics(SourceProductionContext spc, INamedTypeSymbol envelope, EnvelopeAnalysis analysis)
+        {
+            var envelopeName = envelope.ToDisplayString();
+            var envelopeLocation = analysis.EnvelopeLocation ?? Location.None;
+
+            if (analysis.PayloadName == null)
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(EnvelopeMissingPayloadDescriptor, envelopeLocation, envelopeName));
+            }
+
+            foreach (var loc in analysis.DuplicateSuccessLocations)
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(EnvelopeDuplicateMarkerDescriptor, loc, envelopeName, "Success"));
+            }
+            foreach (var loc in analysis.DuplicatePayloadLocations)
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(EnvelopeDuplicateMarkerDescriptor, loc, envelopeName, "Payload"));
+            }
+            foreach (var loc in analysis.DuplicateErrorLocations)
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(EnvelopeDuplicateMarkerDescriptor, loc, envelopeName, "Error"));
+            }
+
+            if (analysis.PayloadType != null && !IsPopOfT(analysis.PayloadType))
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    EnvelopePayloadTypeDescriptor,
+                    analysis.PayloadLocation ?? envelopeLocation,
+                    analysis.PayloadName,
+                    envelopeName,
+                    analysis.PayloadType.ToDisplayString()));
+            }
+
+            if (analysis.ErrorType != null && !IsApiError(analysis.ErrorType))
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    EnvelopeErrorTypeDescriptor,
+                    analysis.ErrorLocation ?? envelopeLocation,
+                    analysis.ErrorName,
+                    envelopeName,
+                    analysis.ErrorType.ToDisplayString()));
+            }
+
+            if (HasGenericContainingType(envelope))
+            {
+                spc.ReportDiagnostic(Diagnostic.Create(EnvelopeGenericOuterDescriptor, envelopeLocation, envelopeName));
+            }
         }
 
         private static bool InheritsOrImplements(ITypeSymbol typeSymbol, string baseTypeName)

@@ -22,7 +22,9 @@ Generator at `dotnet/Popcorn.SourceGenerator/ExpanderGenerator.cs`. Discovery vi
 ## Known Gaps vs Legacy Reflection Engine
 See `apiDesign.md` for the v2 API plan and `migrationAnalysis.md` for the feasibility analysis per feature.
 
-Tier-1 (MUST ship before v2.0 merge): sorting, filtering, pagination, authorizers, custom envelope + exception middleware, `[SubPropertyDefault]`.
+**Dropped from v2 scope (will NOT be implemented)**: sorting, filtering, pagination, authorizers. Never used in practice with the legacy engine; complexity not justified. Callers that need these behaviors implement them at the endpoint level.
+
+Tier-1 (MUST ship before v2.0 merge): custom envelope + exception middleware, `[SubPropertyDefault]`.
 
 Tier-2 (SHOULD ship with v2.0): `[Translator]` methods with DI, `IPopcornBlindHandler<TFrom,TTo>`, `[ExpandFrom]`.
 
@@ -37,7 +39,6 @@ Genuine non-starter under AOT: polymorphic unknown-at-build-time types (trimmer 
 - Dictionary complex-value attribute application still imperfect for some nested shapes.
 
 ## Open Questions
-- Feature-parity scope: which legacy features must ship before this spike can merge? (Authorization and pagination are the most commonly requested.)
 - Header-based include (`POPCORN-INCLUDE`) — implement in this spike or defer?
 - Schema/OpenAPI generation for include-aware endpoints — not in this spike.
 - Client libraries (TS/JS) — out of scope for .NET spike, but protocol decisions here constrain them.
@@ -58,10 +59,10 @@ Genuine non-starter under AOT: polymorphic unknown-at-build-time types (trimmer 
 - `1b39e30` Early experimentation with source generation
 
 ## Immediate Next Steps (suggested, not committed)
-1. Fix `PropertyReference.ParseIncludeStatement` nested-structure bug and re-run dictionary complex-value test.
-2. Implement Tier-1 features against the TDD test ledger (tests in `Popcorn.FunctionalTests` marked `Skip=Pending:`).
+1. Land `[SubPropertyDefault]` (Tier-1 remaining).
+2. Fix `PropertyReference.ParseIncludeStatement` nested-structure bug and re-run dictionary complex-value test.
 3. Run the BenchmarkDotNet suite and record a baseline; compare against legacy reflection numbers.
-4. Decide Tier-2 scope for the v2.0 merge bar.
+4. Decide Tier-2 scope for the v2.0 merge bar (`[Translator]` / `IPopcornBlindHandler` / `[ExpandFrom]`).
 5. Consider header-based include decision (`POPCORN-INCLUDE`).
 
 ## Non-Goals for This Spike
