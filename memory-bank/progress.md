@@ -52,8 +52,20 @@ Every in-scope planned feature from `apiDesign.md` has corresponding skipped tes
 - Validates that generated converters pass the AOT analyzer.
 
 ### Benchmarks (`dotnet/benchmarks/`)
-- `SerializationPerformance` — BenchmarkDotNet suite: serialization comparison (stock vs Popcorn), include strategies, scalability (flat + deep), circular-ref overhead, attribute processing. 7 test models with seeded `TestDataGenerator`. `MemoryDiagnoser` enabled. Command-line selector (`comparison` | `includes` | `scalability` | `circular` | `attributes` | `all`).
+- `SerializationPerformance` — BenchmarkDotNet suite: serialization comparison (stock vs Popcorn source-gen vs legacy `PopcornNetStandard`), include strategies, scalability (flat + deep), circular-ref overhead, attribute processing. 7 test models with seeded `TestDataGenerator`. `MemoryDiagnoser` enabled. Command-line selector (`comparison` | `includes` | `scalability` | `circular` | `attributes` | `all`). Legacy 3-way setup lives inside `SerializationComparisonBenchmarks.Setup()` — configures `PopcornFactory` programmatically to mirror the new models' attribute semantics.
 - `ParsingIncludes` — include-string parser micro-benchmarks.
+
+### Generator performance optimizations (three incremental changes)
+Three build-time optimizations landed as a bundled commit (`03ff6a5`) after the 3-way baseline was captured. Each was isolated, tested against the full functional suite, and benchmarked before the next was applied. Walk-through + raw per-step BDN logs in [`benchmarks/results/v2-baseline/opt-iterations/`](../benchmarks/results/v2-baseline/opt-iterations/README.md).
+1. **LINQ `.Any()` / `.FirstOrDefault()` → index-based for-loops** in the emitted converter body. No per-call delegate dispatch or iterator machinery. Biggest time win on complex objects (ComplexModel_PopcornAll −29%).
+2. **Hoist `useAll` / `useDefault` / `naming` setup into list/dict callers** via a new `Pop{X}Inner` overload that accepts pre-computed flags. List converters call `Inner` per item after computing once before the foreach. Single-member callsites (nested properties with differing `propertyReference.Children`) keep using the 4-arg `Pop{X}` wrapper. Eliminates the per-item `Func<string, string>` naming-closure allocation that dominated the list-scenario allocation delta (−10% to −22% across list scenarios).
+3. **Elide `HashSet<object>` allocation for cycle-safe type graphs.** `IsConverterCycleSafe` DFS classifies every converter; cycle-safe converters (SimpleModel, ScalableModel, any list/dict/nullable wrapper of cycle-safe types) pass `null` at entry. Cycle-risky types (ComplexNestedModel with `Child`, CircularReferenceModel, DeepNestingModel) allocate as before. Body ops are null-conditional to compose both cases.
+
+Cumulative effect on the 3-way baseline (DefaultJob, `spike/source-generator` commit `373f387`):
+- Popcorn vs STJ-reflection: `ComplexModelList_PopcornAll` is now **0.87× time / 0.93× alloc** (was 0.97×/1.03× pre-optimization) — Popcorn is *faster* than STJ when emitting everything on nested data.
+- `SimpleModelList_PopcornAll` worst case: 1.40× (was 1.80×); still not STJ-parity but ~5.8× faster than legacy `LegacyAll` on the same shape.
+- `ComplexModelList_PopcornDefault` unchanged (already dominant at 0.10×).
+- All 182 functional tests remain passing; cycle-safety analyzer verified by inspecting generated output (cycle-safe types pass `null`, cycle-risky types still allocate).
 
 ## What's Broken or Incomplete
 
@@ -105,7 +117,7 @@ Never used in practice with the legacy engine. Callers that need these behaviors
 - `PopcornNetStandard` and `PopcornNetStandard.WebApiCore` remain in the tree unchanged — this spike does not delete the legacy engine. Legacy packages on NuGet (`Skyward.Api.Popcorn`) continue shipping from `master`.
 
 ## Migration Thesis (validation status)
-1. **Perf parity or better vs System.Text.Json AND vs legacy reflection engine** — 3-way baseline committed under `benchmarks/results/v2-baseline/`. Popcorn source-gen beats legacy reflection in every scenario (3–8× faster for `All`, ~4.7× faster for `Default` on ComplexModelList). Popcorn-default is ~10× faster / ~5× less alloc than STJ on ComplexModelList; Popcorn-all is at parity (0.97× time, 1.03× alloc) when emitting everything. Legacy-all is 3.4× slower than STJ on the same shape — the v2 migration has no regression scenario. Benchmark project now has a direct `ProjectReference` to `PopcornNetStandard`; 12 `*_Legacy_*` benchmarks run alongside the existing 20 Popcorn/STJ methods. Caveat: host rolled forward to .NET 9.0.15 for this run (was .NET 10 in the prior 2-way); numbers are internally consistent but ~20% slower absolute than the .NET 10 run.
+1. **Perf parity or better vs System.Text.Json AND vs legacy reflection engine** — 3-way baseline committed under `benchmarks/results/v2-baseline/` (post-optimization state). Popcorn source-gen beats legacy reflection in every scenario (3–8× faster for `All`, ~5.8× faster for `Default` on ComplexModelList). Popcorn-default is ~10× faster / ~5× less alloc than STJ on ComplexModelList; Popcorn-all is **faster** than STJ on nested data (0.87× time, 0.93× alloc on ComplexModelList) after the three generator optimizations landed. Legacy-all is 3.6× slower than STJ on the same shape — the v2 migration has no regression scenario. Benchmark project has a direct `ProjectReference` to `PopcornNetStandard`; 12 `*_Legacy_*` benchmarks run alongside the existing 20 Popcorn/STJ methods. Caveat: host rolled forward to .NET 9.0.15 for this run (was .NET 10 in the prior 2-way); numbers are internally consistent but ~20% slower absolute than the .NET 10 run.
 2. **Native AOT works** — `PopcornAotExample` builds with `PublishAot=True`. End-to-end runtime validation: done locally per recent commits, no CI job yet.
 3. **Trimming works** — `PublishTrimmed=True` set alongside AOT. No separate trim-only run documented.
 

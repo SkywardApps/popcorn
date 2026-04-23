@@ -41,6 +41,8 @@ Genuine non-starter under AOT: polymorphic unknown-at-build-time types (trimmer 
 - **Pragma scope in generated converter files is slightly broad.** Each converter emits `#pragma warning disable CS8619, CS8600, CS8601, CS8625` at file scope. CS8619 / CS8625 are load-bearing (NRT-cast through generated code). CS8600 / CS8601 are pulled in defensively to cover element-assignment cases, but could theoretically mask a genuine null bug introduced by a future generator change. Scope is generated-code only; generator-code warnings still fire.
 - **User-defined non-generic subclasses of Dictionary/IDictionary will crash the generator.** `class SettingsDict : Dictionary<string, string> {}` has `TypeArguments.Length == 0`, so `namedDictionaryTypeNonNullable.TypeArguments[1]` in `GenerateJsonConverter`'s dictionary branch will `IndexOutOfRangeException`. Pre-existing latent bug (pre-fix the branch was dead via whitespace-mismatch; post-fix the branch is live but still assumes target-type's own TypeArguments rather than walking the IDictionary interface). No test currently hits it. If we ever touch dict dispatch, walk the interface chain for `IDictionary<K, V>`'s TypeArguments instead.
 - **`IsBlindSerializableType` uses stringly-typed hashset lookups.** Matches the pre-existing convention used by the rest of the generator (`NumberTypes`, `StringTypes`, `BoolTypes`, `IgnoreTypes` all compared via `ToDisplayString().Replace("?", "")`). Fragile to Roslyn display-format changes but consistent with the existing codebase. A future cleanup would replace all such string lookups with `SpecialType` / `ITypeSymbol` identity comparisons; not worth doing piecemeal.
+- **Cycle-safety analyzer is conservative on non-blind unregistered types.** `IsNamedTypeCycleSafe` treats any type NOT in `allTypeNames` as cycle-safe (returns early before DFS). That's correct for blind types (primitives/enums/ignored) but also applies to user types that Popcorn doesn't walk (e.g. an external library type used as a property value without its own `[JsonSerializable]` registration). Those fall through to `JsonSerializer.Serialize` which doesn't touch Popcorn's HashSet, so the classification is safe. If a future change starts recursing through such types (e.g. adding `IPopcornBlindHandler`), the analyzer must be revisited so those paths either participate in the DFS or explicitly force cycle-risky.
+- **Leftover potential for bigger perf wins.** `opt-iterations/README.md` enumerates three remaining levers: pre-encoded `JsonEncodedText` property names (biggest), hashtable-keyed include-match lookup (marginal), and skipping the per-property include scan when `useAll` is set and no negations are present (moderate). Not attempted in this pass.
 
 ## Open Questions
 - Header-based include (`POPCORN-INCLUDE`) — implement in this spike or defer?
@@ -48,19 +50,14 @@ Genuine non-starter under AOT: polymorphic unknown-at-build-time types (trimmer 
 - Client libraries (TS/JS) — out of scope for .NET spike, but protocol decisions here constrain them.
 
 ## Recent Activity (branch commits, most recent first)
+- `373f387` Add raw benchmark logs for each optimization step
+- `03ff6a5` Three generator-level serialization optimizations (LINQ→for, hoist flags, elide HashSet)
+- `9168c4c` Add legacy PopcornNetStandard to 3-way benchmark baseline
+- `6f61238` Commit v2 baseline benchmark — Stj vs Popcorn serialization
+- `c2f99e6` Ship [SubPropertyDefault] — Tier-1 complete
+- `4aa9174` Fix enum + inherited-member bugs; add v2 API plan and TDD suite
 - `f124e3a` Full benchmarks
 - `50e1aa7` Working basic benchmark
-- `8e059de` Undid some regressions
-- `de9d328` 98% success
-- `7cf86db` Nullable and reference types
-- `5ae4bd1` Simple types testing
-- `6dccf38` Test special parameter handling
-- `0325e48` Working initial batch of tests
-- `387ff4d` Add early support for IEnumerable
-- `3ffc9c2` Refined options to accept naming convention; update libraries
-- `857d89f` HttpContext-relative implementation
-- `571545b` Use JsonSerializerAttribute instead of our own
-- `1b39e30` Early experimentation with source generation
 
 ## Immediate Next Steps (suggested, not committed)
 1. Decide Tier-2 scope for the v2.0 merge bar (`[Translator]` / `IPopcornBlindHandler` / `[ExpandFrom]`).

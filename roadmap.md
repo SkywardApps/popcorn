@@ -50,9 +50,9 @@ Last updated: 2026-04-23.
 ## Non-functional / infrastructure
 
 ### Published benchmark report
-- 3-way baseline committed: [`benchmarks/results/v2-baseline/`](benchmarks/results/v2-baseline/README.md). Covers Stj (reflection) vs Stj (source-gen) vs Popcorn (source-gen) vs legacy `PopcornNetStandard` (reflection) across SimpleModel, SimpleModelList[100], ComplexNestedModel, ComplexNestedModelList[25].
-- Headline: Popcorn source-gen is 3–8× faster than the legacy reflection engine in every scenario (more on complex shapes, never less than parity). Popcorn-default on ComplexModelList is ~10× faster / ~5× less alloc than STJ reflection and ~4.7× faster than legacy-default — selective-fetch thesis validated against both axes. Popcorn-all is at parity with STJ (0.97× time) when emitting everything; legacy-all is 3.4× slower than STJ on the same shape.
-- **Merge-gate item**: **closed**. "Perf parity or better" was the load-bearing thesis claim; 3-way report confirms it across every model × include-shape cell.
+- 3-way baseline committed: [`benchmarks/results/v2-baseline/`](benchmarks/results/v2-baseline/README.md). Covers Stj (reflection) vs Stj (source-gen) vs Popcorn (source-gen) vs legacy `PopcornNetStandard` (reflection) across SimpleModel, SimpleModelList[100], ComplexNestedModel, ComplexNestedModelList[25]. Three incremental generator optimizations landed after initial baseline capture — walk-through under [`opt-iterations/`](benchmarks/results/v2-baseline/opt-iterations/README.md).
+- Headline: Popcorn source-gen beats legacy reflection in every scenario (3–8× for `All`, ~5.8× for `Default` on ComplexModelList). Popcorn-default on ComplexModelList is ~10× faster / ~5× less alloc than STJ reflection. Popcorn-all on ComplexModelList is **0.87× time / 0.93× alloc** — Popcorn is *faster* than STJ when emitting everything on nested data; legacy-all is 3.6× slower than STJ on the same shape.
+- **Merge-gate item**: **closed**. "Perf parity or better" was the load-bearing thesis claim; 3-way report confirms it — and the three in-generator optimizations tipped it from parity-to-STJ into *better* than STJ on complex nested lists.
 
 ### CI: publish + run AOT example in a container
 - Add a GitHub Actions job to `.github/workflows/main.yml` that runs `dotnet publish dotnet/PopcornAotExample -c Release -r linux-x64` with `PublishAot=True`, builds a container, runs it, and hits the three existing endpoints (`/todos`, `/null`, `/sub`) plus the `/boom` endpoint (which should return a 500 with the custom envelope shape).
