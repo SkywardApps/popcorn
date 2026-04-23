@@ -90,6 +90,79 @@ namespace Popcorn.SourceGenerator
                 || IgnoreTypes.Contains(name);
         }
 
+        // Unwrap Nullable<T>, arrays, IEnumerable<T>, IDictionary<K,V> → the inner element/value
+        // type that a converter would recurse into. Non-collection named types pass through.
+        private static ITypeSymbol? UnwrapPayloadType(ITypeSymbol? type)
+        {
+            if (type == null) return null;
+            if (type is INamedTypeSymbol named
+                && named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+                && named.TypeArguments.Length == 1)
+            {
+                return UnwrapPayloadType(named.TypeArguments[0]);
+            }
+            if (type is IArrayTypeSymbol array)
+            {
+                return UnwrapPayloadType(array.ElementType);
+            }
+            if (type is INamedTypeSymbol namedDict && InheritsOrImplements(namedDict, IDictionaryTypeName)
+                && namedDict.TypeArguments.Length >= 2)
+            {
+                return UnwrapPayloadType(namedDict.TypeArguments[1]);
+            }
+            if (type is INamedTypeSymbol namedEnum && InheritsOrImplements(namedEnum, IEnumerableTypeName)
+                && namedEnum.TypeArguments.Length >= 1)
+            {
+                return UnwrapPayloadType(namedEnum.TypeArguments[0]);
+            }
+            return type;
+        }
+
+        // True if the payload type's transitive property graph (limited to types Popcorn itself
+        // recurses into — i.e. members of `allTypeNames`) never contains a path back to itself.
+        // A cycle-safe converter can skip the per-call HashSet<object> allocation used for
+        // circular-reference detection.
+        private static bool IsConverterCycleSafe(ITypeSymbol rootType, HashSet<string> allTypeNames)
+        {
+            var payload = UnwrapPayloadType(rootType);
+            if (payload is not INamedTypeSymbol named) return true;
+            if (IsBlindSerializableType(named)) return true;
+            return IsNamedTypeCycleSafe(named, allTypeNames, new HashSet<string>());
+        }
+
+        private static bool IsNamedTypeCycleSafe(INamedTypeSymbol type, HashSet<string> allTypeNames, HashSet<string> onPath)
+        {
+            var typeName = type.ToDisplayString().Replace("?", "");
+            // Types Popcorn doesn't have a Pop<T> body for (primitives, enums, unregistered externals)
+            // don't participate in Popcorn's recursion — the visited HashSet is never consulted for them.
+            if (IsBlindSerializableType(type)) return true;
+            if (!allTypeNames.Contains(typeName)) return true;
+            if (!onPath.Add(typeName)) return false; // reached an ancestor of ourselves → cycle risk
+
+            try
+            {
+                foreach (var prop in GetSerializableProperties(type))
+                {
+                    if (!ShouldSerializeMember(prop)) continue;
+                    var payload = UnwrapPayloadType(prop.Type);
+                    if (payload is INamedTypeSymbol p && !IsNamedTypeCycleSafe(p, allTypeNames, onPath))
+                        return false;
+                }
+                foreach (var field in GetSerializableFields(type))
+                {
+                    if (!ShouldSerializeMember(field)) continue;
+                    var payload = UnwrapPayloadType(field.Type);
+                    if (payload is INamedTypeSymbol f && !IsNamedTypeCycleSafe(f, allTypeNames, onPath))
+                        return false;
+                }
+                return true;
+            }
+            finally
+            {
+                onPath.Remove(typeName);
+            }
+        }
+
         // Emit type arguments for Pop<...> without NRT annotations on reference types. Preserves
         // `Nullable<T>` on value types (a distinct CLR type). Registered converter method
         // signatures and every Pop<...> callsite use this same formatter so they never diverge by
@@ -717,6 +790,17 @@ public static class PopcornJsonOptionsExtension
             var subPropertyDefaultFields = new StringBuilder();
 
             string internalSerializationCode = "";
+            // Only complex-object targets get the split into a flag-computing 4-arg wrapper + an
+            // Inner overload that takes pre-computed useAll/useDefault/naming. Collection, blind,
+            // and nullable-wrapper targets have no flag-dependent body and keep the single 4-arg.
+            bool emitInnerOverload = false;
+
+            // Cycle-safety analysis: if the converter's effective payload type can never reach
+            // itself (directly or through any property graph Popcorn recurses into), the visit-
+            // tracking HashSet is dead weight. Skip the allocation at the entry point and let the
+            // body's null-conditional ops no-op.
+            var isCycleSafe = IsConverterCycleSafe(targetType, allTypeNames);
+            Show($"{targetType.ToDisplayString()}: cycle-safe = {isCycleSafe}", context);
 
             // Bug 4 fix: root-level primitive / ignored / enum registration
             // (e.g. [JsonSerializable(typeof(ApiResponse<int?>))]). Emit a converter that simply
@@ -781,7 +865,8 @@ public static class PopcornJsonOptionsExtension
                 }
                 else
                 {
-                    internalSerializationCode = CreateComplexObjectSerialization(namedTypeNonNullable, context, allTypeNames, subPropertyDefaultFields);
+                    internalSerializationCode = CreateComplexObjectInnerBody(namedTypeNonNullable, context, allTypeNames, subPropertyDefaultFields);
+                    emitInnerOverload = true;
                 }
             }
             else
@@ -844,14 +929,29 @@ public static class PopcornJsonOptionsExtension
         {subPropertyDefaultFields}
         public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options)
         {{
-            Pop{NameType(targetType)}(writer, value, options, new HashSet<object>());
+            Pop{NameType(targetType)}(writer, value, options, {(isCycleSafe ? "null" : "new HashSet<object>()")});
         }}
-        
-        public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options, HashSet<object> visitedObjects)
+
+        {(emitInnerOverload ? $@"
+        public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options, HashSet<object>? visitedObjects)
+        {{
+                {nullCheck}
+                {FlagSetupCode}
+                Pop{NameType(targetType)}Inner(writer, value, options, visitedObjects, naming, useAll, useDefault);
+        }}
+
+        public static void Pop{NameType(targetType)}Inner(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options, HashSet<object>? visitedObjects, Func<string, string> naming, bool useAll, bool useDefault)
         {{
                 {nullCheck}
                 {internalSerializationCode}
         }}
+        " : $@"
+        public static void Pop{NameType(targetType)}(Utf8JsonWriter writer, global::Popcorn.Shared.Pop<{typeName}> value, global::System.Text.Json.JsonSerializerOptions options, HashSet<object>? visitedObjects)
+        {{
+                {nullCheck}
+                {internalSerializationCode}
+        }}
+        ")}
         }}
         {(classSymbol.ContainingNamespace.IsGlobalNamespace ? "" : "}")}
         ";
@@ -863,18 +963,21 @@ public static class PopcornJsonOptionsExtension
             var propertyTypeName = itemType?.ToDisplayString().Replace("?", "");
             if (allTypeNames.Contains(propertyTypeName))
             {
-                // We need to recurse into this type, and treat it as an array of bundles
-                // This is... a wee bit ugly since each item needs to get bundled independently
+                // Hoist useAll/useDefault/naming ONCE before the foreach — they depend only on
+                // value.PropertyReferences + options, which are constant across items. Call the
+                // element type's *Inner overload per item so it reuses these pre-computed values
+                // instead of re-scanning + re-allocating a naming delegate per item.
                 internalSerializationCode = $@"
+                        {FlagSetupCode}
                         writer.WriteStartArray();
                         foreach(var item in value.Data)
                         {{
-                            Pop{NameType(itemType)}(
+                            Pop{NameType(itemType)}Inner(
                                 writer,
                                 new global::Popcorn.Shared.Pop<{TypeNameForPop(itemType!)}> {{
                                     Data = item,
                                     PropertyReferences = value.PropertyReferences
-                                }}, options, visitedObjects);
+                                }}, options, visitedObjects, naming, useAll, useDefault);
                         }}
                         writer.WriteEndArray();
     ";
@@ -903,26 +1006,28 @@ public static class PopcornJsonOptionsExtension
                 // This is... a wee bit ugly since each item needs to get bundled independently
                 internalSerializationCode = $@"
                         // DICTIONARY COMPLEX PATH - Recursive dictionary serialization for {propertyTypeName}
-                        Func<string, string> naming = options.PropertyNamingPolicy != null ? options.PropertyNamingPolicy.ConvertName : (a) => a;
+                        // Hoist useAll/useDefault/naming ONCE before the foreach (constant across kv pairs)
+                        // and call the value type's *Inner overload per value to skip per-item rescan.
+                        {FlagSetupCode}
                         writer.WriteStartObject();
 
                         // value.PropertyReferences is the sibling list the outer converter drilled into
                         // for this dictionary property — i.e. the include list for each dictionary value.
                         // Pass it through verbatim; do NOT descend into firstRef.Children (that would lose
                         // siblings and confuse the parser's Default placeholder for a real child list).
-                        var dictionaryValueReferences = value.PropertyReferences.Any()
+                        var dictionaryValueReferences = value.PropertyReferences.Count > 0
                             ? value.PropertyReferences
                             : global::Popcorn.Shared.PropertyReference.Default;
 
                         foreach(var kv in value.Data)
                         {{
                                 writer.WritePropertyName(naming(kv.Key));
-                                Pop{NameType(valueType)}(
+                                Pop{NameType(valueType)}Inner(
                                     writer,
                                     new global::Popcorn.Shared.Pop<{TypeNameForPop(valueType!)}> {{
                                         Data = kv.Value,
                                         PropertyReferences = dictionaryValueReferences
-                                }}, options, visitedObjects);
+                                }}, options, visitedObjects, naming, useAll, useDefault);
                         }}
                         writer.WriteEndObject();
 ";
@@ -1014,7 +1119,11 @@ public static class PopcornJsonOptionsExtension
             return null;
         }
 
-        private static string CreateComplexObjectSerialization(INamedTypeSymbol targetType, SourceProductionContext context, HashSet<string> allTypeNames, StringBuilder subPropertyDefaultFields)
+        // Body of the *Inner overload: circular guard + property writes, assuming the caller has
+        // already precomputed useAll / useDefault / naming. Callers that iterate a collection of
+        // this type can compute the flags once and invoke the Inner method per item without
+        // redoing the PropertyReferences scan or re-allocating the naming delegate.
+        private static string CreateComplexObjectInnerBody(INamedTypeSymbol targetType, SourceProductionContext context, HashSet<string> allTypeNames, StringBuilder subPropertyDefaultFields)
         {
             var propertySerializationCode = new StringBuilder();
             var parentDiscriminator = NameType(targetType);
@@ -1047,37 +1156,50 @@ public static class PopcornJsonOptionsExtension
 
                 AddMemberSerializationCode(field, field.Type, field.Name, true, propertySerializationCode, context, allTypeNames, hasAlwaysOrDefaultAttribute, parentDiscriminator, subPropertyDefaultFields);
             }
-            
-            var internalSerializationCode = $@"
-                // Circular reference detection
-                if (visitedObjects.Contains(value.Data))
-                {{
-                    writer.WriteStartObject();
-                    writer.WritePropertyName(""$ref"");
-                    writer.WriteStringValue(""circular"");
-                    writer.WriteEndObject();
-                    return;
-                }}
-                visitedObjects.Add(value.Data);
 
-                Func<string, string> naming = options.PropertyNamingPolicy != null ? options.PropertyNamingPolicy.ConvertName : (a) => a;
+            var innerBody = $@"
+                // Circular reference detection. Cycle-safe converter entry points pass null here
+                // (see IsConverterCycleSafe), so the ops are null-conditional.
+                if (visitedObjects != null)
+                {{
+                    if (visitedObjects.Contains(value.Data))
+                    {{
+                        writer.WriteStartObject();
+                        writer.WritePropertyName(""$ref"");
+                        writer.WriteStringValue(""circular"");
+                        writer.WriteEndObject();
+                        return;
+                    }}
+                    visitedObjects.Add(value.Data);
+                }}
+
                 var properties = value.PropertyReferences;
-                var useAll = properties.Any(p => ""!all"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));
-                // Use default includes if either nothing is explicitly called out or if defaults are explicitly requested
-                // or if no properties/fields have Always/Default attributes
-                var useDefault = !properties.Any() || properties.Any(p => ""!default"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));
 
                 writer.WriteStartObject();
-            
+
                 {propertySerializationCode}
 
                 writer.WriteEndObject();
-                
-                // Remove from visited objects after serialization
-                visitedObjects.Remove(value.Data);
+
+                if (visitedObjects != null) visitedObjects.Remove(value.Data);
             ";
-            return internalSerializationCode;
+            return innerBody;
         }
+
+        // Code that precomputes useAll / useDefault / naming from value.PropertyReferences + options.
+        // Shared between the 4-arg Pop{X} wrapper and any caller that wants to hoist the computation
+        // (e.g. a list/dict converter iterating items with a shared PropertyReferences list).
+        private const string FlagSetupCode = @"
+                Func<string, string> naming = options.PropertyNamingPolicy != null ? options.PropertyNamingPolicy.ConvertName : (a) => a;
+                var __flagScanRefs = value.PropertyReferences;
+                bool useAll = false;
+                bool useDefault = __flagScanRefs.Count == 0;
+                for (int __markerIdx = 0; __markerIdx < __flagScanRefs.Count; __markerIdx++)
+                {
+                    var __markerName = __flagScanRefs[__markerIdx].Name.Span;
+                    if (!useAll && ""!all"".AsSpan().Equals(__markerName, StringComparison.Ordinal)) useAll = true;
+                    if (!useDefault && ""!default"".AsSpan().Equals(__markerName, StringComparison.Ordinal)) useDefault = true;
+                }";
 
         private static void AddMemberSerializationCode(
             ISymbol member,
@@ -1250,8 +1372,17 @@ public static class PopcornJsonOptionsExtension
             
             codeBuilder.AppendLine($@"
         {{
-            // Find if this specific member is requested
-            var propertyReference = properties.FirstOrDefault(p => ""{serializedName}"".AsSpan().Equals(p.Name.Span, StringComparison.Ordinal));
+            // Find if this specific member is requested (for-loop instead of LINQ to avoid per-property enumerator allocation)
+            global::Popcorn.Shared.PropertyReference? propertyReference = null;
+            for (int __refIdx = 0; __refIdx < properties.Count; __refIdx++)
+            {{
+                var __refCandidate = properties[__refIdx];
+                if (""{serializedName}"".AsSpan().Equals(__refCandidate.Name.Span, StringComparison.Ordinal))
+                {{
+                    propertyReference = __refCandidate;
+                    break;
+                }}
+            }}
             {serializeGroup}
         }}");
         }

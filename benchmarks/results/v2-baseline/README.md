@@ -1,8 +1,10 @@
 # v2 baseline — serialization performance (3-way)
 
-Captured 2026-04-23 from branch `spike/source-generator` at the head of that branch. Host: Windows 11, .NET 9.0.15 RyuJIT AVX2, .NET SDK 10.0.201, BenchmarkDotNet 0.14.0. Source: `dotnet/benchmarks/SerializationPerformance` ([`SerializationComparisonBenchmarks.cs`](../../../dotnet/benchmarks/SerializationPerformance/Benchmarks/SerializationComparisonBenchmarks.cs)).
+Captured 2026-04-23 from branch `spike/source-generator`. Host: Windows 11, .NET 9.0.15 RyuJIT AVX2, .NET SDK 10.0.201, BenchmarkDotNet 0.14.0. Source: `dotnet/benchmarks/SerializationPerformance` ([`SerializationComparisonBenchmarks.cs`](../../../dotnet/benchmarks/SerializationPerformance/Benchmarks/SerializationComparisonBenchmarks.cs)).
 
 Full numbers + CSV: [`SerializationComparison.md`](SerializationComparison.md) · [`SerializationComparison.csv`](SerializationComparison.csv).
+
+> **Numbers reflect the post-optimization generator.** After the initial 3-way capture, three incremental generator improvements landed (LINQ→for-loops, hoisted flag setup for list/dict iteration, elided HashSet allocation for cycle-safe type graphs). See [`opt-iterations/README.md`](opt-iterations/README.md) for the step-by-step breakdown and raw logs. The numbers below are the final (post-#3) state.
 
 > **Note on runtime drift.** The earlier 2-way baseline (not preserved — superseded by this run) recorded host `.NET 10.0.7`. This 3-way run landed on `.NET 9.0.15` because the benchmark project targets `net8.0` and the local dotnet host rolled forward to the next available shared runtime. Ratios are internally consistent within this run; absolute numbers drift ~15–25% slower than the earlier .NET 10 numbers across every engine. Re-running under a pinned .NET 10 host is a future cleanup if we want to compare ratios across time.
 
@@ -25,10 +27,10 @@ Both `DefaultJob` (out-of-process, more trustworthy) and `Job-HLUJQF` (`InProces
 
 | Scenario | Stj_SrcGen | Popcorn_Default | Popcorn_All | Popcorn_Custom | Legacy_Default | Legacy_All | Legacy_Custom |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| SimpleModel | 0.98× / 1.00× | 1.52× / 2.00× | 2.03× / 2.62× | 1.94× / 2.14× | **5.12× / 5.81×** | **8.64× / 9.59×** | **4.32× / 5.73×** |
-| SimpleModelList (100) | 1.01× / 1.00× | 1.10× / 1.26× | 1.80× / 1.90× | 1.59× / 1.36× | **4.73× / 5.34×** | **8.46× / 9.26×** | **4.99× / 5.25×** |
-| ComplexModel | 1.02× / 1.00× | **0.15× / 0.17×** | 1.59× / 1.28× | 1.41× / 1.23× | 0.47× / 0.54× | **4.67× / 4.65×** | **3.04× / 2.95×** |
-| ComplexModelList (25) | 0.93× / 1.00× | **0.10× / 0.13×** | 0.97× / 1.03× | 0.94× / 0.92× | 0.48× / 0.67× | **3.40× / 4.41×** | **1.84× / 2.59×** |
+| SimpleModel | 0.95× / 1.00× | 1.24× / 1.41× | 1.77× / 2.03× | 1.70× / 1.54× | **5.12× / 5.81×** | **8.60× / 9.59×** | **4.44× / 5.73×** |
+| SimpleModelList (100) | 0.96× / 1.00× | **0.81× / 1.03×** | 1.40× / 1.67× | 1.26× / 1.13× | **4.50× / 5.34×** | **8.08× / 9.26×** | **4.29× / 5.25×** |
+| ComplexModel | 1.02× / 1.00× | **0.15× / 0.17×** | 1.21× / 1.16× | 1.39× / 1.11× | 0.49× / 0.55× | **4.73× / 4.67×** | **2.79× / 2.96×** |
+| ComplexModelList (25) | 1.02× / 1.00× | **0.10× / 0.10×** | **0.87× / 0.93×** | 0.99× / 0.82× | 0.57× / 0.67× | **3.61× / 4.41×** | **2.20× / 2.59×** |
 
 (Time ratio / allocation ratio. Values < 1 mean faster or less allocation than reflection-STJ.)
 
@@ -38,15 +40,15 @@ Both `DefaultJob` (out-of-process, more trustworthy) and `Job-HLUJQF` (`InProces
 
 2. **Legacy's reflection engine pays a heavy allocation tax.** Even best-case `LegacyDefault` on `SimpleModelList[100]` allocates **152KB vs STJ's 28KB** — a 5× bloat from building the intermediate `Dictionary<string, object?>` projection before JSON-serialization. Source-gen skips that step entirely.
 
-3. **Popcorn's selectivity thesis holds, and holds harder against legacy.** `ComplexModelList_PopcornDefault` is 3,884 ns / 6,992 B: ~10× faster than STJ and ~5× faster than legacy-default for the same "mobile client asks for a subset" workload. The "pay less when you ask for less" claim is consistent across both comparison axes.
+3. **Popcorn's selectivity thesis holds, and holds harder against legacy.** `ComplexModelList_PopcornDefault` is 3,150 ns / 5,456 B: **~10× faster than STJ** and **~5.8× faster than legacy-default** for the same "mobile client asks for a subset" workload. The "pay less when you ask for less" claim is consistent across both comparison axes.
 
 4. **STJ source-gen remains a wash vs STJ reflection** at these model sizes (0.98×–1.02× time, identical allocation). Metadata source-gen is about startup + AOT compatibility, not hot-path throughput. Popcorn's gains do not come from the STJ source-gen it sits on top of.
 
-5. **Parity when emitting everything.** `Popcorn_All` on `ComplexModelList` is 0.97× time, 1.03× alloc vs reflection-STJ — indistinguishable. Popcorn adds no meaningful runtime cost when callers ask for everything. Legacy cannot say the same: `LegacyAll` on the same shape is 3.4× slower and 4.4× more alloc.
+5. **Faster than STJ when emitting everything on nested data.** `Popcorn_All` on `ComplexModelList` is **0.87× time / 0.93× alloc** vs reflection-STJ — Popcorn is now *faster* than STJ even in the "pay full tax, emit everything" scenario for complex nested data. Legacy cannot say the same: `LegacyAll` on the same shape is 3.6× slower and 4.4× more alloc. (The pre-optimization run was at 0.97×/1.03× — parity. The three in-generator optimizations tipped it past.)
 
-6. **Flat simple data is where Popcorn pays a tax, but still beats legacy.** `SimpleModelList_PopcornAll` is 1.80×/1.90× vs STJ — the per-property include-reference check overhead on flat scalars. But `SimpleModelList_LegacyAll` is 8.5×/9.3×, so even the "worst case for Popcorn" is 4.7× faster than legacy for the identical workload. The v2 migration has no scenario in which legacy is faster than v2.
+6. **Flat simple data is where Popcorn pays a tax, but still beats legacy.** `SimpleModelList_PopcornAll` is 1.40×/1.67× vs STJ — the per-property include-reference check overhead on flat scalars. But `SimpleModelList_LegacyAll` is 8.1×/9.3×, so even the "worst case for Popcorn" is ~5.8× faster than legacy for the identical workload. The v2 migration has no scenario in which legacy is faster than v2. (Pre-optimization was 1.80× — the hoisted-flags change closed half the gap.)
 
-7. **Single-object scalar overhead is the one real shrink.** `SimpleModel_PopcornAll` is 2.03× time (351 ns vs 173 ns) and 2.62× alloc (776 B vs 296 B). Absolute terms: ~180 ns / ~480 B envelope tax per request. Unlikely to matter outside extreme throughput paths; even so, still 4× faster than legacy's 1,493 ns.
+7. **Single-object scalar overhead is the one real shrink.** `SimpleModel_PopcornAll` is 1.77× time (292 ns vs 165 ns) and 2.03× alloc (600 B vs 296 B). Absolute terms: ~130 ns / ~300 B envelope tax per request. Unlikely to matter outside extreme throughput paths; even so, still ~5× faster than legacy's 1,429 ns. (Pre-optimization: 2.03×/2.62× — elided HashSet knocked ~60 ns and ~180 B off.)
 
 ## Legacy configuration caveats
 
