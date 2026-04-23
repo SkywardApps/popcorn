@@ -537,6 +537,83 @@ public static class PopcornJsonOptionsExtension
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
+        // JSG008: a property (or collection/array/dictionary element of a property) on a registered
+        // type is declared with a static type whose concrete runtime identity cannot be resolved at
+        // build time — `object`, an abstract class, or an interface. The source generator cannot
+        // emit a Pop<T> converter for these shapes under Native AOT or IL trimming, because the
+        // metadata reflection would need to discover unknown derived types has been stripped by the
+        // trimmer. Documented as the one genuine AOT non-starter in migrationAnalysis.md.
+        private static readonly DiagnosticDescriptor PolymorphicUnknownDescriptor = new DiagnosticDescriptor(
+            id: "JSG008",
+            title: "Property type cannot be resolved at build time (AOT non-starter)",
+            messageFormat: "Member '{0}.{1}' is typed as '{2}', whose concrete runtime type cannot be resolved at build time. Popcorn's source generator cannot emit a converter for this shape under Native AOT or IL trimming. Expose the concrete type(s) through a typed property, register derived types via [JsonDerivedType] and a non-polymorphic wrapper, or handle this member outside Popcorn.",
+            category: "SourceGenerator",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
+        // Unwrap arrays / IEnumerable<T> / IDictionary<K,V> (value) / Nullable<T> until we reach a
+        // leaf type. Used by JSG008 to evaluate the eventual payload type seen at the wire, not the
+        // container.
+        private static ITypeSymbol UnwrapMemberType(ITypeSymbol type)
+        {
+            while (true)
+            {
+                if (type is IArrayTypeSymbol arr)
+                {
+                    type = arr.ElementType;
+                    continue;
+                }
+                if (type is INamedTypeSymbol named)
+                {
+                    if (named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+                        && named.TypeArguments.Length == 1)
+                    {
+                        type = named.TypeArguments[0];
+                        continue;
+                    }
+                    if (InheritsOrImplements(named, IDictionaryTypeName)
+                        && named.TypeArguments.Length > 1)
+                    {
+                        type = named.TypeArguments[1];
+                        continue;
+                    }
+                    if (InheritsOrImplements(named, IEnumerableTypeName)
+                        && named.TypeArguments.Length > 0)
+                    {
+                        // Skip string (which implements IEnumerable<char>) — strings are blind-serialized.
+                        if (named.SpecialType == SpecialType.System_String) return type;
+                        type = named.TypeArguments[0];
+                        continue;
+                    }
+                }
+                return type;
+            }
+        }
+
+        // Emits JSG008 if the member's eventual payload type is polymorphically unresolvable
+        // (object, abstract class, interface). Called once per property/field as GetReferencedTypes
+        // walks. Duplicate diagnostics across multiple registrations targeting the same member are
+        // acceptable — the warning is still correct and useful in each context.
+        private static void CheckForUnresolvablePolymorphism(
+            ISymbol member, ITypeSymbol memberType, SourceProductionContext context)
+        {
+            var unwrapped = UnwrapMemberType(memberType);
+            bool problematic =
+                unwrapped.SpecialType == SpecialType.System_Object
+                || (unwrapped.TypeKind == TypeKind.Class && unwrapped.IsAbstract)
+                || unwrapped.TypeKind == TypeKind.Interface;
+
+            if (!problematic) return;
+
+            var location = member.Locations.FirstOrDefault() ?? Location.None;
+            context.ReportDiagnostic(Diagnostic.Create(
+                PolymorphicUnknownDescriptor,
+                location,
+                member.ContainingType?.ToDisplayString() ?? "?",
+                member.Name,
+                memberType.ToDisplayString()));
+        }
+
         private static void ReportEnvelopeDiagnostics(SourceProductionContext spc, INamedTypeSymbol envelope, EnvelopeAnalysis analysis)
         {
             var envelopeName = envelope.ToDisplayString();
@@ -725,11 +802,13 @@ public static class PopcornJsonOptionsExtension
                     // but [Always]/[Default] on a base class must apply to derived types.
                     foreach (var property in GetSerializableProperties(namedType))
                     {
+                        CheckForUnresolvablePolymorphism(property, property.Type, context);
                         typesToVisit.Enqueue(property.Type);
                     }
 
                     foreach (var field in GetSerializableFields(namedType))
                     {
+                        CheckForUnresolvablePolymorphism(field, field.Type, context);
                         typesToVisit.Enqueue(field.Type);
                     }
                 }

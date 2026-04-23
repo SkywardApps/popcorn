@@ -30,6 +30,8 @@
   
 + ### [Performance](Performance.md)
 
++ ### [Migrating from v7 to v8](MigrationV7toV8.md)
+
 + ### [Roadmap](Roadmap.md)
 
 + ### [Releases and Release Notes](Releases.md)

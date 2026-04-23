@@ -4,6 +4,8 @@ Outstanding work on the `spike/source-generator` branch before it is ready to me
 
 Last updated: 2026-04-23.
 
+> **Open regression (must fix before merge).** Seven `CS0103: The name 'Pop{…}Inner' does not exist` errors fire in generated converters for registrations like `ApiResponse<List<int?>>`, `ApiResponse<Dictionary<string, int?>>`, and `ApiResponse<NullStruct?>` when the payload type contains a nested collection/dict/nullable-of-struct. Root cause: the `Pop{X}Inner` split introduced by the Step-2 generator optimization (`03ff6a5`) is only emitted for complex-object targets, but list/dict converters call `Pop{valueType}Inner` unconditionally when the value type is in `allTypeNames`. Activates whenever a registered payload contains `List<List<int>>` / `Dictionary<string, List<int>>` / `Dictionary<string, Dictionary<string, int>>` / `List<Nullable<Struct>>` / `Dictionary<string, Nullable<Struct>>` / `List<Dictionary<string, X>>` / `Dictionary<string, List<X>>`. Reproduces today on `spike/source-generator` via `dotnet build dotnet/Popcorn.sln -c Release`. The claim "182 passing / 13 skipped / 0 failing" in memory-bank/progress.md was accurate before `03ff6a5` and needs to be re-measured after the fix. **Scope**: guard the `Pop{X}Inner` call-emission in `CreateArraySerializer` / `CreateDictionarySerializer` with the same "is the value type a complex-object target" check `emitInnerOverload` uses; fall back to the 4-arg `Pop{X}` wrapper for collection/dict/nullable value types.
+
 ## Status snapshot
 
 - Core protocol (include parsing, attribute semantics, nested expansion, collections, dictionaries, enums, polymorphism-basic, circular refs, full nullability matrix): **working**.
@@ -38,7 +40,7 @@ Last updated: 2026-04-23.
 ### Polymorphism — partial (2 skipped)
 - **Test ledger**: 2 skipped in [`PolymorphismTests.cs`](dotnet/Tests/Popcorn.FunctionalTests/PolymorphismTests.cs).
   - `PolymorphicCollection_EmitsDiscriminator_WhenConfigured`: abstract/interface base + registered derived types via `[JsonDerivedType]`; generator needs to emit per-item type-dispatch.
-  - The "unknown at build time" case is documented as the only genuine AOT non-starter (trimmer strips the metadata). Ship a clear generator diagnostic for that case rather than trying to support it.
+  - "Unknown at build time" case: **JSG008 diagnostic shipped** (`ExpanderGenerator.cs:PolymorphicUnknownDescriptor`). Generator now emits a warning when a member is typed `object`, abstract class, or interface. 5 tests in [`EnvelopeDiagnosticsTests.cs`](dotnet/Tests/Popcorn.SourceGenerator.Tests/EnvelopeDiagnosticsTests.cs) cover the positive and negative cases. Registered-derived support (the `[JsonDerivedType]` dispatch half) remains unimplemented.
 - **Scope**: medium, mostly generator-side. Defer unless a consumer blocks on it.
 
 ## Tier 3 — v2.x or drop
@@ -59,10 +61,37 @@ Last updated: 2026-04-23.
 - **Why**: merge gate item — prevents regressions in the AOT code path between PRs.
 
 ### NuGet packaging story
-- Decide the v2 package IDs. Proposed: `Skyward.Api.Popcorn.SourceGen` + `Skyward.Api.Popcorn.SourceGen.Shared` (or similar). Must be side-by-side-installable with the legacy `Skyward.Api.Popcorn` package during transition.
-- Update `Popcorn.SourceGenerator.csproj` packaging: analyzer + Popcorn.Shared dll in `analyzers/dotnet/cs/`, Popcorn.Shared dll in `lib/netstandard2.0/` (already configured).
-- Tag a preview release (e.g. `2.0.0-preview.1`) and test install from a throwaway consumer project.
+- Decide the v2 (v8 for the public release) package IDs. Proposed: `Skyward.Api.Popcorn.SourceGen` + `Skyward.Api.Popcorn.SourceGen.Shared` (or similar). Must be side-by-side-installable with the legacy `Skyward.Api.Popcorn` v7 package during transition.
+- Update [`Popcorn.SourceGenerator.csproj`](dotnet/Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj) packaging: analyzer + Popcorn.Shared dll in `analyzers/dotnet/cs/`, Popcorn.Shared dll in `lib/netstandard2.0/` (already configured). Missing today: `PackageId`, `Version`, `Authors`, `Description`, `PackageReadmeFile`, `PackageLicenseExpression`, `RepositoryUrl`, SourceLink + `IncludeSymbols` + `SymbolPackageFormat=snupkg`.
+- Extend [`.github/workflows/main.yml`](.github/workflows/main.yml) (today only publishes legacy v7) to also pack+push the v8 generator and runtime packages on tag releases.
+- Tag a preview release (e.g. `8.0.0-preview.1`) and test install from a throwaway consumer project.
 - **Why**: merge gate item — nothing ships without a publishable package.
+
+### Legacy deprecation timeline + v1→v8 migration guide
+- [docs/MigrationV7toV8.md](docs/MigrationV7toV8.md) shipped — covers attribute renames, dropped features (sorting/pagination/filtering/authorizers), DI replacement for `SetContext(dict)`, custom envelope + middleware for `SetInspector(lambda)`, include-parameter wire-name contract, JSG008 documentation, rollback plan.
+- Decide concrete deprecation window for v7 packages: proposed "v7 remains on NuGet for at least one release after v8.0 ships; v7 gets a `<PackageReleaseNotes>` banner pointing at MigrationV7toV8.md."
+- Update `Releases.md` (currently empty of v8 entries) with an `8.0.0-preview.1` entry when it cuts.
+
+### Example projects refresh
+- [`dotnet/Examples/PopcornNet5Example/`](dotnet/Examples/PopcornNet5Example/) still references the v7 reflection engine (`services.UsePopcorn((config) => config.UseDefaultConfiguration())`, `ExpandServiceFilter`) and targets `net5.0`. Either port to v8 (minimal API + `IPopcornAccessor` + `[JsonSerializable]` context) or delete and rely solely on [`dotnet/PopcornAotExample/`](dotnet/PopcornAotExample/) as the canonical example.
+- **Why**: leaving a v7-shaped example next to a v8 release will confuse new adopters.
+
+## Deferred-quality items (low severity, promoted from activeContext.md)
+
+Confirmed against [`ExpanderGenerator.cs`](dotnet/Popcorn.SourceGenerator/ExpanderGenerator.cs) on 2026-04-23.
+
+- **Pragma scope in generated converter files is slightly broad.** `ExpanderGenerator.cs:908` emits `#pragma warning disable CS8619, CS8600, CS8601, CS8625` at file scope. CS8619 / CS8625 are load-bearing (NRT-cast through generated code). CS8600 / CS8601 are pulled in defensively; could theoretically mask a real null bug introduced by a future generator change. Narrow to per-statement where feasible.
+- **User-defined non-generic subclasses of Dictionary/IDictionary will crash the generator.** `class SettingsDict : Dictionary<string, string> {}` has `TypeArguments.Length == 0`; `ExpanderGenerator.cs:847` accesses `namedDictionaryTypeNonNullable.TypeArguments[1]` unguarded → `IndexOutOfRangeException`. No test hits it today. Fix: walk the `IDictionary<K, V>` interface chain for `TypeArguments` rather than reading the target type's own list.
+- **`IsBlindSerializableType` uses stringly-typed hashset lookups.** Matches the pre-existing convention (`NumberTypes`, `StringTypes`, `BoolTypes`, `IgnoreTypes` all compared via `ToDisplayString().Replace("?", "")`). Fragile to Roslyn display-format changes but consistent. Future cleanup: replace all such lookups with `SpecialType` / `ITypeSymbol` identity comparisons.
+- **Cycle-safety analyzer is conservative on non-blind unregistered types.** `IsNamedTypeCycleSafe` (`ExpanderGenerator.cs:133-164`) treats any type NOT in `allTypeNames` as cycle-safe. Correct today — unregistered user types fall through to `JsonSerializer.Serialize` which doesn't touch Popcorn's HashSet. Revisit if a future change starts recursing through such types (e.g. `IPopcornBlindHandler` landing).
+
+## Remaining performance levers (promoted from opt-iterations/README.md)
+
+Three generator-level optimizations considered but not taken in the 2026-04 opt pass. Listed in rough order of expected payoff.
+
+- **Pre-encoded property names via `JsonEncodedText`.** STJ's own source-gen path does this; saves per-property UTF-16→UTF-8 encoding cost. Complicated by runtime `PropertyNamingPolicy` (the encoded form depends on options → forces per-options caching). Biggest remaining lever; would likely close most of the remaining `SimpleModelList_PopcornAll` 1.40× gap vs raw STJ.
+- **Skip the per-property include-match scan when `useAll && !hasNegations`.** Every property unconditionally emits under `!all` with no negations, so the scan is pure overhead. A one-time check at the top of the body could bypass the per-property loop entirely. Moderate payoff on `Popcorn_All` scenarios.
+- **Hashtable-keyed include-list lookup.** Current linear scan is O(n·m) in properties × include-list size. Marginal gain — include lists are typically small.
 
 ## Optional / open questions
 
@@ -94,5 +123,8 @@ Adjust based on what any real consumer blocks on first.
 ## Remaining merge-to-master gates
 
 - [x] Published benchmark report. 3-way (Stj reflection vs Stj source-gen vs Popcorn source-gen vs legacy `PopcornNetStandard`) committed under `benchmarks/results/v2-baseline/`.
+- [ ] **Fix the `Pop{X}Inner` regression** (see the callout at the top of this file). Must land before anything else — blocks a clean solution build.
 - [ ] CI job that publishes the AOT example and runs it in a container.
 - [ ] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared`.
+- [x] v7→v8 migration guide ([docs/MigrationV7toV8.md](docs/MigrationV7toV8.md)).
+- [x] JSG008 diagnostic for polymorphic unknown-at-build-time types.

@@ -183,6 +183,7 @@ The generator enforces: exactly one `[PopcornPayload]` property (otherwise JSG00
 ## Error Surfaces
 - Generator diagnostic `JSG001` — source generation failure (emitted at build time, doesn't fail build catastrophically).
 - Generator diagnostics `JSG003`–`JSG007` — malformed envelope: missing `[PopcornPayload]` (JSG003), duplicate marker (JSG004), non-`Pop<T>` payload (JSG005, warning), non-`ApiError` error slot (JSG006, warning), envelope nested inside a generic outer type (JSG007, warning — no valid open-generic `typeof` syntax possible).
+- Generator diagnostic `JSG008` — member typed as `object`, abstract class, or interface (checked after unwrapping arrays / `IEnumerable<T>` / `IDictionary<K,V>` / `Nullable<T>`). Flags the genuine AOT non-starter; generator continues but warns the consumer that the member won't round-trip under `PublishAot=True`. Emitted by `PolymorphicUnknownDescriptor` + `CheckForUnresolvablePolymorphism` wired into `GetReferencedTypes`.
 - Invalid include strings → `PropertyReference.Default` fallback.
 - Missing `JsonSerializable` attr for a type at runtime → standard `System.Text.Json` "no metadata" error.
 - Unhandled exception in a handler → `UsePopcornExceptionHandler` rewrites the response as a structured envelope (default shape or custom via registry), status 500.

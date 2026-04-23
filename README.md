@@ -177,6 +177,7 @@ to contribute any platform-specific providers you come up with!
 + [Quick Start](docs/QuickStart.md)
 + [Documentation](docs/Documentation.md)
 + [Performance](docs/Performance.md)
++ [Migrating from v7 to v8](docs/MigrationV7toV8.md)
 + [Roadmap](docs/Roadmap.md)
 + [Releases and Release Notes](docs/Releases.md)
 + [Contributing](docs/Contributing.md)
