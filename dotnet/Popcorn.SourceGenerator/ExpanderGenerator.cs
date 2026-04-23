@@ -551,6 +551,28 @@ public static class PopcornJsonOptionsExtension
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
+        // True iff GenerateJsonConverter would set emitInnerOverload=true for this target — i.e.
+        // the target's converter file emits a Pop{X}Inner overload. Only complex-object targets do
+        // (the final `else` branch in GenerateJsonConverter); every other dispatch branch (blind,
+        // Nullable<T>, IDictionary<K,V>, array, IEnumerable<T>) leaves emitInnerOverload=false.
+        // Used by CreateArraySerializer / CreateDictionarySerializer to decide whether the per-item
+        // call can take the fast path (Pop{X}Inner with hoisted naming/useAll/useDefault) or must
+        // fall back to the 4-arg Pop{X} wrapper. Failing to fall back produces CS0103 at consumer
+        // build time on nested-collection shapes — the regression fixed here.
+        private static bool TargetEmitsInner(ITypeSymbol? type)
+        {
+            if (type == null) return false;
+            if (IsBlindSerializableType(type)) return false;
+            if (type is IArrayTypeSymbol) return false;
+            if (type is INamedTypeSymbol named)
+            {
+                if (named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T) return false;
+                if (InheritsOrImplements(named, IDictionaryTypeName)) return false;
+                if (InheritsOrImplements(named, IEnumerableTypeName)) return false;
+            }
+            return true;
+        }
+
         // Unwrap arrays / IEnumerable<T> / IDictionary<K,V> (value) / Nullable<T> until we reach a
         // leaf type. Used by JSG008 to evaluate the eventual payload type seen at the wire, not the
         // container.
@@ -1042,11 +1064,14 @@ public static class PopcornJsonOptionsExtension
             var propertyTypeName = itemType?.ToDisplayString().Replace("?", "");
             if (allTypeNames.Contains(propertyTypeName))
             {
-                // Hoist useAll/useDefault/naming ONCE before the foreach — they depend only on
-                // value.PropertyReferences + options, which are constant across items. Call the
-                // element type's *Inner overload per item so it reuses these pre-computed values
-                // instead of re-scanning + re-allocating a naming delegate per item.
-                internalSerializationCode = $@"
+                if (TargetEmitsInner(itemType))
+                {
+                    // Fast path: the item type's converter emits a Pop{X}Inner overload. Hoist
+                    // useAll/useDefault/naming ONCE before the foreach — they depend only on
+                    // value.PropertyReferences + options, which are constant across items — and call
+                    // the element type's Inner overload per item to skip the per-call rescan +
+                    // naming-delegate allocation.
+                    internalSerializationCode = $@"
                         {FlagSetupCode}
                         writer.WriteStartArray();
                         foreach(var item in value.Data)
@@ -1060,6 +1085,29 @@ public static class PopcornJsonOptionsExtension
                         }}
                         writer.WriteEndArray();
     ";
+                }
+                else
+                {
+                    // Fallback: item type is a collection / dict / Nullable<T> wrapper — its
+                    // converter file does not emit an Inner overload. Call the 4-arg wrapper per
+                    // item. The wrapper will compute useAll/useDefault/naming itself; we pay the
+                    // re-compute cost per item, but for these nested-collection shapes that's the
+                    // only correct option. Pre-`03ff6a5` every list/dict took this path — so the
+                    // perf floor here matches the prior shipped baseline for these shapes only.
+                    internalSerializationCode = $@"
+                        writer.WriteStartArray();
+                        foreach(var item in value.Data)
+                        {{
+                            Pop{NameType(itemType)}(
+                                writer,
+                                new global::Popcorn.Shared.Pop<{TypeNameForPop(itemType!)}> {{
+                                    Data = item,
+                                    PropertyReferences = value.PropertyReferences
+                                }}, options, visitedObjects);
+                        }}
+                        writer.WriteEndArray();
+    ";
+                }
             }
             else
             {
@@ -1081,12 +1129,30 @@ public static class PopcornJsonOptionsExtension
             
             if (allTypeNames.Contains(propertyTypeName))
             {
+                // Dictionaries always need `naming` (for kv.Key), so FlagSetupCode stays in.
+                // Only the value-side call flips between Inner (fast) and the 4-arg wrapper (safe).
+                var valueCall = TargetEmitsInner(valueType)
+                    ? $@"Pop{NameType(valueType)}Inner(
+                                    writer,
+                                    new global::Popcorn.Shared.Pop<{TypeNameForPop(valueType!)}> {{
+                                        Data = kv.Value,
+                                        PropertyReferences = dictionaryValueReferences
+                                }}, options, visitedObjects, naming, useAll, useDefault);"
+                    : $@"Pop{NameType(valueType)}(
+                                    writer,
+                                    new global::Popcorn.Shared.Pop<{TypeNameForPop(valueType!)}> {{
+                                        Data = kv.Value,
+                                        PropertyReferences = dictionaryValueReferences
+                                }}, options, visitedObjects);";
+
                 // We need to recurse into this type, and treat it as an array of bundles
                 // This is... a wee bit ugly since each item needs to get bundled independently
                 internalSerializationCode = $@"
                         // DICTIONARY COMPLEX PATH - Recursive dictionary serialization for {propertyTypeName}
-                        // Hoist useAll/useDefault/naming ONCE before the foreach (constant across kv pairs)
-                        // and call the value type's *Inner overload per value to skip per-item rescan.
+                        // Hoist useAll/useDefault/naming ONCE before the foreach (constant across kv pairs).
+                        // If the value type emits an Inner overload, call it per-value to skip the rescan;
+                        // otherwise fall through to the 4-arg wrapper (correct but slower — the only option
+                        // for nested collections / dicts / Nullable<T> wrappers).
                         {FlagSetupCode}
                         writer.WriteStartObject();
 
@@ -1101,12 +1167,7 @@ public static class PopcornJsonOptionsExtension
                         foreach(var kv in value.Data)
                         {{
                                 writer.WritePropertyName(naming(kv.Key));
-                                Pop{NameType(valueType)}Inner(
-                                    writer,
-                                    new global::Popcorn.Shared.Pop<{TypeNameForPop(valueType!)}> {{
-                                        Data = kv.Value,
-                                        PropertyReferences = dictionaryValueReferences
-                                }}, options, visitedObjects, naming, useAll, useDefault);
+                                {valueCall}
                         }}
                         writer.WriteEndObject();
 ";

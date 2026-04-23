@@ -4,7 +4,7 @@ Outstanding work on the `spike/source-generator` branch before it is ready to me
 
 Last updated: 2026-04-23.
 
-> **Open regression (must fix before merge).** Seven `CS0103: The name 'Pop{…}Inner' does not exist` errors fire in generated converters for registrations like `ApiResponse<List<int?>>`, `ApiResponse<Dictionary<string, int?>>`, and `ApiResponse<NullStruct?>` when the payload type contains a nested collection/dict/nullable-of-struct. Root cause: the `Pop{X}Inner` split introduced by the Step-2 generator optimization (`03ff6a5`) is only emitted for complex-object targets, but list/dict converters call `Pop{valueType}Inner` unconditionally when the value type is in `allTypeNames`. Activates whenever a registered payload contains `List<List<int>>` / `Dictionary<string, List<int>>` / `Dictionary<string, Dictionary<string, int>>` / `List<Nullable<Struct>>` / `Dictionary<string, Nullable<Struct>>` / `List<Dictionary<string, X>>` / `Dictionary<string, List<X>>`. Reproduces today on `spike/source-generator` via `dotnet build dotnet/Popcorn.sln -c Release`. The claim "182 passing / 13 skipped / 0 failing" in memory-bank/progress.md was accurate before `03ff6a5` and needs to be re-measured after the fix. **Scope**: guard the `Pop{X}Inner` call-emission in `CreateArraySerializer` / `CreateDictionarySerializer` with the same "is the value type a complex-object target" check `emitInnerOverload` uses; fall back to the 4-arg `Pop{X}` wrapper for collection/dict/nullable value types.
+> **Closed.** The `Pop{X}Inner` regression on nested-collection registrations (7 CS0103 errors in the generator output) was fixed by adding a `TargetEmitsInner(ITypeSymbol)` helper and gating the per-item `Inner` calls in `CreateArraySerializer` + `CreateDictionarySerializer`. When the item/value type is itself a collection / dict / `Nullable<T>` wrapper, the generator now falls back to the 4-arg `Pop{X}` wrapper (the pre-`03ff6a5` path). Solution builds clean; FunctionalTests back to 182 passing / 13 skipped / 0 failing; SourceGenerator.Tests at 19 passing.
 
 ## Status snapshot
 
@@ -123,7 +123,7 @@ Adjust based on what any real consumer blocks on first.
 ## Remaining merge-to-master gates
 
 - [x] Published benchmark report. 3-way (Stj reflection vs Stj source-gen vs Popcorn source-gen vs legacy `PopcornNetStandard`) committed under `benchmarks/results/v2-baseline/`.
-- [ ] **Fix the `Pop{X}Inner` regression** (see the callout at the top of this file). Must land before anything else — blocks a clean solution build.
+- [x] Fix the `Pop{X}Inner` regression on nested-collection registrations.
 - [ ] CI job that publishes the AOT example and runs it in a container.
 - [ ] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared`.
 - [x] v7→v8 migration guide ([docs/MigrationV7toV8.md](docs/MigrationV7toV8.md)).

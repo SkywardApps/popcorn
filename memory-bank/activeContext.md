@@ -35,8 +35,7 @@ Already supported by construction: lazy loading, blind expansion of user-declare
 Genuine non-starter under AOT: polymorphic unknown-at-build-time types (trimmer removes the metadata). Document the requirement, emit a generator diagnostic.
 
 ## Known Issues
-- **Open: `Pop{X}Inner` regression on nested-collection registrations.** Seven CS0103 errors fire in generated converters for `ApiResponse<List<int?>>` / `ApiResponse<Dictionary<string, int?>>` / `ApiResponse<NullStruct?>` and any payload containing a nested collection-of-collection / dict-of-collection / list-of-nullable-struct. The step-2 generator optimization (commit `03ff6a5`) only emits `Pop{X}Inner` for complex-object targets, but list/dict converters call it unconditionally when the value type is in `allTypeNames`. Reproduces today on `spike/source-generator` via `dotnet build dotnet/Popcorn.sln -c Release`. Tracked in [roadmap.md](../roadmap.md) as the top merge-gate item. The claim below ("182 passing / 13 skipped") was accurate before `03ff6a5` and must be re-measured after the fix.
-- Recent fixes: (1) dictionary complex-value include passthrough (value.PropertyReferences now passed verbatim to dictionary value types). (2) Four-bug nullability cleanup — NRT-annotation normalization at every `Pop<T>` callsite, primitive-at-root no longer cross-contaminates `allTypeNames`, `IDictionary<K,V>` / `ReadOnlyDictionary<K,V>` target-type dispatch works (was failing due to whitespace mismatch in a constant), `RegisterConverters.g.cs` has `#nullable enable`. Generated-code warning count dropped from 64 CS86xx to 0.
+- *No open parser / dictionary / nullability bugs.* Recent fixes: (1) dictionary complex-value include passthrough (value.PropertyReferences now passed verbatim to dictionary value types). (2) Four-bug nullability cleanup — NRT-annotation normalization at every `Pop<T>` callsite, primitive-at-root no longer cross-contaminates `allTypeNames`, `IDictionary<K,V>` / `ReadOnlyDictionary<K,V>` target-type dispatch works (was failing due to whitespace mismatch in a constant), `RegisterConverters.g.cs` has `#nullable enable`. Generated-code warning count dropped from 64 CS86xx to 0. (3) `Pop{X}Inner` regression fix — `TargetEmitsInner(ITypeSymbol)` helper gates the fast per-item call in `CreateArraySerializer` / `CreateDictionarySerializer`; nested-collection / nested-dict / list-of-`Nullable<T>` shapes fall back to the 4-arg `Pop{X}` wrapper. Solution builds clean; FunctionalTests at 182 / 13 / 0.
 
 ## Deferred quality items (promoted to [roadmap.md](../roadmap.md) → "Deferred-quality items" section)
 
@@ -54,6 +53,8 @@ These five items are tracked in the roadmap now; kept here as a back-reference f
 - Client libraries (TS/JS) — out of scope for .NET spike, but protocol decisions here constrain them.
 
 ## Recent Activity (branch commits, most recent first)
+- `a1c6078` Add JSG008 diagnostic + v7→v8 migration guide; promote deferred items to roadmap
+- `8d6017a` Add user-facing Performance page + README summary
 - `373f387` Add raw benchmark logs for each optimization step
 - `03ff6a5` Three generator-level serialization optimizations (LINQ→for, hoist flags, elide HashSet)
 - `9168c4c` Add legacy PopcornNetStandard to 3-way benchmark baseline
