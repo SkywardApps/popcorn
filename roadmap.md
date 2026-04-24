@@ -54,10 +54,10 @@ If a real consumer presents a concrete case that none of the replacement pattern
 - **CI workflow.** [`.github/workflows/main.yml`](.github/workflows/main.yml) extended to pack+push both v8 packages alongside the legacy v7 pack steps on tag releases. `fetch-depth: 0` added so SourceLink can resolve commit hashes.
 - **Verified locally.** `dotnet pack` produces `Skyward.Api.Popcorn.SourceGen.Shared.8.0.0-preview.1.nupkg` (16 KB, `lib/netstandard2.0/Popcorn.Shared.dll` + deps) and `Skyward.Api.Popcorn.SourceGen.8.0.0-preview.1.nupkg` (38 KB, `analyzers/dotnet/cs/` containing both dlls, no `lib/`, no transitive deps). Snupkg generated for Shared.
 - **Remaining to tag:**
-  - [ ] Test install from a throwaway consumer project (add `PackageReference`, build, confirm analyzer runs, confirm runtime types resolve).
-  - [ ] Tag `8.0.0-preview.1`, push tag, CI pushes to NuGet.
-  - [ ] Update [`docs/Releases.md`](docs/Releases.md) with the preview entry.
-- **Merge-gate item: code-complete.** The remaining work is operational (tag + push + verify) rather than engineering.
+  - [x] Test install from a throwaway consumer project. Smoke-tested on 2026-04-23 using a `net9.0` classlib with `<PackageReference>` to both packages from a local feed: packages restored, analyzer ran, generated `SmokeConsumerCarJsonConverter.g.cs` + `SystemCollectionsGenericListSmokeConsumerCarJsonConverter.g.cs` + `RegisterConverters.g.cs`, STJ source generator picked up the emitted `Pop<Car>` / `Pop<List<Car>>` types (visible in `SmokeJsonContext.PopCar.g.cs` / `SmokeJsonContext.PopListCar.g.cs`), build clean (0 errors, only informational JSG002 logs).
+  - [x] Update [`docs/Releases.md`](docs/Releases.md) with the preview entry.
+  - [ ] Tag `8.0.0-preview.1`, push tag, CI pushes to NuGet. **(Operational — user decision to ship.)**
+- **Merge-gate item: code-complete.** Everything up to the actual `git tag` + push is done.
 
 ### Legacy deprecation timeline + v1→v8 migration guide
 - [docs/MigrationV7toV8.md](docs/MigrationV7toV8.md) shipped — covers attribute renames, dropped features (sorting/pagination/filtering/authorizers), DI replacement for `SetContext(dict)`, custom envelope + middleware for `SetInspector(lambda)`, include-parameter wire-name contract, JSG008 documentation, rollback plan.

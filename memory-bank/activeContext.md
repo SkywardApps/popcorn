@@ -53,6 +53,8 @@ These five items are tracked in the roadmap now; kept here as a back-reference f
 - Client libraries (TS/JS) — out of scope for .NET spike, but protocol decisions here constrain them.
 
 ## Recent Activity (branch commits, most recent first)
+- `6c437cb` Wire v8 NuGet packaging: two-package design (`Skyward.Api.Popcorn.SourceGen` + `.Shared`), SourceLink, snupkg for Shared, CI step for both packages; smoke-tested locally
+- `be55b65` Clear remaining Tier-2 scope: drop `[Translator]` with DI and `IPopcornBlindHandler`; migration guide §5/§8 document endpoint-side resolution + standard `JsonConverter<T>` patterns
 - `efb05b9` Drop `[ExpandFrom]` from v2 scope; delete `ExpandFromTests.cs`; migration guide §7 now recommends `[Never]` / hand factory / Mapster
 - `a1c6078` Add JSG008 diagnostic + v7→v8 migration guide; promote deferred items to roadmap
 - `8d6017a` Add user-facing Performance page + README summary
