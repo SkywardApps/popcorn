@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Multi-target so BDN can spawn host processes for each runtime via the CsProj toolchain.
+         Order matters: `dotnet run` without `-f` picks the first TFM as the host. -->
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- AOT-safe: no dynamic reflection, no legacy PopcornNetStandard reference. AOT is
+         enabled here in the csproj (not via `-p:` on the CLI) so the flag stays scoped to
+         this project and does NOT flow to our netstandard2.0 ProjectReferences (which would
+         fail with NETSDK1207). Has no effect on `dotnet run` — PublishAot only activates
+         during `dotnet publish`. Same pattern as PopcornAotExample.csproj. -->
+    <PublishAot>true</PublishAot>
+
+    <RootNamespace>MatrixPerformance</RootNamespace>
+
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Same pattern as PopcornAotExample: OutputItemType="Analyzer" suppresses
+         PublishAot propagation to these netstandard2.0 projects (which can't AOT-
+         compile themselves per NETSDK1207), while ReferenceOutputAssembly="true" on
+         Popcorn.Shared keeps its DLL linked at compile time. -->
+    <ProjectReference Include="..\..\Popcorn.Shared\Popcorn.Shared.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="true" />
+    <ProjectReference Include="..\..\Popcorn.SourceGenerator\Popcorn.SourceGenerator.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- BDN uses reflection to discover [Benchmark]-tagged methods and to instantiate its
+         InProcessNoEmitRunner.Runnable. Without pinning each assembly as a trim root, the
+         trimmer strips them and BDN fails with "type not found" at runtime. -->
+    <TrimmerRootAssembly Include="MatrixPerformance" />
+    <TrimmerRootAssembly Include="Popcorn.Shared" />
+    <TrimmerRootAssembly Include="BenchmarkDotNet" />
+  </ItemGroup>
+
+  <!-- Share the test models with SerializationPerformance without copying them. The linked
+       files end up in the MatrixPerformance.Models namespace (matches SerializationPerformance.Models
+       because that's the declared namespace in the source file). -->
+  <ItemGroup>
+    <Compile Include="..\SerializationPerformance\Models\BenchmarkModels.cs"
+             Link="Shared\BenchmarkModels.cs" />
+    <Compile Include="..\SerializationPerformance\Models\TestDataGenerator.cs"
+             Link="Shared\TestDataGenerator.cs" />
+  </ItemGroup>
+
+</Project>

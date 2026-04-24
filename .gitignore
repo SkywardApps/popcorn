@@ -300,3 +300,6 @@ Gemfile*
 
 # Exclude Source Generated output
 Generated/
+
+# Matrix benchmark results are machine-specific — kept local, shared via PR pastes.
+/benchmarks/matrix/results/
