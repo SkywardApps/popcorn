@@ -47,12 +47,17 @@ If a real consumer presents a concrete case that none of the replacement pattern
 - Add a GitHub Actions job to `.github/workflows/main.yml` that runs `dotnet publish dotnet/PopcornAotExample -c Release -r linux-x64` with `PublishAot=True`, builds a container, runs it, and hits the three existing endpoints (`/todos`, `/null`, `/sub`) plus the `/boom` endpoint (which should return a 500 with the custom envelope shape).
 - **Why**: merge gate item — prevents regressions in the AOT code path between PRs.
 
-### NuGet packaging story
-- Decide the v2 (v8 for the public release) package IDs. Proposed: `Skyward.Api.Popcorn.SourceGen` + `Skyward.Api.Popcorn.SourceGen.Shared` (or similar). Must be side-by-side-installable with the legacy `Skyward.Api.Popcorn` v7 package during transition.
-- Update [`Popcorn.SourceGenerator.csproj`](dotnet/Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj) packaging: analyzer + Popcorn.Shared dll in `analyzers/dotnet/cs/`, Popcorn.Shared dll in `lib/netstandard2.0/` (already configured). Missing today: `PackageId`, `Version`, `Authors`, `Description`, `PackageReadmeFile`, `PackageLicenseExpression`, `RepositoryUrl`, SourceLink + `IncludeSymbols` + `SymbolPackageFormat=snupkg`.
-- Extend [`.github/workflows/main.yml`](.github/workflows/main.yml) (today only publishes legacy v7) to also pack+push the v8 generator and runtime packages on tag releases.
-- Tag a preview release (e.g. `8.0.0-preview.1`) and test install from a throwaway consumer project.
-- **Why**: merge gate item — nothing ships without a publishable package.
+### NuGet packaging story — **ready to tag 8.0.0-preview.1**
+- **Two-package design.** `Skyward.Api.Popcorn.SourceGen.Shared` (runtime attributes, envelopes, middleware — from [`Popcorn.Shared.csproj`](dotnet/Popcorn.Shared/Popcorn.Shared.csproj)) and `Skyward.Api.Popcorn.SourceGen` (analyzer-only, from [`Popcorn.SourceGenerator.csproj`](dotnet/Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj)). Side-by-side-installable with legacy `Skyward.Api.Popcorn` v7 because the IDs diverge.
+- **Metadata shipped.** Both csproj files carry `PackageId`, `Version=8.0.0-preview.1`, `Authors`, `Description`, `PackageTags`, `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseFile=LICENSE`, `PackageReadmeFile=README.md`, `Copyright`. Both reference `Microsoft.SourceLink.GitHub` with `PublishRepositoryUrl=true` and `EmbedUntrackedSources=true`. `SourceGen` is marked `DevelopmentDependency=true` + `SuppressDependenciesWhenPacking=true` so it flows analyzer-only and declares no runtime dependencies. `SourceGen.Shared` has `IncludeSymbols=true` + `SymbolPackageFormat=snupkg`.
+- **Analyzer packaging.** `SourceGen` embeds `Popcorn.Shared.dll` into `analyzers/dotnet/cs/` (required for Roslyn to resolve attribute symbols during generation). The separate `SourceGen.Shared` package provides the runtime-visible copy under `lib/netstandard2.0/`. Consumers install both; they serve different layers.
+- **CI workflow.** [`.github/workflows/main.yml`](.github/workflows/main.yml) extended to pack+push both v8 packages alongside the legacy v7 pack steps on tag releases. `fetch-depth: 0` added so SourceLink can resolve commit hashes.
+- **Verified locally.** `dotnet pack` produces `Skyward.Api.Popcorn.SourceGen.Shared.8.0.0-preview.1.nupkg` (16 KB, `lib/netstandard2.0/Popcorn.Shared.dll` + deps) and `Skyward.Api.Popcorn.SourceGen.8.0.0-preview.1.nupkg` (38 KB, `analyzers/dotnet/cs/` containing both dlls, no `lib/`, no transitive deps). Snupkg generated for Shared.
+- **Remaining to tag:**
+  - [ ] Test install from a throwaway consumer project (add `PackageReference`, build, confirm analyzer runs, confirm runtime types resolve).
+  - [ ] Tag `8.0.0-preview.1`, push tag, CI pushes to NuGet.
+  - [ ] Update [`docs/Releases.md`](docs/Releases.md) with the preview entry.
+- **Merge-gate item: code-complete.** The remaining work is operational (tag + push + verify) rather than engineering.
 
 ### Legacy deprecation timeline + v1→v8 migration guide
 - [docs/MigrationV7toV8.md](docs/MigrationV7toV8.md) shipped — covers attribute renames, dropped features (sorting/pagination/filtering/authorizers), DI replacement for `SetContext(dict)`, custom envelope + middleware for `SetInspector(lambda)`, include-parameter wire-name contract, JSG008 documentation, rollback plan.
@@ -111,6 +116,6 @@ Adjust based on what any real consumer blocks on first.
 - [x] Published benchmark report. 3-way (Stj reflection vs Stj source-gen vs Popcorn source-gen vs legacy `PopcornNetStandard`) committed under `benchmarks/results/v2-baseline/`.
 - [x] Fix the `Pop{X}Inner` regression on nested-collection registrations.
 - [ ] CI job that publishes the AOT example and runs it in a container.
-- [ ] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared`.
+- [x] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared` — two-package design `Skyward.Api.Popcorn.SourceGen` + `Skyward.Api.Popcorn.SourceGen.Shared`, 8.0.0-preview.1, verified locally. Operational tag+push remains.
 - [x] v7→v8 migration guide ([docs/MigrationV7toV8.md](docs/MigrationV7toV8.md)).
 - [x] JSG008 diagnostic for polymorphic unknown-at-build-time types.

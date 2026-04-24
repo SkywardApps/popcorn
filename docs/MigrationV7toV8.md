@@ -12,10 +12,12 @@ This guide walks the breaks you will hit, what to change, and what has been drop
 If a feature you rely on is in the **"Dropped from v8"** section, you will need to handle it
 yourself at the endpoint level — v8 will not ship a replacement.
 
-> **Packages**: v8 ships as new package IDs (finalizing — see the
-> [Roadmap](Roadmap.md)). The legacy `Skyward.Api.Popcorn` / `Skyward.Api.Popcorn.DotNetCore`
-> packages (v7) will continue to ship from `master` for at least one release after v8 cuts, so
-> you can install side-by-side during migration.
+> **Packages**: v8 ships as two new package IDs —
+> `Skyward.Api.Popcorn.SourceGen` (the Roslyn analyzer) and
+> `Skyward.Api.Popcorn.SourceGen.Shared` (the runtime library). Install both. The legacy
+> `Skyward.Api.Popcorn` / `Skyward.Api.Popcorn.DotNetCore` v7 packages continue to ship from
+> `master` for at least one release after v8 cuts, so you can install side-by-side during
+> migration. First preview: `8.0.0-preview.1`.
 
 ## At a glance
 
@@ -53,10 +55,13 @@ using Skyward.Popcorn.Expanders;
 ### v8
 
 ```xml
-<!-- Final package IDs are being finalized; see roadmap.md for the current plan. -->
-<PackageReference Include="Popcorn.Shared" Version="8.*" />
-<PackageReference Include="Popcorn.SourceGenerator" Version="8.*" PrivateAssets="all" />
+<PackageReference Include="Skyward.Api.Popcorn.SourceGen.Shared" Version="8.0.0-preview.1" />
+<PackageReference Include="Skyward.Api.Popcorn.SourceGen" Version="8.0.0-preview.1" PrivateAssets="all" />
 ```
+
+The `SourceGen` package is marked `developmentDependency` — it only contributes the Roslyn
+analyzer, never any runtime DLLs. The `SourceGen.Shared` package is the normal runtime
+library that carries attributes, envelopes, and middleware.
 
 ```csharp
 using Popcorn;         // attributes live here
