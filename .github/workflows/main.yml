@@ -1,51 +1,39 @@
 name: Build and Publish Package
 
 on:
-  # run it on push to the default repository branch
   push:
     tags:
       - /^release/
 
 jobs:
-  # define job to build and publish
   build-and-push-package:
-    name: Build Docker image and push to repositories
+    name: Pack and push v8 packages to NuGet
 
-    # run only when code is compiling and tests are passing
     runs-on: ubuntu-latest
 
-    # steps to perform in job
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # SourceLink needs full history to resolve commit hashes
+          fetch-depth: 0  # SourceLink needs full history to resolve commit hashes.
 
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v4.0.0
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8
 
-      # Legacy v7 packages (Skyward.Api.Popcorn + Skyward.Api.Popcorn.DotNetCore)
-      - name: Build Core
-        run: cd dotnet && dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard/PopcornNetStandard.csproj
-      - name: Package Core
-        run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard/PopcornNetStandard.csproj
-
-      - name: Build WebApi
-        run: cd dotnet && dotnet build --ignore-failed-sources -c ${PublishConfiguration:-Release}  PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
-      - name: Package WebApi
-        run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --include-source --include-symbols  -p:SymbolPackageFormat=snupkg  --output ../publish PopcornNetStandard.WebApiCore/PopcornNetStandard.WebApiCore.csproj
-
-      # v8 packages (Skyward.Api.Popcorn.SourceGen + Skyward.Api.Popcorn.SourceGen.Shared)
-      # SourceGen.Shared first — the SourceGen project's pack step transitively builds Shared as a ProjectReference.
+      # v8 only. The legacy v7 packages (Skyward.Api.Popcorn +
+      # Skyward.Api.Popcorn.DotNetCore) are no longer published from this repo — the
+      # last v7 release was shipped from master and will remain on NuGet for install
+      # compatibility, but new work happens only on v8 (Skyward.Api.Popcorn.SourceGen +
+      # Skyward.Api.Popcorn.SourceGen.Shared).
       - name: Package SourceGen.Shared
         run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --output ../publish Popcorn.Shared/Popcorn.Shared.csproj
 
       - name: Package SourceGen
         run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --output ../publish Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj
 
-      # Publish (both v7 legacy + v8 preview packages; `|| :` tolerates version-conflict re-runs)
+      # `|| :` tolerates version-conflict re-runs (same tag, re-pushed).
       - name: Publish Packages
         env:
           SKYWARDNUGETAPIKEY: ${{ secrets.SKYWARDNUGETAPIKEY }}
