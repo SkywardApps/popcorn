@@ -4,32 +4,25 @@ Outstanding work on the `spike/source-generator` branch before it is ready to me
 
 Last updated: 2026-04-23.
 
-> **Scope update (2026-04-23).** `[ExpandFrom]` dropped from Tier-2. The v7 `MapEntityFramework` pattern intercepted serialization; `[ExpandFrom]` as specced only emitted a `From(TSource)` factory, so it wasn't clean parity anyway. The three real use cases have cleaner answers: `[Never]` on the source, a hand-written factory, or `Mapster.SourceGenerator` for complex mapping. See [docs/MigrationV7toV8.md §7](docs/MigrationV7toV8.md) for the recommendation and rationale.
+> **Scope update (2026-04-23).** All three Tier-2 features — `[ExpandFrom]`, `[Translator]` with DI, `IPopcornBlindHandler<TFrom,TTo>` — cleared from scope after use-case analysis showed each had a cleaner answer using patterns already native to ASP.NET Core + System.Text.Json. Each drop is documented with a recommended replacement in [docs/MigrationV7toV8.md](docs/MigrationV7toV8.md) (§5, §7, §8). v2.0 is now feature-complete; the two remaining merge-gate items are both infrastructure (AOT CI + NuGet packaging).
 
 ## Status snapshot
 
 - Core protocol (include parsing, attribute semantics, nested expansion, collections, dictionaries, enums, polymorphism-basic, circular refs, full nullability matrix): **working**.
 - Tier-1 feature set — custom envelope + `UsePopcornExceptionHandler` + `[SubPropertyDefault]`: **shipped**.
-- Test suite: 182 passing / 9 skipped / 0 failing in `Popcorn.FunctionalTests`. 19 passing in `Popcorn.SourceGenerator.Tests`. Zero CS86xx warnings in generated code.
+- Test suite: 182 passing / 2 skipped / 0 failing in `Popcorn.FunctionalTests` (2 remaining skips are the polymorphism dispatch feature — see Tier 2 section below). 19 passing in `Popcorn.SourceGenerator.Tests`. Zero CS86xx warnings in generated code.
 - AOT/trim smoke: `PopcornAotExample` builds with `PublishAot=True` and exercises a custom `[PopcornEnvelope]` shape.
 - Legacy reflection engine (`PopcornNetStandard*`): still in the tree, unchanged. Planned removal after v2 ships side-by-side for a release or two.
 
-## Tier 2 — should ship with v2.0 or soon after
+## Tier 2 — **scope-cleared 2026-04-23.**
 
-### `[Translator]` methods with DI
-- **Why**: Computed properties already work (3 passing tests in `TranslatorTests.cs`). The remaining gap is translator methods that need injected services — e.g. `[Translator(nameof(Owner))] public static EmployeeRef? ResolveOwner(Car src, IEmployeeLookup lookup)`.
-- **Test ledger**: 3 skipped in [`TranslatorTests.cs`](dotnet/Tests/Popcorn.FunctionalTests/TranslatorTests.cs).
-- **Generator work**: inspect method signature (first param = source type, rest = DI services); emit a call with `IServiceProvider.GetRequiredService<T>()` in the generated converter's Write path. Emit a diagnostic for invalid signatures.
-- **Runtime work**: none — DI resolution is emitted inline.
-- **Dependencies**: the converter must have access to `IServiceProvider`. `JsonSerializerOptions` doesn't carry one today; we may need to thread it through via `PopcornAccessor` (already scoped-per-request) and have the converter fetch it via an ambient context or via a generator-emitted wrapper.
-- **Scope**: medium. 3–5 days including partial-method variant.
+All three planned Tier-2 features were considered and dropped after use-case analysis. The consistent finding: what v7 shipped as dedicated framework surface is, in v8, better served by patterns already native to ASP.NET Core + System.Text.Json. Each drop is documented in the migration guide with the recommended replacement:
 
-### `IPopcornBlindHandler<TFrom, TTo>`
-- **Why**: external types like `NetTopologySuite.Geometry` that we can't decorate. The user registers a DI-resolved handler; generator sees `TFrom` during its type walk and emits a conversion call if a handler exists.
-- **Test ledger**: 4 skipped in [`BlindHandlerTests.cs`](dotnet/Tests/Popcorn.FunctionalTests/BlindHandlerTests.cs).
-- **Generator work**: register known handler pairs at build time (via a generator-recognized DI marker or a static registration convention); in the type walk, when `TFrom` is encountered and a handler pair is registered, emit a DI resolve + `Convert()` call instead of a recursive converter.
-- **Runtime work**: `IPopcornBlindHandler<TFrom, TTo>` interface in `Popcorn.Shared`; a `services.AddPopcornBlindHandler<TFrom, TTo>(func)` DI extension.
-- **Scope**: medium. Similar complexity to `[Translator]`.
+- `[ExpandFrom]` — use `[Never]` on internal source properties, a 3-line hand-written factory, or `Mapster.SourceGenerator` for complex mapping. See [MigrationV7toV8.md §7](docs/MigrationV7toV8.md).
+- `[Translator]` with DI — resolve at the endpoint (batchable, clear I/O boundaries, testable); computed properties still work for pure transforms. Serializing with injected services is an antipattern (N+1 queries, hidden I/O, scope threading complexity). See [MigrationV7toV8.md §5](docs/MigrationV7toV8.md).
+- `IPopcornBlindHandler<TFrom,TTo>` — standard `JsonConverter<T>` registered on `JsonSerializerOptions.Converters` covers the full use case and composes with Popcorn transparently. See [MigrationV7toV8.md §8](docs/MigrationV7toV8.md).
+
+If a real consumer presents a concrete case that none of the replacement patterns cover, the specs live on in the git history and can be revived — but spec-driven shipping of features nobody has asked for is the shape of complexity we are deliberately shedding.
 
 ### Polymorphism — partial (2 skipped)
 - **Test ledger**: 2 skipped in [`PolymorphismTests.cs`](dotnet/Tests/Popcorn.FunctionalTests/PolymorphismTests.cs).
@@ -105,9 +98,9 @@ Three generator-level optimizations considered but not taken in the 2026-04 opt 
 
 A defensible order that minimizes dependency chains and maximizes incremental merge-readiness:
 
-1. **Publish a benchmark baseline.** Uses the current generator; doesn't depend on any Tier-2 feature. Makes the perf claim verifiable. **(Done)**
-2. **Ship `[Translator]` with DI, then `IPopcornBlindHandler<TFrom,TTo>`.** These share the "generator emits DI resolution" infrastructure; doing them together reduces duplication.
-3. **AOT CI job + NuGet preview.** Once the feature set is stable.
+1. **Publish a benchmark baseline.** **(Done.)**
+2. **Tier-2 scope cleanup.** **(Done — all three features dropped; see section above.)**
+3. **AOT CI job + NuGet packaging.** Final two merge gates before v2.0 can ship.
 4. **Polymorphism dispatch** (if a consumer requests it; otherwise defer to v2.1).
 5. **Header-based include** (opportunistic; ship whenever convenient).
 

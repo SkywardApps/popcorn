@@ -17,8 +17,8 @@
 - `AddPopcorn()` DI registration, `HttpContextExtensions.Respond<T>`.
 
 ### Functional test suite (`dotnet/Tests/Popcorn.FunctionalTests`)
-- xUnit, 21 test files (after deprecation cleanup + review-fix coverage + `ExpandFromTests.cs` deletion).
-- **191 tests total**: 182 passing, 0 failing, 9 skipped (TDD-pending Tier-2 features). Sorting/Pagination/Filtering/Authorizer test files were deleted as part of the v2 scope decision; their 30 skipped tests are gone. Custom envelope + exception middleware shipped: 5 more tests flipped from skipped to passing. Review-driven fixes added `EnvelopeFixesTests.cs` with 9 new passing tests. Dictionary complex-value passthrough bug fixed + 4 new tests. Nullability coverage model (`NullabilityCoverageModel` + `NullabilityCoverageTests.cs`) added: 26 tests spanning every (type-kind × position × container-nullability × element-nullability) cell, all passing after the four-bug nullability fix landed. `[SubPropertyDefault]` shipped (Tier-1 complete): 4 more tests flipped from skipped to passing.
+- xUnit, 20 test files (after deprecation cleanup + `ExpandFromTests.cs` + `BlindHandlerTests.cs` deletion; 3 skipped `TranslatorTests` cases removed).
+- **184 tests total**: 182 passing, 0 failing, 2 skipped (polymorphism-dispatch Tier-2 only — the `[JsonDerivedType]` half of `PolymorphismTests`). Sorting/Pagination/Filtering/Authorizer test files were deleted as part of the v2 scope decision; their 30 skipped tests are gone. Custom envelope + exception middleware shipped: 5 more tests flipped from skipped to passing. Review-driven fixes added `EnvelopeFixesTests.cs` with 9 new passing tests. Dictionary complex-value passthrough bug fixed + 4 new tests. Nullability coverage model (`NullabilityCoverageModel` + `NullabilityCoverageTests.cs`) added: 26 tests spanning every (type-kind × position × container-nullability × element-nullability) cell, all passing after the four-bug nullability fix landed. `[SubPropertyDefault]` shipped (Tier-1 complete): 4 more tests flipped from skipped to passing.
 - Covers attribute semantics, include-parameter variations, primitives, value types, basic + advanced collections, dictionaries, nesting, conflicting attributes, default-behavior rules, enums, `JsonPropertyName`, inheritance, generics, include-parser edge cases, error handling, middleware integration, computed-property translators, custom envelope shape + exception wrapping.
 - Single `TestJsonContext` drives the generator over 30+ `ApiResponse<Model>` and `MyTestEnvelope<Model>` declarations.
 - Generated sources visible at `$(BaseIntermediateOutputPath)Generated` for debugging.
@@ -36,15 +36,17 @@
 ### Established Contract: `?include=` uses wire names only
 The include list is part of the API contract — it uses the wire name (from `[JsonPropertyName]` if present, otherwise the C# name). The C# name is an implementation detail the client has no visibility into. A client sees `{"display_name":...}` in responses and must request `?include=[display_name]`; `?include=[DisplayName]` is treated as an unknown name and the property is not emitted. This matches how the generator currently behaves and is the correct design. Tests in `JsonPropertyNameTests.cs` assert this contract explicitly (both positive: `IncludeMatchesWireName`, and negative: `IncludeByCSharpName_DoesNotMatch`).
 
-### TDD-pending test ledger (9 skipped)
-Every in-scope planned feature from `apiDesign.md` has corresponding skipped tests. When implementation lands, remove the `Skip=` attribute and the test becomes active. Files:
+### TDD-pending test ledger (2 skipped)
+Files:
 - `CustomEnvelopeTests.cs` — **0 skipped, 4 passing** (Tier-1 SHIPPED).
 - `ErrorHandlingTests.cs` — **0 skipped, 6 passing** (includes new `SerializationException_ProducesErrorEnvelope`).
 - `SubPropertyDefaultTests.cs` — **0 skipped, 4 passing** (Tier-1 SHIPPED).
-- `TranslatorTests.cs` (3 skipped, 3 passing for computed properties), `BlindHandlerTests.cs` (4) — Tier-2.
-- `PolymorphismTests.cs` (2 skipped). `IncludeParserEdgeTests.cs` previously had 1 skipped for an alleged parser bug — un-skipped after the dictionary-value bug was traced to the generator instead.
+- `TranslatorTests.cs` — **0 skipped, 3 passing** (computed properties). The 3 DI-needing skips were removed 2026-04-23; see `docs/MigrationV7toV8.md` §5 for the endpoint-side resolution pattern.
+- `PolymorphismTests.cs` (2 skipped — `[JsonDerivedType]` dispatch; Tier-2 feature still in scope if a consumer asks).
 
-**Deleted test files (v2 scope decision):** `SortingTests.cs`, `PaginationTests.cs`, `FilteringTests.cs`, `AuthorizerTests.cs`, `ExpandFromTests.cs`. Corresponding model files (`SortingModel.cs`, `AuthorizationModel.cs`) deleted. See `migrationAnalysis.md` for the scope rationale. `ExpandFromTests.cs` was dropped 2026-04-23 when `[ExpandFrom]` was cut from v2 — the replacement recommendation lives in `docs/MigrationV7toV8.md` §7.
+**Deleted test files (v2 scope decisions):**
+- 2025 v2 scope cut: `SortingTests.cs`, `PaginationTests.cs`, `FilteringTests.cs`, `AuthorizerTests.cs` + corresponding model files (`SortingModel.cs`, `AuthorizationModel.cs`).
+- 2026-04-23 Tier-2 scope clear: `ExpandFromTests.cs`, `BlindHandlerTests.cs`. See `migrationAnalysis.md` "Scope Decision" and `docs/MigrationV7toV8.md` §5/§7/§8 for the replacement patterns.
 
 ### AOT smoke test (`PopcornAotExample`)
 - `WebApplication.CreateSlimBuilder`, `PublishAot=True`, `PublishTrimmed=True`, Dockerfile.
@@ -81,7 +83,8 @@ Cumulative effect on the 3-way baseline (DefaultJob, `spike/source-generator` co
 Never used in practice with the legacy engine. Callers that need these behaviors implement them at the endpoint level with standard ASP.NET tools. See `migrationAnalysis.md` > "Scope Decision" for full rationale.
 
 ### Not yet ported (still in scope)
-- `[Translator]` methods with DI, `IPopcornBlindHandler<TFrom,TTo>` (Tier-2). `[ExpandFrom]` was dropped 2026-04-23 — replacement patterns documented in `docs/MigrationV7toV8.md` §7.
+- Polymorphism dispatch via `[JsonDerivedType]` — 2 skipped tests in `PolymorphismTests.cs`. Defer unless a consumer blocks on it.
+- All three former Tier-2 feature items (`[ExpandFrom]`, `[Translator]` with DI, `IPopcornBlindHandler<TFrom,TTo>`) were cleared from scope on 2026-04-23; replacement patterns for each live in `docs/MigrationV7toV8.md` §5/§7/§8.
 
 ### Shipped: `[SubPropertyDefault]` (Tier-1 complete)
 - `SubPropertyDefaultAttribute` in `Popcorn.Shared/PopAttribute.cs` — `[AttributeUsage(Property | Field)]`, constructor takes the include string.

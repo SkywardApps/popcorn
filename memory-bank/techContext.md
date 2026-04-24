@@ -28,7 +28,7 @@ dotnet/
 │   │   │                        #   DefaultBehavior, IncludeParameterVariation, BasicSerialization,
 │   │   │                        #   Enum, JsonPropertyName, Polymorphism, Generic, IncludeParserEdge,
 │   │   │                        #   ErrorHandling, Translator, SubPropertyDefault, CustomEnvelope,
-│   │   │                        #   EnvelopeFixes, BlindHandler
+│   │   │                        #   EnvelopeFixes
 │   │   ├── Models/              # 20+ test model classes incl. EnvelopeModel (MyTestEnvelope, DerivedEnvelope, NestedEnvelopeContainer)
 │   │   ├── TestJsonContext.cs   # JsonSerializerContext with [JsonSerializable] attrs for every test model
 │   │   └── TestPlan.md

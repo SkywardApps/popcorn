@@ -25,7 +25,7 @@
 
 ## Attribute Surface (on methods — translators)
 
-### Option A: computed property (preferred; already works)
+### Computed property (the one v8 pattern for pure transforms)
 ```csharp
 public partial record Employee(string First, string Last)
 {
@@ -33,46 +33,17 @@ public partial record Employee(string First, string Last)
 }
 ```
 
-### Option B: `[Translator]` method with DI
-```csharp
-public partial class Car
-{
-    public EmployeeRef? Owner { get; init; } // populated by generator-emitted call
-
-    [Translator(nameof(Owner))]
-    public static EmployeeRef? ResolveOwner(Car source, IEmployeeLookup lookup)
-        => lookup.Find(source.Id);
-}
-```
-Generator inspects the method signature: first param is the source type (matched by position), remaining params come from DI via `IServiceProvider.GetRequiredService`. Emits a call from the `Write` path with DI resolution.
-
-### Option C: partial method
-```csharp
-public partial record Car
-{
-    public string DisplayName { get; init; } = "";
-    static partial string ComputeDisplayName(Car c);
-}
-```
-Generator wires `DisplayName = ComputeDisplayName(this)` into the write path. User implements `ComputeDisplayName` in a partial file.
+**Dropped 2026-04-23: `[Translator]` method with DI.** The DI-during-serialization pattern fires N+1 queries on collections, moves I/O into the response-writing path, and requires threading `IServiceProvider` into `JsonSerializerOptions` which STJ doesn't natively support. The v8 answer is endpoint-side resolution: compute where the data lives, then serialize. See `docs/MigrationV7toV8.md` §5.
 
 ## DI Surface (on the service container)
 
 ```csharp
 services.AddHttpContextAccessor();
-services.AddPopcorn(o => o.EnvelopeType = typeof(MyEnvelope<>));   // existing + envelope option
-services.AddPopcornBlindHandler<Geometry, string>(                  // NEW — external type → simpler form
-    (g, svc) => svc.GetRequiredService<IWktWriter>().Write(g));
+services.AddPopcorn(o => o.EnvelopeType = typeof(MyEnvelope<>));
+services.AddPopcornEnvelopes();
 ```
 
-### IPopcornBlindHandler<TFrom, TTo>
-```csharp
-public interface IPopcornBlindHandler<TFrom, TTo>
-{
-    TTo Convert(TFrom source);
-}
-```
-For externally-defined types (e.g. NetTopologySuite `Geometry`) where you can't annotate the type but want a custom projection. User still declares `[JsonSerializable(typeof(ApiResponse<ThingWithGeometry>))]`; generator sees `Geometry` in the walk and emits `writer.WriteValue(handler.Convert(g))` if a handler is registered. If no handler, falls back to System.Text.Json default for the type.
+**Dropped 2026-04-23: `IPopcornBlindHandler<TFrom,TTo>`.** Standard `System.Text.Json` `JsonConverter<T>` registered on `JsonSerializerOptions.Converters` covers the full external-type case and composes with Popcorn transparently (Popcorn's generator falls through to `JsonSerializer.Serialize` for unknown types, STJ picks up the user's registered converter). See `docs/MigrationV7toV8.md` §8.
 
 ## Query Parameter Surface
 
@@ -141,7 +112,7 @@ Replaces the legacy `SetInspector((data, ctx, exception) => wrapper)` pattern. E
 | Include parsing | ✅ | ✅ | Same `PropertyReference` parser in `Popcorn.Shared` |
 | `[IncludeByDefault]` / `[IncludeAlways]` | ✅ | ✅ (renamed `[Default]` / `[Always]`) | Existing |
 | Blind expansion (own types) | ✅ | ✅ | Automatic — generator walks reachable types |
-| Blind expansion (external types) | ✅ runtime reflection | ✅ via `IPopcornBlindHandler<TFrom,TTo>` | Registered DI handler |
+| Blind expansion (external types) | ✅ runtime reflection | ❌ **Dropped from V2 scope** | Use a standard `JsonConverter<T>` on `JsonSerializerOptions.Converters` (see `docs/MigrationV7toV8.md` §8) |
 | Blind expansion (runtime-unknown polymorphic) | ✅ | ❌ non-starter under AOT | Live with the break |
 | `[InternalOnly]` | ✅ | ✅ (as `[Never]`) | Existing |
 | `[SubPropertyIncludeByDefault]` | ✅ | ✅ (as `[SubPropertyDefault]`, shipped) | New attribute, existing parser, pre-parsed-once static field |
@@ -150,7 +121,8 @@ Replaces the legacy `SetInspector((data, ctx, exception) => wrapper)` pattern. E
 | Pagination | ✅ | ❌ **Dropped from V2 scope** | Never used in practice; complexity not justified |
 | Filtering | ✅ | ❌ **Dropped from V2 scope** | Never used in practice; complexity not justified |
 | Authorizers | ✅ lambda config | ❌ **Dropped from V2 scope** | Never used in practice; complexity not justified |
-| Translators / advanced projections | ✅ lambda config | ✅ via `[Translator]` method + DI | Attribute-tagged static method |
+| Translators (pure transforms) | ✅ lambda config | ✅ C# computed properties | Works today; `TranslatorTests` has 3 passing |
+| Translators (DI-needing) | ✅ lambda config | ❌ **Dropped from V2 scope** | Resolve at endpoint or via standard `JsonConverter<T>` (see `docs/MigrationV7toV8.md` §5) |
 | Factories | ✅ lambda config | ⏸ moot until deserialization | Write path doesn't instantiate |
 | Contexts (dictionary) | ✅ | ❌ superseded by DI | Drop the dictionary concept entirely |
 | Inspectors | ✅ lambda config | ✅ via envelope type + middleware | Split: type for shape, middleware for exceptions |

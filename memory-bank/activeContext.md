@@ -26,7 +26,7 @@ See `apiDesign.md` for the v2 API plan and `migrationAnalysis.md` for the feasib
 
 Tier-1 (MUST ship before v2.0 merge): custom envelope + exception middleware (shipped), `[SubPropertyDefault]` (shipped). **Tier-1 complete.**
 
-Tier-2 (SHOULD ship with v2.0): `[Translator]` methods with DI, `IPopcornBlindHandler<TFrom,TTo>`. `[ExpandFrom]` was dropped 2026-04-23 — see `docs/MigrationV7toV8.md` §7 for the replacement patterns (`[Never]` on source / hand-written factory / Mapster).
+Tier-2: **all cleared from scope 2026-04-23.** `[ExpandFrom]`, `[Translator]` with DI, and `IPopcornBlindHandler<TFrom,TTo>` each have cleaner answers using patterns native to ASP.NET Core + System.Text.Json. Documented replacements live in `docs/MigrationV7toV8.md` §5 (endpoint-side resolution for DI-needing translators), §7 (`[Never]` / hand factory / Mapster for projections), §8 (standard `JsonConverter<T>` for external types).
 
 Tier-3 (defer/drop): factories (moot until deserialization), deserialization (out of scope), legacy `Dictionary<string,object>` context (dropped — superseded by DI).
 
@@ -35,7 +35,7 @@ Already supported by construction: lazy loading, blind expansion of user-declare
 Genuine non-starter under AOT: polymorphic unknown-at-build-time types (trimmer removes the metadata). Document the requirement, emit a generator diagnostic.
 
 ## Known Issues
-- *No open parser / dictionary / nullability bugs.* Recent fixes: (1) dictionary complex-value include passthrough (value.PropertyReferences now passed verbatim to dictionary value types). (2) Four-bug nullability cleanup — NRT-annotation normalization at every `Pop<T>` callsite, primitive-at-root no longer cross-contaminates `allTypeNames`, `IDictionary<K,V>` / `ReadOnlyDictionary<K,V>` target-type dispatch works (was failing due to whitespace mismatch in a constant), `RegisterConverters.g.cs` has `#nullable enable`. Generated-code warning count dropped from 64 CS86xx to 0. (3) `Pop{X}Inner` regression fix — `TargetEmitsInner(ITypeSymbol)` helper gates the fast per-item call in `CreateArraySerializer` / `CreateDictionarySerializer`; nested-collection / nested-dict / list-of-`Nullable<T>` shapes fall back to the 4-arg `Pop{X}` wrapper. Solution builds clean; FunctionalTests at 182 / 9 / 0 (down from 13 skipped after `[ExpandFrom]` was dropped from v2 scope and its 4 skipped tests were deleted).
+- *No open parser / dictionary / nullability bugs.* Recent fixes: (1) dictionary complex-value include passthrough (value.PropertyReferences now passed verbatim to dictionary value types). (2) Four-bug nullability cleanup — NRT-annotation normalization at every `Pop<T>` callsite, primitive-at-root no longer cross-contaminates `allTypeNames`, `IDictionary<K,V>` / `ReadOnlyDictionary<K,V>` target-type dispatch works (was failing due to whitespace mismatch in a constant), `RegisterConverters.g.cs` has `#nullable enable`. Generated-code warning count dropped from 64 CS86xx to 0. (3) `Pop{X}Inner` regression fix — `TargetEmitsInner(ITypeSymbol)` helper gates the fast per-item call in `CreateArraySerializer` / `CreateDictionarySerializer`; nested-collection / nested-dict / list-of-`Nullable<T>` shapes fall back to the 4-arg `Pop{X}` wrapper. Solution builds clean; FunctionalTests at 182 / 2 / 0 (all Tier-2 feature skips cleared along with the features; the 2 remaining are polymorphism-dispatch tests).
 
 ## Deferred quality items (promoted to [roadmap.md](../roadmap.md) → "Deferred-quality items" section)
 
@@ -66,7 +66,7 @@ These five items are tracked in the roadmap now; kept here as a back-reference f
 - `50e1aa7` Working basic benchmark
 
 ## Immediate Next Steps (suggested, not committed)
-1. Decide Tier-2 scope for the v2.0 merge bar (`[Translator]` / `IPopcornBlindHandler`).
+1. ~~Decide Tier-2 scope for the v2.0 merge bar.~~ **Done 2026-04-23: all dropped.**
 2. CI job for AOT example + NuGet packaging story.
 3. Consider header-based include decision (`POPCORN-INCLUDE`).
 

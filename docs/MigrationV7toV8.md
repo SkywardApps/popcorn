@@ -28,9 +28,9 @@ yourself at the endpoint level — v8 will not ship a replacement.
 | Always-emit | `[IncludeAlways]` | `[Always]` |
 | Never-emit | `[InternalOnly]` | `[Never]` |
 | Sub-default includes | `[SubPropertyIncludeByDefault]` | `[SubPropertyDefault("[Make,Model]")]` |
-| Computed field | `.Translate<Car>(c => c.First + " " + c.Last)` lambda | C# computed property (preferred) or `[Translator]` method with DI *(not yet shipped — see [Roadmap](Roadmap.md))* |
+| Computed field | `.Translate<Car>(c => c.First + " " + c.Last)` lambda | C# computed property. DI-needing translators resolved at the endpoint layer — see §5 |
 | Projection class | `MapEntityFramework<TSource, TProjection, TContext>` | **Dropped.** Decorate source with `[Never]`, hand-write a factory, or use `Mapster.SourceGenerator` (see §7) |
-| External-type conversion | `BlindHandler` via runtime reflection | `IPopcornBlindHandler<TFrom, TTo>` DI service *(not yet shipped)* |
+| External-type conversion | `BlindHandler` via runtime reflection | Standard `JsonConverter<T>` registered on `JsonSerializerOptions.Converters` — see §8 |
 | Ambient data | `.SetContext(Dictionary<string, object>)` | Standard ASP.NET Core DI — translator methods receive services as parameters |
 | Exception wrapping | `.SetInspector((data, ctx, exc) => wrapper)` | `UsePopcornExceptionHandler()` middleware + `[PopcornEnvelope]` marker attributes |
 | Authorization | `.Authorize<T>((src, ctx, val) => …)` | **Dropped.** Use ASP.NET Core authorization middleware and endpoint-level checks |
@@ -166,9 +166,9 @@ They have no visibility into C# identifier casing.
 config.Translate<Employee>(e => e.FullName, e => $"{e.First} {e.Last}");
 ```
 
-### v8
+### v8 — **one pattern: compute where the data lives.**
 
-**Preferred — regular C# computed property.** Works today, zero framework:
+**Pure transforms — regular C# computed property.** Zero framework:
 
 ```csharp
 public partial record Employee(string First, string Last)
@@ -177,22 +177,35 @@ public partial record Employee(string First, string Last)
 }
 ```
 
-**Planned (not yet shipped) — `[Translator]` method with DI.** For cases where the computation
-needs an injected service. Track via the [Roadmap](Roadmap.md):
+**DI-needing computation — resolve at the endpoint.** v8 does not ship a `[Translator]`
+attribute. The DI-during-serialization pattern (`translator method takes source + injected
+service, serializer invokes it per property`) has three problems: it fires N+1 queries when
+serializing a collection, it moves I/O into the response-writing path, and it ties the
+converter to an ambient `IServiceProvider` that `JsonSerializerOptions` doesn't natively
+carry. The clean pattern is:
 
 ```csharp
-public partial class Car
+app.MapGet("/cars", (IPopcornAccessor access, IEmployeeLookup lookup, ICarRepo cars) =>
 {
-    public EmployeeRef? Owner { get; init; }
-
-    [Translator(nameof(Owner))]
-    public static EmployeeRef? ResolveOwner(Car source, IEmployeeLookup lookup)
-        => lookup.Find(source.Id);
-}
+    var owners = lookup.FindMany(cars.OwnerIds);              // batchable
+    var view = cars.GetAll().Select(c => new Car
+    {
+        Id = c.Id, Make = c.Make,
+        Owner = owners.GetValueOrDefault(c.OwnerId),
+    });
+    return access.CreateResponse(view);
+});
 ```
 
-If you rely on translators-with-services today, stay on v7 until the `[Translator]` ship item
-closes, or hand-roll the translation at the endpoint.
+Batch-friendly, clear I/O boundaries, trivially testable. Equivalent to v7's
+`Translate<Employee>(…)` for every case where the lambda closed over a service (which in v7
+was awkward to do anyway — the lambda closed over startup-time state, not request-scoped
+services).
+
+For the rare case where serialization-time resolution is genuinely desired (e.g. per-request
+locale-aware formatting), write a standard `JsonConverter<T>` that pulls from
+`IHttpContextAccessor.HttpContext.RequestServices`. Popcorn composes with standard STJ
+converters.
 
 ## 6. Custom response envelope + error handling
 
@@ -309,18 +322,45 @@ converter for it.
 The v7 reflection expander handled externally-defined types (e.g. `NetTopologySuite.Geometry`)
 by walking them at runtime.
 
-### v8 — **not yet shipped** ([Roadmap Tier 2](Roadmap.md))
+### v8 — **use a standard `JsonConverter<T>`.**
 
-Planned: `IPopcornBlindHandler<TFrom, TTo>` DI service. Generator sees `TFrom` during the type
-walk and, if a handler is registered, emits a conversion call.
+v8 does not ship `IPopcornBlindHandler<TFrom, TTo>`. The standard `System.Text.Json` converter
+surface already covers this cleanly and works under AOT:
 
 ```csharp
-services.AddPopcornBlindHandler<Geometry, string>(
-    (g, svc) => svc.GetRequiredService<IWktWriter>().Write(g));
+public class GeometryConverter : JsonConverter<Geometry>
+{
+    public override void Write(Utf8JsonWriter writer, Geometry value, JsonSerializerOptions options)
+        => writer.WriteStringValue(value.ToText()); // WKT
+    public override Geometry Read(…) => throw new NotImplementedException();
+}
+
+// Register globally — Popcorn composes with it transparently.
+options.Converters.Add(new GeometryConverter());
+options.AddPopcornOptions();
 ```
 
-Until this ships, either add a `[JsonConverter]` attribute directly on the external type's
-property (standard STJ) or introduce a typed wrapper you control.
+Popcorn's generator walks your types and falls through to `JsonSerializer.Serialize` for any
+type it doesn't recognize. STJ then picks up your registered converter. Collections and
+dictionaries of external types work the same way — one converter handles all reachable uses.
+
+**Edge case: include filtering through an external type.** If you want
+`?include=[Location[Type,Coordinates]]` to filter fields inside the external type's
+projection, wrap it in a Popcorn-registered class:
+
+```csharp
+public class GeometryEnvelope
+{
+    public string Type { get; init; }
+    public double[] Coordinates { get; init; }
+    public double[]? Bbox { get; init; }
+    public static GeometryEnvelope From(Geometry g) => /* … */;
+}
+
+// Use GeometryEnvelope on the API-facing model instead of Geometry directly.
+```
+
+Then include filtering reaches normally through your wrapper class.
 
 ## 9. Dropped from v8 (these will not return)
 
@@ -384,8 +424,8 @@ Before flipping the switch, verify:
 - [ ] Every v7 attribute renamed per §3.
 - [ ] Every `config.Map<T>()` call replaced with a `[JsonSerializable(typeof(ApiResponse<T>))]`
       attribute on a `JsonSerializerContext` subclass.
-- [ ] `config.Translate(...)` lambdas converted to computed properties (or stay on v7 until
-      `[Translator]` ships).
+- [ ] `config.Translate(...)` lambdas converted to computed properties (pure transforms) or
+      endpoint-side resolution (DI-needing translations — see §5).
 - [ ] `config.Authorize(...)` removed; authorization moved to endpoint / policy layer.
 - [ ] `config.SetContext(dict)` replaced with DI registrations.
 - [ ] `config.SetInspector(...)` split: shape moves to a `[PopcornEnvelope]` type; error-wrapping

@@ -36,13 +36,14 @@ This decision resolves the "scope decision required before merge" question that 
 - **(Dropped 2026-04-23)** `ExpandFrom` projections. Technically doable via a generator-emitted `ProjectionType.From(Source)` copy method, but the v7 `MapEntityFramework` pattern it would replace was an *interception* feature (serializer sees `S`, emits `P`), not a factory — so `[ExpandFrom]` wasn't clean parity. The three real use cases have cleaner answers: `[Never]` on internal source properties, a hand-written factory, or `Mapster.SourceGenerator` for complex mapping. See `docs/MigrationV7toV8.md` §7.
 
 ### Doable via DI registration (Tier 2)
-- **Blind handlers (external types).** `IPopcornBlindHandler<TFrom,TTo>` registered per-type-pair. Generator sees `TFrom` during walk; if a handler exists, emits conversion call.
+- **(Dropped 2026-04-23)** Blind handlers for external types. Standard `System.Text.Json` `JsonConverter<T>` registered on `JsonSerializerOptions.Converters` covers this cleanly and composes with Popcorn transparently (Popcorn's generator falls through to `JsonSerializer.Serialize` for unknown types; STJ picks up the registered converter). See `docs/MigrationV7toV8.md` §8.
 
 ### Doable via middleware (Tier 1)
 - **Exception → envelope rewriting.** `UsePopcornExceptionHandler()` catches unhandled exceptions, looks up the configured envelope type via `PopcornOptions`, and writes an `ApiError`-populated envelope. Envelope **shape** is source-gen; exception **handling** is middleware. Clean split.
 
 ### Doable via attribute-tagged methods (Tier 2)
-- **Translators (computed properties).** Simplest case: just use a C# computed property (`public string FullName => First + " " + Last;`) — works today, zero framework. Complex case: `[Translator(nameof(Owner))] public static EmployeeRef ResolveOwner(Car c, IEmployeeLookup svc)` with generator-emitted DI resolution.
+- **Translators (computed properties).** C# computed property (`public string FullName => First + " " + Last;`) works today, zero framework. 3 passing tests.
+- **(Dropped 2026-04-23)** Translators with DI. The DI-during-serialization pattern is an antipattern (N+1, hidden I/O, scope threading). The clean answer is endpoint-side resolution: resolve services in the route handler, populate the DTO, serialize. See `docs/MigrationV7toV8.md` §5.
 - **Factories.** Moot for v2.0 (write-only). When deserialization ships, `[Factory]`-tagged static method.
 
 ### Genuine non-starter
@@ -57,9 +58,7 @@ This decision resolves the "scope decision required before merge" question that 
 - Custom envelope + exception middleware (error handling parity)
 - `[SubPropertyDefault]` (common include ergonomics)
 
-**Tier 2 — SHOULD ship with v2.0 or soon after:**
-- `[Translator]` methods with DI (computed values needing services)
-- `IPopcornBlindHandler<TFrom,TTo>` (external types like Geometry)
+**Tier 2 — cleared 2026-04-23.** All three planned items (`[ExpandFrom]`, `[Translator]` with DI, `IPopcornBlindHandler<TFrom,TTo>`) were dropped after use-case analysis showed each has a cleaner answer using patterns already native to ASP.NET Core + STJ. Documented replacements in `docs/MigrationV7toV8.md` §5/§7/§8. Polymorphism dispatch via `[JsonDerivedType]` remains Tier-2-deferred if a consumer asks.
 
 **Tier 3 — DEFER to v2.x or drop:**
 - Factories (moot until deserialization).
