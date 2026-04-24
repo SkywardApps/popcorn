@@ -16,7 +16,6 @@ on:
   push:
     branches:
       - master
-      - 'spike/**'
   pull_request:
     branches:
       - master
