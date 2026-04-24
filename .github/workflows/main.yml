@@ -1,40 +1,140 @@
-name: Build and Publish Package
+name: Release
+
+# Triggered by pushing a tag of the form `release/vX.Y.Z` (or `release/vX.Y.Z-suffix`)
+# to master. The tag is the single source of truth for the version: we pack both
+# v8 packages with that version (overriding the csproj <Version> via -p:Version=),
+# push them to NuGet, create a GitHub Release with the .nupkg + .snupkg attached,
+# and sync the csproj <Version> on master so the next dev build starts from a
+# matching baseline.
+#
+# The csproj sync is best-effort — if branch protection blocks the push, the release
+# still succeeds; a maintainer can bump the csproj manually after the fact.
+#
+# Prior iteration of this file had a broken regex-style tag filter (`/^release/`)
+# that never matched any glob, so the pipeline never actually ran. If anyone on the
+# team "published v8 manually before," this is why.
 
 on:
   push:
     tags:
-      - /^release/
+      - 'release/v*'
+
+permissions:
+  contents: write  # needed for `gh release create` and for the version-sync push
 
 jobs:
-  build-and-push-package:
-    name: Pack and push v8 packages to NuGet
-
+  release:
+    name: Pack, publish to NuGet, create GitHub release
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout code
+      - name: Checkout tagged commit
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # SourceLink needs full history to resolve commit hashes.
+          fetch-depth: 0  # SourceLink needs full history to resolve commit hashes
 
-      - name: Setup dotnet
+      - name: Extract version from tag
+        id: ver
+        run: |
+          # Tag: refs/tags/release/v8.0.0           → version 8.0.0
+          # Tag: refs/tags/release/v8.1.0-preview.1 → version 8.1.0-preview.1
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#release/v}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$ ]]; then
+            echo "::error::Tag '$TAG' is not in the expected format release/vX.Y.Z[-suffix]"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Detected version: $VERSION"
+
+      - name: Setup .NET SDK 8.0
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8
+          dotnet-version: 8.0.x
 
-      # v8 only. The legacy v7 packages (Skyward.Api.Popcorn +
-      # Skyward.Api.Popcorn.DotNetCore) are no longer published from this repo — the
-      # last v7 release was shipped from master and will remain on NuGet for install
-      # compatibility, but new work happens only on v8 (Skyward.Api.Popcorn.SourceGen +
-      # Skyward.Api.Popcorn.SourceGen.Shared).
-      - name: Package SourceGen.Shared
-        run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --output ../publish Popcorn.Shared/Popcorn.Shared.csproj
+      # -p:Version= and -p:PackageVersion= together make the emitted .nupkg carry the
+      # tag's version regardless of what <Version> the csproj has. The csproj edit
+      # (later step) is for keeping the repo tidy, not for the pack output.
+      - name: Pack Popcorn.Shared
+        working-directory: dotnet
+        run: >
+          dotnet pack Popcorn.Shared/Popcorn.Shared.csproj
+          -c Release
+          -p:Version=${{ steps.ver.outputs.version }}
+          -p:PackageVersion=${{ steps.ver.outputs.version }}
+          --output ../publish
 
-      - name: Package SourceGen
-        run: cd dotnet && dotnet pack -c ${PublishConfiguration:-Release} --output ../publish Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj
+      - name: Pack Popcorn.SourceGenerator
+        working-directory: dotnet
+        run: >
+          dotnet pack Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj
+          -c Release
+          -p:Version=${{ steps.ver.outputs.version }}
+          -p:PackageVersion=${{ steps.ver.outputs.version }}
+          --output ../publish
 
-      # `|| :` tolerates version-conflict re-runs (same tag, re-pushed).
-      - name: Publish Packages
+      - name: List packaged artifacts
+        run: ls -la publish/
+
+      # `dotnet nuget push *.nupkg` automatically pushes the sibling .snupkg symbol
+      # package if one exists, so a single loop over *.nupkg is enough.
+      # `--skip-duplicate` replaces the old `|| :` hack: if someone re-runs a release
+      # (same tag, re-push), we don't fail on "already exists."
+      - name: Push packages to NuGet
         env:
-          SKYWARDNUGETAPIKEY: ${{ secrets.SKYWARDNUGETAPIKEY }}
-        run: cd publish && for fileName in *.nupkg; do echo ${fileName}; dotnet nuget push -k "$SKYWARDNUGETAPIKEY" -s https://api.nuget.org/v3/index.json ${fileName} || :; done
+          NUGET_API_KEY: ${{ secrets.SKYWARDNUGETAPIKEY }}
+        working-directory: publish
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "::error::Secret SKYWARDNUGETAPIKEY is not set — cannot push to NuGet."
+            exit 1
+          fi
+          for pkg in *.nupkg; do
+            echo "Pushing $pkg"
+            dotnet nuget push "$pkg" \
+              -k "$NUGET_API_KEY" \
+              -s https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "v${{ steps.ver.outputs.version }}" \
+            --generate-notes \
+            publish/*.nupkg publish/*.snupkg
+
+      # Sync the csproj <Version> on master so the next dev build reads a version
+      # that matches the latest release. Best-effort: branch protection may reject
+      # the push, in which case we log a warning and the release still succeeds.
+      - name: Sync csproj version on master
+        continue-on-error: true
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          git fetch origin master
+          git checkout master
+          changed=0
+          for f in dotnet/Popcorn.Shared/Popcorn.Shared.csproj dotnet/Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj; do
+            current=$(grep -oP '(?<=<Version>)[^<]+' "$f" | head -n 1)
+            if [ "$current" != "$VERSION" ]; then
+              echo "Bumping $f: $current → $VERSION"
+              sed -i "s|<Version>${current}</Version>|<Version>${VERSION}</Version>|" "$f"
+              changed=1
+            else
+              echo "$f already at $VERSION"
+            fi
+          done
+          if [ "$changed" = "1" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add dotnet/Popcorn.Shared/Popcorn.Shared.csproj dotnet/Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj
+            git commit -m "Sync csproj Version to ${VERSION} after ${GITHUB_REF_NAME} release [skip ci]"
+            if ! git push origin master; then
+              echo "::warning::Could not push version bump to master. Branch protection may be blocking workflow pushes. Bump csproj <Version> manually."
+              exit 0
+            fi
+          fi

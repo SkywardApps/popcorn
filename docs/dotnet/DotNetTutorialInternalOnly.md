@@ -1,76 +1,106 @@
-# [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Internal Only Attribute
+# [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Internal-Only Fields (`[Never]`)
 
 [Table Of Contents](../../docs/TableOfContents.md)
-We assume you've already learned the basics of configuring Popcorn in this tutorial. 
-If not, you should probably go back and complete [Getting Started](DotNetTutorialGettingStarted.md) first.
 
+If you're new to Popcorn, start with [Getting Started](DotNetTutorialGettingStarted.md) first.
 
-This tutorial will walk you through a few ways to protect undesired data from being passed to the client.
+Sometimes a model carries fields the API client should never see — a database-internal row
+version, a denormalized lookup key, a row-level secret. Popcorn gives you `[Never]`: a
+compile-time guarantee that the marked field is dropped during serialization, no matter what
+the client requests.
 
-### Overview
-We will achieve this using the [InternalOnly] attribute, which can be used on Classes, Properties and Methods.
+> **v7 → v8 note.** This attribute was called `[InternalOnly]` in v7. In v8 it's `[Never]`
+> (and lives in the `Popcorn` namespace). Semantics are otherwise unchanged.
+
+## Example
+
+Say we add a Social Security Number to our `Employee` model. Clients should never receive it:
+
 ```csharp
-[InternalOnly(throwException)]
+using Popcorn;
+
+public class Employee
+{
+    [Default] public string FirstName { get; set; } = "";
+    [Default] public string LastName  { get; set; } = "";
+
+    [Never] public string SocialSecurityNumber { get; set; } = "";
+}
 ```
-throwException is a bool parameter and the default value is true.
-* When used on classes:
-    * If true, an InternalOnlyViolationException will be thrown when you try to expand the class. 
-    * If false, you will receive a null object in response.
- * When used on methods and properties:
-    * If true an InternalOnlyViolationException will be thrown when you try to access the marked field or method. 
-    * If false, you will receive a null object for the requested property or method in response.
 
-### Example usage:
-Let's say  we store employee Social Security Numbers in our database. Under no circumstance do we want their socials to 
-be transmitted through our project using Popcorn. Enter the power of [InternalOnly]!
+The field is still a normal C# property — internal code can read and write it. It just gets
+dropped on the way out:
 
-First, we add the SocialSecurityNumber property to our Employee class and its projection.
-(Admittedly you could just not add the Social to the projection, but technically that is still a little vulnerable to 
-blind mapping and the like)
+```
+GET /employees?include=[FirstName,LastName,SocialSecurityNumber]
+```
+
+```json
+{
+  "Success": true,
+  "Data": [
+    { "FirstName": "Liz",  "LastName": "Lemon"   },
+    { "FirstName": "Jack", "LastName": "Donaghy" }
+  ]
+}
+```
+
+Note that the request *asked* for `SocialSecurityNumber` and the server simply omitted it — no
+error, no special handling. `[Never]` is stronger than "not in the default set"; it beats every
+other inclusion mechanism: `?include=[!all]` won't emit it, `[SubPropertyDefault("[SSN]")]`
+on the parent won't emit it, explicit `?include=[SocialSecurityNumber]` won't emit it.
+
+## When to use `[Never]` vs omitting the field entirely
+
+The safest way to keep a field off the wire is simply not to have it on the model the API
+returns. Two situations where `[Never]` is the better answer:
+
+1. **The model doubles as the internal data shape.** If your `Employee` class is also your
+   domain entity, you can't drop `SocialSecurityNumber` — internal code needs it. `[Never]`
+   lets the property stay in code and be invisible to the API.
+2. **Defense in depth.** Even if you also use a separate DTO, adding `[Never]` to sensitive
+   fields on the source model gives you an extra guardrail — if someone refactors and
+   accidentally returns the domain entity directly, the field still stays off the wire.
+
+If your API surface is naturally a separate DTO class and the source model never crosses the
+API boundary, you can skip `[Never]` — just omit the property from the DTO.
+
+## Why `[Never]` is better than "remove from projection"
+
+In v7 users would often strip sensitive fields by leaving them off the projection class. That
+worked, but it was easy to undermine accidentally (blind expansion would walk the source
+object, or a future refactor added a "quick" path that returned the entity directly). v8
+preserves `[Never]` explicitly at compile time because it's the one attribute whose guarantee
+is load-bearing for security.
+
+## Combining with `[SubPropertyDefault]`
+
+`[Never]` takes precedence over `[SubPropertyDefault]`. Even if a parent's `[SubPropertyDefault]`
+lists a `[Never]`-marked child property by name, the field stays hidden:
+
 ```csharp
 public class Employee
 {
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-
-    [InternalOnly(true)]
-    public int SocialSecurityNumber { get; set; }
-	...
+    [SubPropertyDefault("[Make,Model,Color,InternalVin]")]  // mentions InternalVin explicitly
+    public List<Car> Vehicles { get; set; } = new();
 }
 
-public class EmployeeProjection
+public class Car
 {
-    [IncludeByDefault]
-    public string FirstName { get; set; }
-    [IncludeByDefault]
-    public string LastName { get; set; }
+    public string Make  { get; set; } = "";
+    public string Model { get; set; } = "";
+    public Colors Color { get; set; }
 
-    public int SocialSecurityNumber { get; set; }
- }
-
-```
-
-Note that the SocialSecurityNumber property is marked as [InternalOnly] and set to throw an exception should it be called.
-**A key difference to remember here when compared to some other attributes is the source object is marked with the [InternalOnly] attibute and not its projection  
-- to make sure that the SocialSecurityNumber attribute isn't referenced accidentally in another place**
-
-Let's try making a request now to a GET employees endpoint and see what comes back when we specifically try to include SocialSecurityNumbers.
-```json
-http://localhost:49699/api/example/employees?include=[SocialSecurityNumber]
-{
-    "Success": false,
-    "ErrorCode": "Skyward.Popcorn.InternalOnlyViolationException",
-    "ErrorMessage": "Expand: SocialSecurityNumber property inside Employee class is marked [InternalOnly]",
-    "ErrorDetails": "Skyward.Popcorn.InternalOnlyViolationException: Expand: SocialSecurityNumber property inside Employee class is marked [InternalOnly]...
+    [Never] public string InternalVin { get; set; } = "";
 }
 ```
 
-An exception was thrown as expected!
-If we were to make a request to the GET employees method without a specific mention of SocialSecurityNumber, we would see a success response 
-with all of the other relevant employee information - just not the Social.
+`GET /employees?include=[Vehicles]` emits `Make` + `Model` + `Color` per car and no `InternalVin`.
+The substitution list is used to pick the default set; each child property still consults its
+own attribute stack before being emitted.
 
-It is up to you on how you will use the throwException parameter based on your needs.
+## See also
 
-**Don't Forget:** This attribute can be applied to Classes, Methods, and Properties so you have a lot of freedom here!
-
-And that's it, you can now use the [InternalOnly] attribute.
+- [Default Includes](DotNetTutorialDefaultIncludes.md) for `[Default]` and `[Always]`.
+- [Include Parameter Syntax](DotNetTutorialIncludeParameterSyntax.md) for the full `?include=`
+  grammar.

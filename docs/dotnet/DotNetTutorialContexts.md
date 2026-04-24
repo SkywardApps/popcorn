@@ -1,5 +1,21 @@
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Setting Contexts
 
+> ⚠️ **v7-only — dropped in v8.** `SetContext(Dictionary<string, object>)` does not exist in v8.
+> The entire "pass an ambient dictionary to your lambdas" pattern is superseded by standard
+> ASP.NET Core **dependency injection**:
+>
+> ```csharp
+> builder.Services.AddSingleton<ExampleContext>(database);
+>
+> app.MapGet("/cars", (IPopcornAccessor access, ExampleContext db) =>
+>     access.CreateResponse(db.Cars));
+> ```
+>
+> Translator lambdas that needed ambient data in v7 become endpoint-side resolution in v8 (see
+> [MigrationV7toV8.md §5](../MigrationV7toV8.md#5-translators-computed-fields)).
+>
+> The tutorial below is preserved for v7 users still on that line.
+
 Popcorn does not know about everything in your application on its own. Actually, it's aware of virtually nothing without being specifically told and thus 
 we use .NET MVC options with the Popcorn Configuration as an abstraction layer between whatever it is you're doing on your back end and your API.
 

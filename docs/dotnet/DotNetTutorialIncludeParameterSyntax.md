@@ -4,6 +4,13 @@
 
 Popcorn's core feature is the ability to selectively include properties in API responses using the `include` parameter. This tutorial explains the syntax for the `include` parameter, including special references and property negation.
 
+> **Names in `?include=` are wire names, not C# names.** The names you list are matched
+> against the JSON property name the client sees on the wire — whichever comes first:
+> the `[JsonPropertyName("...")]` value, or the C# name normalized by your configured
+> `JsonNamingPolicy`. A response body `{"display_name": "..."}` is asked for as
+> `?include=[display_name]`. Requesting `?include=[DisplayName]` is treated as an unknown
+> name and the field is silently omitted.
+
 ## Basic Include Syntax
 
 The basic syntax for the `include` parameter is a comma-separated list of property names enclosed in square brackets:
@@ -91,13 +98,15 @@ This will include `Property1` and the nested properties `NestedProperty1` and `N
 
 ## Case Sensitivity
 
-Property names in the `include` parameter are case-sensitive. For example:
+Property names in the `include` parameter are case-sensitive and must match the wire name
+exactly. If your `JsonNamingPolicy` is `CamelCase`, a C# `DisplayName` property is emitted
+as `"displayName"` and must be requested as `?include=[displayName]`.
 
 ```
 ?include=[Name]
 ```
 
-Will include a property named `Name`, but not a property named `name`.
+Will match a wire-name property `Name`, but not `name`.
 
 ## Examples
 

@@ -2,6 +2,18 @@
 
 [Table Of Contents](../../docs/TableOfContents.md)
 
+> ⚠️ **v7-only — dropped in v8.** The `.Authorize<T>(...)` lambda configuration does not exist
+> in v8. Authorization decisions belong at the endpoint / policy layer, not inside the
+> serializer. Use:
+>
+> - **ASP.NET Core `[Authorize]` attributes / policies** to gate whole endpoints.
+> - **Endpoint-level checks** (`if (!userCanSee(car)) return Forbid();`) when per-row filtering is needed.
+> - **`[Never]` on sensitive properties** to hard-exclude fields from the API shape regardless of caller.
+>
+> Full rationale: [MigrationV7toV8.md §9](../MigrationV7toV8.md#9-dropped-from-v8-these-will-not-return).
+>
+> The tutorial below is preserved for v7 users still on that line.
+
 Restricting access to information in our APIs is so important and can often be incredibly complex. We recognize this inevitable struggle
 and are now offering an "Authorize" setting within your Popcorn configuration to restrict responses as you see fit 
 and hopefully mitigate part of that trouble.
