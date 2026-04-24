@@ -53,6 +53,7 @@ These five items are tracked in the roadmap now; kept here as a back-reference f
 - Client libraries (TS/JS) — out of scope for .NET spike, but protocol decisions here constrain them.
 
 ## Recent Activity (branch commits, most recent first)
+- `efb05b9` Drop `[ExpandFrom]` from v2 scope; delete `ExpandFromTests.cs`; migration guide §7 now recommends `[Never]` / hand factory / Mapster
 - `a1c6078` Add JSG008 diagnostic + v7→v8 migration guide; promote deferred items to roadmap
 - `8d6017a` Add user-facing Performance page + README summary
 - `373f387` Add raw benchmark logs for each optimization step
