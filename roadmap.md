@@ -43,6 +43,11 @@ If a real consumer presents a concrete case that none of the replacement pattern
 - Headline: Popcorn source-gen beats legacy reflection in every scenario (3–8× for `All`, ~5.8× for `Default` on ComplexModelList). Popcorn-default on ComplexModelList is ~10× faster / ~5× less alloc than STJ reflection. Popcorn-all on ComplexModelList is **0.87× time / 0.93× alloc** — Popcorn is *faster* than STJ when emitting everything on nested data; legacy-all is 3.6× slower than STJ on the same shape.
 - **Merge-gate item**: **closed**. "Perf parity or better" was the load-bearing thesis claim; 3-way report confirms it — and the three in-generator optimizations tipped it from parity-to-STJ into *better* than STJ on complex nested lists.
 
+### CI: run full test suite on PR + push — **shipped**
+- [`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs on PR + push to `master` / `spike/**`. Installs .NET 8.0 SDK, caches NuGet packages keyed on csproj hashes, runs `dotnet test` on both `Popcorn.FunctionalTests` (182 passing / 2 skipped) and `Popcorn.SourceGenerator.Tests` (19 passing). trx logs uploaded as an artifact on failure. Concurrency-group cancels superseded runs.
+- Why separate from `aot-ci.yml`: the AOT workflow needs the AOT toolchain (clang/zlib) + Docker; the test workflow should run faster and with fewer dependencies. Parallel jobs keep PR feedback tight.
+- Previously the 201 tests only ran on dev boxes — a regression in the generator or runtime could land on `spike/source-generator` without catching. Closed.
+
 ### CI: publish + run AOT example in a container — **shipped**
 - [`.github/workflows/aot-ci.yml`](.github/workflows/aot-ci.yml) runs on PR + push to `master` / `spike/**`. Uses `docker/build-push-action@v5` with `type=gha` cache to build [`dotnet/PopcornAotExample/Dockerfile`](dotnet/PopcornAotExample/Dockerfile) (context: `dotnet/`). Starts the container on port 8080, waits up to 60s for readiness, verifies all four endpoints end-to-end:
   - `/todos` — `Success:true`, `Id:1` + `Id:2` present, `IsComplete` (`[Never]`) absent.

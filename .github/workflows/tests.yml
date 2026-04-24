@@ -1,0 +1,90 @@
+name: Tests
+
+# Runs the full .NET test suite on every PR and every push to master / spike/**.
+# Keeps the source generator + runtime library honest between merges.
+
+on:
+  push:
+    branches:
+      - master
+      - 'spike/**'
+  pull_request:
+    branches:
+      - master
+      - 'spike/**'
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: dotnet test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK 8.0
+        uses: actions/setup-dotnet@v4
+        with:
+          # Test projects target net8.0. Install the matching SDK so we don't rely on
+          # DOTNET_ROLL_FORWARD.
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('dotnet/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # Restore + build + test each test project individually. We avoid `dotnet test
+      # Popcorn.sln` because the solution also contains PopcornNet5Example (net5.0, EOL)
+      # and PopcornAotExample (needs the AOT toolchain), neither of which belongs in the
+      # test gate. The AOT path is covered separately by aot-ci.yml.
+
+      - name: Restore FunctionalTests
+        working-directory: dotnet
+        run: dotnet restore Tests/Popcorn.FunctionalTests/Popcorn.FunctionalTests.csproj
+
+      - name: Build FunctionalTests (Release)
+        working-directory: dotnet
+        run: dotnet build Tests/Popcorn.FunctionalTests/Popcorn.FunctionalTests.csproj -c Release --no-restore
+
+      - name: Run FunctionalTests
+        working-directory: dotnet
+        run: >
+          dotnet test Tests/Popcorn.FunctionalTests/Popcorn.FunctionalTests.csproj
+          -c Release --no-build
+          --logger "console;verbosity=minimal"
+          --logger "trx;LogFileName=functional-tests.trx"
+          --results-directory TestResults
+
+      - name: Restore SourceGenerator.Tests
+        working-directory: dotnet
+        run: dotnet restore Tests/Popcorn.SourceGenerator.Tests/Popcorn.SourceGenerator.Tests.csproj
+
+      - name: Build SourceGenerator.Tests (Release)
+        working-directory: dotnet
+        run: dotnet build Tests/Popcorn.SourceGenerator.Tests/Popcorn.SourceGenerator.Tests.csproj -c Release --no-restore
+
+      - name: Run SourceGenerator.Tests
+        working-directory: dotnet
+        run: >
+          dotnet test Tests/Popcorn.SourceGenerator.Tests/Popcorn.SourceGenerator.Tests.csproj
+          -c Release --no-build
+          --logger "console;verbosity=minimal"
+          --logger "trx;LogFileName=sourcegen-tests.trx"
+          --results-directory TestResults
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: dotnet/TestResults/*.trx
+          retention-days: 7
