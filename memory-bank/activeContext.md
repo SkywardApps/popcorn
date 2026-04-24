@@ -53,7 +53,7 @@ These five items are tracked in the roadmap now; kept here as a back-reference f
 - Client libraries (TS/JS) — out of scope for .NET spike, but protocol decisions here constrain them.
 
 ## Recent Activity (branch commits, most recent first)
-- (pending) Strip legacy v7 pack steps from main.yml (f564a0e); add benchmark ratio-gate workflow — runs `SerializationComparisonBenchmarks` ci subset on PR + push, compares 3 Popcorn/STJ ratios vs `benchmarks/results/ci-baseline.json`, fails on >25% regression. Ratios are stable across runners (±5%) while absolute ns/op varies ±20–30%.
+- `07bb01d` Add relative-performance gate (`.github/workflows/benchmarks.yml` + `.github/scripts/compare-benchmark-ratios.py` + `benchmarks/results/ci-baseline.json`): runs `SerializationComparisonBenchmarks` ci subset on PR + push, compares 3 Popcorn/STJ ratios vs baseline, fails on >25% regression. Ratios are stable across runners (±5%) while absolute ns/op varies ±20–30%.
 - `f564a0e` Strip legacy v7 pack steps from main.yml — v8-only publishing now
 - `4c5587d` Add `.github/workflows/tests.yml`: runs `dotnet test` on both Popcorn.FunctionalTests + Popcorn.SourceGenerator.Tests on PR + push. Closes the "tests don't run on CI" gap.
 - `2853a5d` Add AOT CI workflow (`.github/workflows/aot-ci.yml`): builds the Dockerfile, runs the container, asserts all four endpoints. Closes the AOT merge-gate.
