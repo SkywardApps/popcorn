@@ -32,8 +32,8 @@ This decision resolves the "scope decision required before merge" question that 
 
 ### Doable with attribute-driven design (Tier 1/2)
 - **Sub-property defaults** (Tier 1). `[SubPropertyDefault("[Make,Model]")]` attribute read at build time.
-- **`ExpandFrom` projections** (Tier 2). `[ExpandFrom(typeof(Source))]` on projection class; generator emits copy logic.
 - **Custom response envelope** (Tier 1). Marker-attribute design: `[PopcornEnvelope]` on the type + `[PopcornPayload]` / `[PopcornError]` / `[PopcornSuccess]` on the slot properties. Generator emits typed `CreateSuccess` / `CreateError` factories keyed by envelope type.
+- **(Dropped 2026-04-23)** `ExpandFrom` projections. Technically doable via a generator-emitted `ProjectionType.From(Source)` copy method, but the v7 `MapEntityFramework` pattern it would replace was an *interception* feature (serializer sees `S`, emits `P`), not a factory — so `[ExpandFrom]` wasn't clean parity. The three real use cases have cleaner answers: `[Never]` on internal source properties, a hand-written factory, or `Mapster.SourceGenerator` for complex mapping. See `docs/MigrationV7toV8.md` §7.
 
 ### Doable via DI registration (Tier 2)
 - **Blind handlers (external types).** `IPopcornBlindHandler<TFrom,TTo>` registered per-type-pair. Generator sees `TFrom` during walk; if a handler exists, emits conversion call.
@@ -60,7 +60,6 @@ This decision resolves the "scope decision required before merge" question that 
 **Tier 2 — SHOULD ship with v2.0 or soon after:**
 - `[Translator]` methods with DI (computed values needing services)
 - `IPopcornBlindHandler<TFrom,TTo>` (external types like Geometry)
-- `[ExpandFrom]` projection attribute
 
 **Tier 3 — DEFER to v2.x or drop:**
 - Factories (moot until deserialization).

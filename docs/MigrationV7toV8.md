@@ -29,7 +29,7 @@ yourself at the endpoint level — v8 will not ship a replacement.
 | Never-emit | `[InternalOnly]` | `[Never]` |
 | Sub-default includes | `[SubPropertyIncludeByDefault]` | `[SubPropertyDefault("[Make,Model]")]` |
 | Computed field | `.Translate<Car>(c => c.First + " " + c.Last)` lambda | C# computed property (preferred) or `[Translator]` method with DI *(not yet shipped — see [Roadmap](Roadmap.md))* |
-| Projection class | `MapEntityFramework<TSource, TProjection, TContext>` | `[ExpandFrom(typeof(Source))]` *(not yet shipped)* |
+| Projection class | `MapEntityFramework<TSource, TProjection, TContext>` | **Dropped.** Decorate source with `[Never]`, hand-write a factory, or use `Mapster.SourceGenerator` (see §7) |
 | External-type conversion | `BlindHandler` via runtime reflection | `IPopcornBlindHandler<TFrom, TTo>` DI service *(not yet shipped)* |
 | Ambient data | `.SetContext(Dictionary<string, object>)` | Standard ASP.NET Core DI — translator methods receive services as parameters |
 | Exception wrapping | `.SetInspector((data, ctx, exc) => wrapper)` | `UsePopcornExceptionHandler()` middleware + `[PopcornEnvelope]` marker attributes |
@@ -245,7 +245,7 @@ app.MapGet("/cars", (IPopcornAccessor access) =>
 The middleware wraps unhandled exceptions in your envelope shape with `Problem` populated
 (`ApiError(Code, Message, Detail?)`) and status 500.
 
-## 7. Projections (`ExpandFrom` / `MapEntityFramework`)
+## 7. Projections (replacing `MapEntityFramework`)
 
 ### v7
 
@@ -254,20 +254,53 @@ config.MapEntityFramework<CarEntity, CarDto, AppDbContext>();
 // Or projection lambdas per property.
 ```
 
-### v8 — **not yet shipped** ([Roadmap Tier 2](Roadmap.md))
+### v8 — **dropped. Three replacement patterns, pick the one that fits.**
 
-Planned design: decorate the projection class and let the generator emit a copy method:
+The v7 `MapEntityFramework` intercepted serialization: when the expander saw `CarEntity` it
+automatically produced a `CarDto`-shaped response. v8 does not replicate that. The three
+scenarios it covered each have a cleaner v8 answer.
+
+**(A) Hiding internal fields on the API surface — the most common case.** Decorate the source
+type directly:
 
 ```csharp
-[ExpandFrom(typeof(CarEntity))]
-public record CarDto(int Id, string Make, string Model);
-
-// Generator emits:
-// public static CarDto From(CarEntity source) => new(source.Id, source.Make, source.Model);
+public class CarEntity
+{
+    public int Id { get; set; }
+    public string Make { get; set; }
+    public string Model { get; set; }
+    [Never] public string InternalNotes { get; set; } // never leaves the server
+}
 ```
 
-Until this ships, project manually at the endpoint (`return entities.Select(e => new CarDto(e.Id, e.Make, e.Model))`)
-or stay on v7 for projection-heavy endpoints.
+Zero projection class. One source of truth. Works if your entity can carry API-layer attributes.
+
+**(B) Hard boundary between domain and API — write a three-line factory.**
+
+```csharp
+public record CarDto(int Id, string Make, string Model)
+{
+    public static CarDto From(CarEntity src) => new(src.Id, src.Make, src.Model);
+}
+
+// In the endpoint:
+app.MapGet("/cars", (IPopcornAccessor access) =>
+    access.CreateResponse(GetCars().Select(CarDto.From).ToList()));
+```
+
+Explicit, trimmer-safe, obvious when you add a field and forget to wire it.
+
+**(C) Complex mapping — nested, flattening, custom resolvers — use
+[Mapster.SourceGenerator](https://github.com/MapsterMapper/Mapster).** It is AOT-compatible,
+actively maintained, and solves the same problem more thoroughly than anything bundled with
+Popcorn would. Popcorn deliberately does not ship a mapper.
+
+```csharp
+[AdaptTo(typeof(CarDto))] public partial class CarEntity { /* ... */ }
+```
+
+Mapster and Popcorn compose — Mapster produces the DTO, Popcorn's generator emits the JSON
+converter for it.
 
 ## 8. External-type handlers (`BlindHandler`)
 
@@ -378,7 +411,7 @@ If you hit a blocker:
 ## See also
 
 - [Performance](Performance.md) — why v8 is faster, with benchmarked ratios vs v7 and raw `System.Text.Json`.
-- [Roadmap](Roadmap.md) — Tier-2 feature ship status (translators with DI, blind handlers, `[ExpandFrom]`).
+- [Roadmap](Roadmap.md) — Tier-2 feature ship status (translators with DI, blind handlers).
 - [migrationAnalysis.md](../memory-bank/migrationAnalysis.md) — the full feature-by-feature
   feasibility ledger used to decide what survived the v8 cut.
 - [apiDesign.md](../memory-bank/apiDesign.md) — v8 API design philosophy and surface.

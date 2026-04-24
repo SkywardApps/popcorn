@@ -15,7 +15,7 @@
 
 ### New attributes
 - `[SubPropertyDefault("[Make,Model]")]` — when this property is included without explicit sub-children, use this include list as its default. Replaces `[SubPropertyIncludeByDefault]`. **Implemented.** Pre-parsed once per process into a generator-emitted static readonly field and substituted at the two nested-`Pop<T>` callsites (complex member, complex-array element). Explicit sub-children override the attribute; `[Always]` / `[Never]` on the sub-type still win.
-- `[ExpandFrom(typeof(SourceType))]` — on a projection class; generator emits `ProjectionType.From(SourceType)` copy logic. Optional — most users serialize source types directly.
+- **(Dropped from v2 scope, 2026-04-23)** `[ExpandFrom(typeof(SourceType))]` — was planned to emit a `ProjectionType.From(SourceType)` copy method. The three real use cases have cleaner answers: `[Never]` on internal source properties (use case 1), a three-line hand-written factory (use case 2), or `Mapster.SourceGenerator` for complex mapping (use case 3). See `docs/MigrationV7toV8.md` §7 for the consumer-facing recommendation.
 
 ### Envelope marker attributes
 - `[PopcornEnvelope]` — marks a type as the application-wide response envelope. One per app.
@@ -155,7 +155,7 @@ Replaces the legacy `SetInspector((data, ctx, exception) => wrapper)` pattern. E
 | Contexts (dictionary) | ✅ | ❌ superseded by DI | Drop the dictionary concept entirely |
 | Inspectors | ✅ lambda config | ✅ via envelope type + middleware | Split: type for shape, middleware for exceptions |
 | Lazy loading | ✅ | ✅ by construction | Generator never touches excluded props |
-| `ExpandFrom` | ✅ | ✅ via `[ExpandFrom]` | Generator emits copy logic |
+| `ExpandFrom` / projections | ✅ `MapEntityFramework<S,P,Ctx>` | ❌ **Dropped from V2 scope** | Use `[Never]` on source, a hand-written factory, or `Mapster.SourceGenerator` (see `docs/MigrationV7toV8.md` §7) |
 | Custom envelope + exception middleware | ✅ lambda config | ✅ via `[PopcornEnvelope]` markers + `UsePopcornExceptionHandler` | Generator emits factories; middleware dispatches |
 | Deserialization | ❌ | ⏸ deferred | Out of scope for v2.0 |
 
@@ -164,7 +164,7 @@ Replaces the legacy `SetInspector((data, ctx, exception) => wrapper)` pattern. E
 - `[IncludeByDefault]` renamed `[Default]`, `[IncludeAlways]` renamed `[Always]`, `[InternalOnly]` renamed `[Never]`.
 - `SetContext(Dictionary<string,object>)` removed — use DI.
 - `SetInspector(lambda)` removed — use envelope type + middleware.
-- `MapEntityFramework<TSource,TProjection,TContext>` removed — projections are now either direct-serialize-the-source or `[ExpandFrom]` on a projection class.
+- `MapEntityFramework<TSource,TProjection,TContext>` removed — projections are now direct-serialize-the-source with `[Never]` on internal properties, a hand-written `From(TSource)` factory, or `Mapster.SourceGenerator` for complex mapping. `[ExpandFrom]` was considered and dropped (see `docs/MigrationV7toV8.md` §7).
 - Sorting, pagination, filtering, authorization: **dropped entirely**. Callers that depended on `?sort=`, `?page=`, `?filter=`, or `.Authorize<T>(...)` must implement these themselves at the endpoint level.
 - Package ID change (TBD) to allow side-by-side install with the legacy package during transition.
 

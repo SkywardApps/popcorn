@@ -4,13 +4,13 @@ Outstanding work on the `spike/source-generator` branch before it is ready to me
 
 Last updated: 2026-04-23.
 
-> **Closed.** The `Pop{X}Inner` regression on nested-collection registrations (7 CS0103 errors in the generator output) was fixed by adding a `TargetEmitsInner(ITypeSymbol)` helper and gating the per-item `Inner` calls in `CreateArraySerializer` + `CreateDictionarySerializer`. When the item/value type is itself a collection / dict / `Nullable<T>` wrapper, the generator now falls back to the 4-arg `Pop{X}` wrapper (the pre-`03ff6a5` path). Solution builds clean; FunctionalTests back to 182 passing / 13 skipped / 0 failing; SourceGenerator.Tests at 19 passing.
+> **Scope update (2026-04-23).** `[ExpandFrom]` dropped from Tier-2. The v7 `MapEntityFramework` pattern intercepted serialization; `[ExpandFrom]` as specced only emitted a `From(TSource)` factory, so it wasn't clean parity anyway. The three real use cases have cleaner answers: `[Never]` on the source, a hand-written factory, or `Mapster.SourceGenerator` for complex mapping. See [docs/MigrationV7toV8.md §7](docs/MigrationV7toV8.md) for the recommendation and rationale.
 
 ## Status snapshot
 
 - Core protocol (include parsing, attribute semantics, nested expansion, collections, dictionaries, enums, polymorphism-basic, circular refs, full nullability matrix): **working**.
 - Tier-1 feature set — custom envelope + `UsePopcornExceptionHandler` + `[SubPropertyDefault]`: **shipped**.
-- Test suite: 182 passing / 13 skipped / 0 failing in `Popcorn.FunctionalTests`. 14 passing in `Popcorn.SourceGenerator.Tests`. Zero CS86xx warnings in generated code.
+- Test suite: 182 passing / 9 skipped / 0 failing in `Popcorn.FunctionalTests`. 19 passing in `Popcorn.SourceGenerator.Tests`. Zero CS86xx warnings in generated code.
 - AOT/trim smoke: `PopcornAotExample` builds with `PublishAot=True` and exercises a custom `[PopcornEnvelope]` shape.
 - Legacy reflection engine (`PopcornNetStandard*`): still in the tree, unchanged. Planned removal after v2 ships side-by-side for a release or two.
 
@@ -30,12 +30,6 @@ Last updated: 2026-04-23.
 - **Generator work**: register known handler pairs at build time (via a generator-recognized DI marker or a static registration convention); in the type walk, when `TFrom` is encountered and a handler pair is registered, emit a DI resolve + `Convert()` call instead of a recursive converter.
 - **Runtime work**: `IPopcornBlindHandler<TFrom, TTo>` interface in `Popcorn.Shared`; a `services.AddPopcornBlindHandler<TFrom, TTo>(func)` DI extension.
 - **Scope**: medium. Similar complexity to `[Translator]`.
-
-### `[ExpandFrom]` projection attribute
-- **Why**: Projection classes that copy a subset of fields from a source type — `[ExpandFrom(typeof(CarSource))] public class CarProjection { ... }`. Generator emits a `CarProjection.From(CarSource)` static method.
-- **Test ledger**: 4 skipped in [`ExpandFromTests.cs`](dotnet/Tests/Popcorn.FunctionalTests/ExpandFromTests.cs).
-- **Generator work**: purely code-gen; emit a static `From(TSource)` method on the projection type that copies properties whose names match. Respect inheritance. No runtime wiring.
-- **Scope**: small–medium. No DI, no middleware.
 
 ### Polymorphism — partial (2 skipped)
 - **Test ledger**: 2 skipped in [`PolymorphismTests.cs`](dotnet/Tests/Popcorn.FunctionalTests/PolymorphismTests.cs).
@@ -111,12 +105,11 @@ Three generator-level optimizations considered but not taken in the 2026-04 opt 
 
 A defensible order that minimizes dependency chains and maximizes incremental merge-readiness:
 
-1. **Publish a benchmark baseline.** Uses the current generator; doesn't depend on any Tier-2 feature. Makes the perf claim verifiable.
-2. **Ship `[ExpandFrom]`.** Pure code-gen, no runtime wiring — the lowest-risk Tier-2.
-3. **Ship `[Translator]` with DI, then `IPopcornBlindHandler<TFrom,TTo>`.** These share the "generator emits DI resolution" infrastructure; doing them together reduces duplication.
-4. **AOT CI job + NuGet preview.** Once the feature set is stable.
-5. **Polymorphism dispatch** (if a consumer requests it; otherwise defer to v2.1).
-6. **Header-based include** (opportunistic; ship whenever convenient).
+1. **Publish a benchmark baseline.** Uses the current generator; doesn't depend on any Tier-2 feature. Makes the perf claim verifiable. **(Done)**
+2. **Ship `[Translator]` with DI, then `IPopcornBlindHandler<TFrom,TTo>`.** These share the "generator emits DI resolution" infrastructure; doing them together reduces duplication.
+3. **AOT CI job + NuGet preview.** Once the feature set is stable.
+4. **Polymorphism dispatch** (if a consumer requests it; otherwise defer to v2.1).
+5. **Header-based include** (opportunistic; ship whenever convenient).
 
 Adjust based on what any real consumer blocks on first.
 
