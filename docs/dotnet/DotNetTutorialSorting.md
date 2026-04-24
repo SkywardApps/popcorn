@@ -2,6 +2,27 @@
 
 [Table Of Contents](../TableOfContents.md)
 
+> ⚠️ **v7-only — dropped in v8.** Built-in `?sort=…&sortDirection=…` handling does not exist
+> in v8. Sorting was very rarely used in practice, and when it was used the constraints (one
+> parameter, case-sensitive, top-level only) usually pushed callers to endpoint-level sorting
+> anyway. v8 asks you to handle it there directly:
+>
+> ```csharp
+> app.MapGet("/cars", (IPopcornAccessor access, string? sort, string? direction) =>
+> {
+>     var cars = _context.Cars.AsQueryable();
+>     cars = (sort, direction) switch
+>     {
+>         ("Model", "Descending") => cars.OrderByDescending(c => c.Model),
+>         ("Model", _)            => cars.OrderBy(c => c.Model),
+>         _                       => cars
+>     };
+>     return access.CreateResponse(cars.ToList());
+> });
+> ```
+>
+> The tutorial below is preserved for v7 users still on that line.
+
 This is a more advanced tutorial - we recommend you read [Getting Started](DotNetTutorialGettingStarted.md) and our other tutorials first to familiarize
 yourself with Popcorn. 
 

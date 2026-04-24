@@ -1,33 +1,45 @@
 <img src="/media/PopcornLogo.png" width="50%">
+
 # Popcorn
 
-[![Join the chat at https://gitter.im/popcorn-api/Lobby](https://badges.gitter.im/popcorn-api/Lobby.svg)](https://gitter.im/popcorn-api/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build status](https://ci.appveyor.com/api/projects/status/odjc31j0q0k213qh/branch/master?svg=true)](https://ci.appveyor.com/project/alexbarbato/popcorn/branch/master) 
-[![NuGet](https://img.shields.io/nuget/v/Skyward.Api.Popcorn.svg)](https://www.nuget.org/packages/Skyward.Api.Popcorn)
+[![NuGet (v8 preview)](https://img.shields.io/nuget/vpre/Skyward.Api.Popcorn.SourceGen.Shared?label=v8%20preview)](https://www.nuget.org/packages/Skyward.Api.Popcorn.SourceGen.Shared)
+[![NuGet (v7)](https://img.shields.io/nuget/v/Skyward.Api.Popcorn?label=v7%20stable)](https://www.nuget.org/packages/Skyward.Api.Popcorn)
+[![Tests](https://github.com/SkywardApps/popcorn/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/SkywardApps/popcorn/actions/workflows/tests.yml)
+[![AOT CI](https://github.com/SkywardApps/popcorn/actions/workflows/aot-ci.yml/badge.svg?branch=master)](https://github.com/SkywardApps/popcorn/actions/workflows/aot-ci.yml)
 
 [Table Of Contents](docs/TableOfContents.md)
+
+> **Quick orientation.** Popcorn v8 (the current active line) is a Roslyn **source generator**.
+> The older v7 packages (still on NuGet) were built on **runtime reflection**. The two are
+> side-by-side installable and 100% wire-compatible — same `?include=` grammar, same attribute
+> semantics. The source-gen rewrite exists so Popcorn can run under `PublishAot=True` and
+> `PublishTrimmed=True`, which reflection can't. New projects: start with v8. Existing
+> projects on v7: see [Migrating from v7 to v8](docs/MigrationV7toV8.md) — the migration is
+> mostly find-and-replace.
+
 ## Jump straight in
-+ **.NET Core** - We have a [.net core middleware](docs/dotnet/DotNetDocumentation.md) that you can drop in to enable Popcorn on Web Apis. 
-Feel free to grab it on [nuget](https://www.nuget.org/packages/Skyward.Api.Popcorn.DotNetCore).
-+ **Other implementations** - See our [Roadmap](docs/Roadmap.md) or issues on GitHub for coming work
+
++ **New in .NET?** [DotNet Quick Start](docs/dotnet/DotNetQuickStart.md) — drop Popcorn v8 into a minimal-API app in five minutes.
++ **Migrating from v7?** [Migration guide](docs/MigrationV7toV8.md) — attribute renames, startup config changes, dropped features.
++ **Curious about numbers?** [Performance](docs/Performance.md) — benchmarked vs raw System.Text.Json and v7 reflection.
++ **Other platforms?** The protocol is platform-agnostic; only .NET has a provider today. See [Roadmap](roadmap.md).
 
 ## What is Popcorn?
-Popcorn is a communication protocol on top of a RESTful API that allows requesting clients to 
+
+Popcorn is a communication protocol on top of a RESTful API that allows requesting clients to
 identify individual fields of resources to include when retrieving the resource or resource
 collection.
 
-It allows for a recursive selection of fields, allowing multiple calls to be condensed 
-into one.  
+It allows for a recursive selection of fields, allowing multiple calls to be condensed
+into one.
 
-### Features
-+ Selective inclusion from a RESTful API
-	+ Configurable [response defaults](docs/dotnet/DotNetTutorialDefaultIncludes.md)
-	+ [Sorting](docs/dotnet/DotNetTutorialSorting.md) of responses
-	+ Selective [authorization](docs/dotnet/DotNetTutorialAuthorizers.md) and [permissioning](docs/dotnet/DotNetTutorialInternalOnly.md) of response values
-	+ Configurable [response inspectors](docs/dotnet/DotNetTutorialInspectors.md)
-	+ [Factory and advanced projection](docs/dotnet/DotNetTutorialAdvancedProjections.md) support
-	+ Set relevant [contexts](docs/dotnet/DotNetTutorialContexts.md) for your API
-	+ [Blind expansion](docs/dotnet/DotNetTutorialBlindExpansion.md) of response objects
+### Features (v8)
+
++ Selective field inclusion via `?include=[Field,Nested[Field]]` — one round trip instead of N.
++ Configurable [response defaults](docs/dotnet/DotNetTutorialDefaultIncludes.md) via `[Default]` / `[Always]` / `[Never]` attributes.
++ [Custom response envelopes](docs/MigrationV7toV8.md#6-custom-response-envelope--error-handling) via marker attributes + generator-emitted exception middleware.
++ Works under `PublishAot=True` and `PublishTrimmed=True`. No runtime reflection on the hot path.
++ Beats raw `System.Text.Json` on complex nested data (0.87× time / 0.93× alloc when emitting everything; ~10× faster and ~10× less alloc on selective fetch).
 
 **Ok, so.... what is it in action?**
 
@@ -129,48 +141,54 @@ Presto! All the information we wanted at our fingertips, and none of the data we
 
 ## Why would I use it?
 
-By implementing the Popcorn protocol, you get a consistent, well defined API abstraction that your
-API consumers will be able to easily utilize.  You will be able to take advantage of the various
-libraries and tools Popcorn offers; right now this includes a C# automatic implementation for 
-Asp.Net Core and EntityFramework Core, but many more platforms are on the roadmap.
+By implementing the Popcorn protocol, you get a consistent, well-defined API abstraction that your
+API consumers can easily utilize. Right now this ships as a C# library for ASP.NET Core with
+`System.Text.Json`; the protocol itself is platform-agnostic and other providers are welcome.
 
 ### Pros
-+ Faster calls
-+ Saves data
-+ Potential for server-side optimization
-+ Less boilerplate code to write
++ Fewer round trips for nested data.
++ Smaller payloads — server never materializes fields the client isn't going to read.
++ AOT- and trim-safe (v8) — your Popcorn-enabled service can publish to a single native binary.
++ Plain REST + JSON — no new client runtime, visible in the URL, cacheable by HTTP-standard tooling.
 
 ### Cons
-+ You don't get to write as much code
-+ Your consumers don't get to write as much code
++ `?include=[...]` is a new grammar clients must learn (though it's easy — see [Include Parameter Syntax](docs/dotnet/DotNetTutorialIncludeParameterSyntax.md)).
++ If you need typed client generation (OpenAPI, etc.), you'll need extra tooling — the shape of a response depends on the request.
 
-## Performance
+## A short history (reflection → source generator)
 
-The upcoming v2 (.NET source-generator) build has been benchmarked against both the v1 reflection
-engine and raw `System.Text.Json`.  Highlights (vs raw STJ, on a 25-item list of complex nested
-objects):
+Popcorn v1 through v7 (on NuGet as `Skyward.Api.Popcorn` / `.DotNetCore`) implemented selective
+serialization with **runtime reflection**: at request time the library walked the response
+object, read `[IncludeByDefault]` / `[InternalOnly]` attributes, and built a filtered
+`Dictionary<string, object?>` before handing it to the JSON serializer. That worked well on
+classic ASP.NET Core but became a blocker for newer .NET deployment stories:
 
-+ When the client asks for a subset, v2 is **~10× faster and allocates ~10× less** than raw STJ.
-+ When the client asks for everything, v2 is **0.87× the time of raw STJ** — faster than STJ even
-  without using selectivity, with no "Popcorn tax" to pay for keeping the feature available.
-+ v2 beats the v1 legacy engine in every cell we measured — 3–8× on apples-to-apples "emit
-  everything" comparisons, ~5.8× on the selective-fetch case that matters most.
-+ v2 works under `PublishAot=True` and `PublishTrimmed=True` (no runtime reflection on the hot
-  path). v1 does not.
+- **Native AOT** (`PublishAot=True`) strips metadata the reflection path needs. Popcorn v7 cannot AOT-publish.
+- **IL trimming** (`PublishTrimmed=True`) removes reachable-but-reflection-only members.
+  Again, v7 loses.
+- **Overhead on every request** — reflection + intermediate dictionary allocations dominated
+  the hot path, especially for large nested responses.
 
-Full methodology, per-shape ratios, and reproduction instructions: **[Performance](docs/Performance.md)**.
+**Popcorn v8** is a rewrite on top of a Roslyn source generator. At build time the generator
+scans `[JsonSerializable(typeof(ApiResponse<T>))]` declarations, walks the type graph, and
+emits one straight-line `JsonConverter<T>` per reachable type — no reflection, no intermediate
+dictionary, no metadata the trimmer can strip. The wire protocol (`?include=` grammar, attribute
+semantics, `Pop<T>` envelope shape) is unchanged; only the internals and the extension-point API
+surface moved. See [Performance](docs/Performance.md) for the numbers and
+[Migrating from v7 to v8](docs/MigrationV7toV8.md) for the API changes.
+
+Both package lines are on NuGet side-by-side during the transition: grab v8 for new work,
+keep v7 if you aren't yet ready to migrate.
 
 ## How can I use it in my project?
 
-First you need to figure out if you're working with a platform that has a provider implemented in 
-the popcorn project. (Probably check out [Documentation](docs/Documentation.md)).
+**.NET (ASP.NET Core):** see the [.NET Quick Start](docs/dotnet/DotNetQuickStart.md) and the
+[Getting Started tutorial](docs/dotnet/DotNetTutorialGettingStarted.md). Both packages
+(`Skyward.Api.Popcorn.SourceGen` + `Skyward.Api.Popcorn.SourceGen.Shared`) are on NuGet.
 
-If there's a provider already in the project, great!  The platform-specific documentation will walk
-you though incorporating the provider into your project.
-
-If there isn't a provider yet, you'll have to roll your own.  You'll still get the benefit of 
-working with a standard, so your consumers will have a well documented spec to work with.  Feel free
-to contribute any platform-specific providers you come up with!
+**Other platforms:** the protocol is documented in [Documentation](docs/Documentation.md) — if
+you build a provider in another language, the `?include=` grammar and default/always/never
+semantics defined there are the contract you need to satisfy. Contributions welcome!
 
 ## Further Reading
 
@@ -178,7 +196,7 @@ to contribute any platform-specific providers you come up with!
 + [Documentation](docs/Documentation.md)
 + [Performance](docs/Performance.md)
 + [Migrating from v7 to v8](docs/MigrationV7toV8.md)
-+ [Roadmap](docs/Roadmap.md)
++ [Roadmap](roadmap.md)
 + [Releases and Release Notes](docs/Releases.md)
 + [Contributing](docs/Contributing.md)
 + [License](LICENSE)

@@ -13,8 +13,23 @@ Platform-specific implementation documentation can be found here:
 There are intended to be two main mechanisms for specifying which fields are to be included in a query response:
 1. A query string appended to the url, 'include'.
 2. A custom header attached to the request, 'POPCORN-INCLUDE'
- 
-Currently only the query string mechanism is actually supported in any provider.
+
+Currently only the query string mechanism is supported in the .NET provider. Header-based
+transport is on the roadmap — see [roadmap.md](../roadmap.md).
+
+### Names are wire names, not C# names
+
+This is protocol-level, and it matters for any client: the names in an `?include=` list are
+matched against the **wire name** of each field — the name the client actually sees in
+response bodies. In the .NET provider this is whichever comes first:
+
+1. The value of `[JsonPropertyName("...")]` on the property, if present.
+2. The C# property name, normalized by any `JsonNamingPolicy` the server has configured
+   (CamelCase, SnakeCase, etc.).
+
+A client that sees `{"display_name": "..."}` in responses should request that field as
+`?include=[display_name]`. Requesting `?include=[DisplayName]` is silently treated as an
+unknown name and the field will not be emitted. Same rule applies to negation.
 
 <a name="includingFields"/>
 
@@ -79,6 +94,26 @@ Each entity type shall define its own default fields.  These are the implicit fi
 + No includes are specified at all
 + An empty set of includes are provided (ie, ```[]```)
 + The entity is included via a field reference in a parent object, but no subentity field list is provided or an empty list is provided. (Eg, ```[AllMyChildren]``` or ```[AllMyChildren[]]```)
+
+### Wildcards and negation
+
+Two keywords (both prefixed with `!`) let a client refer to the default and full field sets:
+
++ `!all` includes every available field on the target type.
++ `!default` is the default field set explicitly invoked — useful when combining with negation or an additional include.
+
+A `-` prefix on a field name negates it (removes it from what would otherwise be emitted):
+
+```
+?include=[!all,-Secret]      # everything except Secret
+?include=[!default,-Email]   # default set minus Email
+?include=[Id,Name,Child[Id,-Secret]]  # explicit plus nested with negation
+```
+
+Implementation contract: fields tagged with an "always emit" attribute (e.g. `[Always]` in the
+.NET provider) are emitted even under negation — negating an always-emit field is a silent
+no-op. Conversely, fields tagged "never emit" (e.g. `[Never]`) are never emitted, even if
+explicitly requested or covered by `!all`.
 
 <a name="methods"/>
 

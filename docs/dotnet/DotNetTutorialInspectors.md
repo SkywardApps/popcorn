@@ -2,6 +2,20 @@
 
 [Table Of Contents](../../docs/TableOfContents.md)
 
+> ⚠️ **v7-only — dropped in v8.** `SetDefaultApiResponseInspector()` and `SetInspector(lambda)`
+> exist only in the v7 runtime-reflection line. v8 splits the two jobs cleanly:
+>
+> - **Response envelope shape** — declare a type decorated with `[PopcornEnvelope]` and marker
+>   attributes (`[PopcornPayload]`, `[PopcornError]`, `[PopcornSuccess]`). The generator emits a
+>   typed, reflection-free error writer for it.
+> - **Exception → envelope rewriting** — use `app.UsePopcornExceptionHandler()` middleware. It
+>   catches unhandled exceptions, looks up the configured envelope, and writes an
+>   `ApiError`-populated response with status 500.
+>
+> Full rationale + code samples: [MigrationV7toV8.md §6](../MigrationV7toV8.md#6-custom-response-envelope--error-handling).
+>
+> The tutorial below is preserved for v7 users still on that line.
+
 We feel that it is important for developers to have the opportunity to inspect their Popcorn response objects in a consistent fashion so that 
 they can format or process the responses according to the needs of their users. So with that we've extended "inspector" functionality to Popcorn users! 
 An example of an "inspector" that we often use would be setting a standard response object wrapper to make an

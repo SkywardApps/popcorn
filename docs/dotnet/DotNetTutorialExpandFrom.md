@@ -2,6 +2,18 @@
 
 [Table Of Contents](../../docs/TableOfContents.md)
 
+> ⚠️ **v7-only — dropped in v8.** The `[ExpandFrom]` attribute and the projection-class pattern
+> it supports exist only in the v7 runtime-reflection line (`Skyward.Api.Popcorn` /
+> `.DotNetCore`). v8 does not ship it. The v8 replacements, in rough order of preference:
+>
+> 1. Decorate the source type directly with `[Never]` on internal properties (one source of truth, no projection class).
+> 2. Write a three-line hand factory (`public static CarDto From(CarEntity src) => new(...)`) when the domain/API boundary is hard.
+> 3. Use [Mapster.SourceGenerator](https://github.com/MapsterMapper/Mapster) for complex flattening — it is AOT-compatible and composes with Popcorn.
+>
+> Full rationale and code samples: [MigrationV7toV8.md §7](../MigrationV7toV8.md#7-projections-replacing-mapentityframework).
+>
+> The tutorial below is preserved for v7 users still on that line.
+
 The power of Popcorn comes in its ability to expand objects dynamically based on the specified object's properties.
 
 There are currently 3 ways that an object can be "Mapped" so it will be expanded by Popcorn. 

@@ -2,312 +2,201 @@
 
 [Table Of Contents](../../docs/TableOfContents.md)
 
-If you are unfamiliar with how to 'project' a data entity into another type please complete the [Getting Started](DotNetTutorialGettingStarted.md) first.
+If you're new to Popcorn, start with [Getting Started](DotNetTutorialGettingStarted.md) —
+this tutorial assumes you already have a working app and understand the basics of `?include=`.
 
-Popcorn's projections are very powerful, but you probably don't want to have to specify what should be included 
-in a response object every time.
+Popcorn lets you declare which fields show up when the client makes a "bare" request — one
+with no `?include=` parameter or with an empty `?include=[]`. You do this with three
+attributes on the model, all in the `Popcorn` namespace.
 
-This tutorial will walk you through the two ways you can declare default properties on your projections - while also discussing a way
-to include subproperties on an object by default.
+| Attribute | Emitted when |
+|---|---|
+| `[Always]` | Every response, regardless of `?include=`. Cannot be negated. |
+| `[Default]` | `?include=` is absent, empty, or `!default`. Can be negated via `-FieldName`. |
+| `[Never]`  | Never. Not even when `?include=[FieldName]` asks for it explicitly. |
 
-First let's start with an example!
-Let's look at our intial Employee object and its projection
+## Example model
+
+Suppose we extend the `Employee` model from [Getting Started](DotNetTutorialGettingStarted.md)
+with a computed `FullName` property:
+
 ```csharp
+using Popcorn;
+
 public class Employee
 {
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
+    public string FirstName { get; set; } = "";
+    public string LastName  { get; set; } = "";
+    public string FullName => $"{FirstName} {LastName}";
 
     public DateTimeOffset Birthday { get; set; }
     public int VacationDays { get; set; }
 
-    public List<Car> Vehicles { get; set; }
+    public List<Car> Vehicles { get; set; } = new();
 }
 ```
+
+A bare `GET /employees` request would return every public property. For most APIs that's too
+much — the client ends up paying for data it won't render. Let's declare a smaller default.
+
+## Controlling the default set with `[Default]`
 
 ```csharp
-public class EmployeeProjection
+public class Employee
 {
-	public string FirstName { get; set; }
-	public string LastName { get; set; }
-	public string FullName { get; set; }
+    [Default] public string FirstName { get; set; } = "";
+    [Default] public string LastName  { get; set; } = "";
+    public string FullName => $"{FirstName} {LastName}";
 
-	public string Birthday { get; set; }
-	public int? VacationDays { get; set; }
+    public DateTimeOffset Birthday { get; set; }
+    public int VacationDays { get; set; }
 
-	public List<CarProjection> Vehicles { get; set; }
+    public List<Car> Vehicles { get; set; } = new();
 }
 ```
 
-Now, assuming you've mapped the projection as we've discussed in [Getting Started](DotNetTutorialGettingStarted.md) let's see what
-comes back from our "Employee" endpoint with no include statement
+```
+GET /employees
+```
 
-```javascript
-http://localhost:50353/api/example/employees
-
+```json
 {
-	"FirstName": "Liz",
-	"LastName": "Lemon",
-	"FullName": "Liz Lemon",
-	"Birthday": "05/01/1981",
-	"VacationDays": 0,
-	"Vehicles": [
-		{
-			"Model": "Firebird",
-			"Make": "Pontiac",
-			"Year": 1981
-		}
-	]
-},
-{
-	"FirstName": "Jack",
-	"LastName": "Donaghy",
-	"FullName": "Jack Donaghy",
-	"Birthday": "07/12/1957",
-	"VacationDays": 300,
-	"Vehicles": [
-		{
-			"Model": "250 GTO",
-			"Make": "Ferrari N.V.",
-			"Year": 1962
-		},
-		{
-			"Model": "Cayman",
-			"Make": "Porsche",
-			"Year": 2005
-		}
-	]
+  "Success": true,
+  "Data": [
+    { "FirstName": "Liz",  "LastName": "Lemon"   },
+    { "FirstName": "Jack", "LastName": "Donaghy" }
+  ]
 }
 ```
 
-That is a lot of information, but what if we know that the standard request for employees should only include the "FirstName" and "LastName" by default, as our database may be enormous and returning all information unnecessarily is time consuming.
+The `Birthday`, `VacationDays`, `FullName`, and `Vehicles` fields are still available on the
+wire — clients just have to ask for them:
 
-The answer is default properties.
+```
+GET /employees?include=[FirstName,Birthday,FullName]
+```
 
-### Option 1: Declaring default properties on the projection
+```json
+{
+  "Success": true,
+  "Data": [
+    { "FirstName": "Liz",  "Birthday": "1981-05-01T00:00:00+00:00", "FullName": "Liz Lemon"   },
+    { "FirstName": "Jack", "Birthday": "1957-07-12T00:00:00+00:00", "FullName": "Jack Donaghy" }
+  ]
+}
+```
 
-This is the recommended way to declare defaults as it is very easily maintained and makes it clear which defaults have been set.
-Plus, it blends seamlessly with the subproperty default include system.
+## The "no attributes" rule
 
+If a type has **no** `[Default]` or `[Always]` attributes anywhere, every property is treated
+as default-included. This keeps getting-started friction low — you can start emitting everything
+and only introduce attributes when you want to tighten the default set.
 
+| Attribute layout | Default set |
+|---|---|
+| No `[Default]` / `[Always]` anywhere on the type | All properties |
+| At least one `[Default]` | Only properties marked `[Default]` or `[Always]` |
+| `[Never]` on a property | That property is excluded, always, regardless of other rules |
 
-Go back to your Employee projection and add the property [IncludeByDefault] to "FirstName" and "LastName"
+Inheritance: `[Default]` / `[Always]` on a base class flow through to derived classes. `[Never]`
+does the same. You don't need to re-declare them on the subclass.
+
+## `[Always]` for fields that must be on every response
+
+Some fields — primary keys, tenant IDs, version columns — should always be present even if the
+client forgot to ask. `[Always]` guarantees that:
+
 ```csharp
-public class EmployeeProjection
+public class Employee
 {
-	[IncludeByDefault]
-	public string FirstName { get; set; }
-	[IncludeByDefault]
-	public string LastName { get; set; }
-	public string FullName { get; set; }
-
-	public string Birthday { get; set; }
-	public int? VacationDays { get; set; }
-
-	public List<CarProjection> Vehicles { get; set; }
+    [Always]  public int Id { get; set; }
+    [Default] public string FirstName { get; set; } = "";
+    [Default] public string LastName  { get; set; } = "";
+    ...
 }
 ```
 
-Now boot up the project and make the employees request again with no include statement.
-```javascript
-http://localhost:50353/api/example/employees
+```
+GET /employees?include=[FirstName]
+```
 
+```json
 {
-	"FirstName": "Liz",
-	"LastName": "Lemon"
-},
-{
-	"FirstName": "Jack",
-	"LastName": "Donaghy"
+  "Success": true,
+  "Data": [
+    { "Id": 1, "FirstName": "Liz"  },
+    { "Id": 2, "FirstName": "Jack" }
+  ]
 }
 ```
 
-Much more streamlined, and we can still send a request out with ?include=[...] and access
-all of the properties exposed on the projection, overriding the DefaultInclude statement.
+`Id` shows up even though the client didn't list it. Negation won't remove it either — a
+request for `?include=[!all,-Id]` still emits `Id`. If a field is genuinely sensitive, use
+`[Never]`, not `[Always]` — see [Internal-Only Fields](DotNetTutorialInternalOnly.md).
 
-*Important FYI: Derived classes will inherit their base class' [IncludeByDefault]'s by default and can be overridden 
-in the usual fashion with a specific ?include in a request.* 
+## Sub-property defaults via `[SubPropertyDefault]`
 
-### Option 2: Including a DefaultIncludes string at "Map" time
+When a property is a complex type (like `List<Car>`), including the parent without specifying
+sub-children normally falls back to the child type's own default set. `[SubPropertyDefault]`
+lets you override that decision *for this property*:
 
-You'll remember in our [Advanced Projections Tutorial](DotNetTutorialAdvancedProjections.md) we explained translations on the mappings.
-In addition to that functionality, you can also pass in a defaultIncludes string at the time of a mapping to include certain properties 
-by default.
-
-Let's shift to the Car object and projection and see how that is applied there
 ```csharp
-public class Car
+public class Employee
 {
-    public string Model { get; set; }
-    public string Make { get; set; }
-    public int Year { get; set; }
+    [Default] public string FirstName { get; set; } = "";
+    [Default] public string LastName  { get; set; } = "";
 
-    public enum Colors
+    [SubPropertyDefault("[Make,Model,Color]")]
+    public List<Car> Vehicles { get; set; } = new();
+}
+```
+
+```
+GET /employees?include=[FirstName,Vehicles]
+```
+
+```json
+{
+  "Success": true,
+  "Data": [
     {
-        Black,
-        Red,
-        Blue,
-        Gray,
-        White,
-        Yellow,
-    }
-    public Colors Color { get; set; }
-}
-
-```csharp
-public class CarProjection
-{
-	public string Model { get; set; }
-	public string Make { get; set; }
-	public int? Year { get; set; }
-	public string Color { get; set; }
+      "FirstName": "Liz",
+      "Vehicles": [
+        { "Make": "Pontiac", "Model": "Firebird", "Color": 2 }
+      ]
+    },
+    ...
+  ]
 }
 ```
 
-As you've seen above with the Employee Projection, with no default includes, making a request to the "cars" endpoint 
-will return all 4 exposed properties. Again, let us say we only care to see Make, Model, and Year by default on our returned objects.
+Without the attribute, `Vehicles` would have emitted the `Car` type's own default set. The
+override applies only when the client doesn't spell out sub-children: `?include=[Vehicles[Year]]`
+still wins (explicit sub-children beat the attribute), and `[Never]` on a `Car` property still
+wins over the attribute (declared "never-emit" always beats "default-emit").
 
-We return to our mapping statement in Startup.cs and configure it as seen below, ignoring the translation for clarity.
-```csharp
-mvcOptions.UsePopcorn((popcornConfig) => {
-	popcornConfig
-		.Map<Car, CarProjection>(defaultIncludes: "[Model,Make,Year]", config: (carConfig) => {
-			...
-		}
+The include string is parsed once per process into a static readonly field at generation time —
+no per-request parsing cost.
+
+## Negation and `!default` keyword
+
+`?include=[!default]` is shorthand for "the default set" — useful when you want the default
+set *plus* a couple of extra fields:
+
+```
+GET /employees?include=[!default,Birthday]
+→ default set (FirstName + LastName) plus Birthday
+
+GET /employees?include=[!default,-LastName]
+→ default set minus LastName (FirstName only)
 ```
 
-Now if we fired up our program again and made the "cars" request we would see a response like the below
-```javascript
-http://localhost:50353/api/example/employees
+`[Always]`-marked fields are still included regardless of negation — `-Id` is a silent no-op
+if `Id` is marked `[Always]`.
 
-{
-	"Model": "Firebird",
-	"Make": "Pontiac",
-	"Year": 1981
-},
-{
-	"Model": "250 GTO",
-	"Make": "Ferrari N.V.",
-	"Year": 1962
-},
-{
-	"Model": "Cayman",
-	"Make": "Porsche",
-	"Year": 2005
-}
-```
+## See also
 
-Voila! Default inclusion complete.
-
-## Important caveat
-It is important to mention that both option 1 and option 2 can't be used at the same time on any single projection in order to help maintain clarity of design.
-
-## Default Behavior When No Attributes Are Present
-
-Starting with version 2.0, Popcorn introduces a more intuitive default behavior:
-
-**If a type has no properties or fields with either `[Always]` or `[Default]` attributes, then all properties and fields of that type are considered Default.**
-
-This means:
-
-1. If you mark one or more properties with `[Default]` or `[Always]`, only those properties (and any with `[Always]`) will be included by default
-2. If you don't mark any properties with attributes, all properties will be included by default
-3. Properties marked with `[Never]` are still excluded, even when all other properties are included by default
-
-This behavior makes Popcorn more intuitive for new users while maintaining backward compatibility with existing code that uses attributes.
-
-### Examples:
-
-**Example 1: No attributes - all properties included by default**
-```csharp
-public class Person
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public int Age { get; set; }
-}
-```
-All properties (Id, Name, Age) will be included by default.
-
-**Example 2: One Default attribute - only that property included by default**
-```csharp
-public class Person
-{
-    [Default]
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public int Age { get; set; }
-}
-```
-Only the Id property will be included by default.
-
-**Example 3: Never attribute with no other attributes - all properties except Never included by default**
-```csharp
-public class Person
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    [Never]
-    public int Age { get; set; }
-}
-```
-Id and Name will be included by default, but Age will never be included.
-
-### Default includes on subproperties
-We've also created a "SubPropertyDefaultIncludes" property that can be put on a projection to have any subordinate object
-returned with a set of default properties.
-
-Things to remember:
-1. The SubPropertyDefaultIncludes will override any DefaultIncludes (be it mapped or a property) on the actual projection being referenced.
-2. Just like with DefaultIncludes, the sub-entities properties can still be included in the ?include=[..[..]] statement to override the SubPropertyDefaultIncludes.
-	
-Again, we return to EmployeeProjection to see this feature in use:
-```csharp
-public class EmployeeProjection
-{
-	[IncludeByDefault]
-	public string FirstName { get; set; }
-	[IncludeByDefault]
-	public string LastName { get; set; }
-	public string FullName { get; set; }
-
-	public string Birthday { get; set; }
-	public int? VacationDays { get; set; }
-
-	[SubPropertyIncludeByDefault("[Make,Model,Color]")]
-	public List<CarProjection> Vehicles { get; set; }
-}
-```
-
-You'll see that we added a "SubPropertyIncludeByDefault" to our Vehicles property that specifies a standard "include" format list of properties.
-As mentioned above, by default the "employees?include=[Vehicle]" request will return the Make, Model, and Year as that
-is the default set to the car projection.
-
-Now let's see what happens with the addition of the "SubPropertyIncludeByDefault" property.
-
-```javascript
-http://localhost:49695/api/example/employees?include=[Vehicles]
-{
-	"Vehicles": [
-		{
-			"Model": "Firebird",
-			"Make": "Pontiac",
-			"Color": "Blue"
-		}
-	]
-},
-{
-	"Vehicles": [
-		{
-			"Model": "250 GTO",
-			"Make": "Ferrari N.V.",
-			"Color": "Red"
-		},
-		{
-			"Model": "Cayman",
-			"Make": "Porsche",
-			"Color": "Yellow"
-		}
-	]
-}
-```
+- [Include Parameter Syntax](DotNetTutorialIncludeParameterSyntax.md) for the full grammar
+  (nesting, negation, `!all`).
+- [Internal-Only Fields](DotNetTutorialInternalOnly.md) for `[Never]`.
+- [Wildcard Includes](DotNetTutorialWildcardIncludes.md) for `!all`.

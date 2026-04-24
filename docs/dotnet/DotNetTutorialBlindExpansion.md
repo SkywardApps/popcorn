@@ -1,5 +1,20 @@
 # [Popcorn](../../README.md) > [Documentation](../Documentation.md) > [DotNet](DotNetDocumentation.md) > Tutorial: Blind Expansion
 
+> ⚠️ **v7-only — dropped in v8.** `EnableBlindExpansion(true)` and the `BlindHandler<TFrom, TTo>`
+> registration no longer exist. Two clean v8 answers cover what this feature did:
+>
+> - **For your own types:** v8 walks your type graph automatically. Add
+>   `[JsonSerializable(typeof(ApiResponse<Business>))]` to your `JsonSerializerContext`, and the
+>   generator emits a converter for every reachable type. No extra "turn on blind expansion" flag.
+> - **For external types** (e.g. `NetTopologySuite.Geometry`): register a standard
+>   `JsonConverter<Geometry>` on `JsonSerializerOptions.Converters`. Popcorn composes with STJ
+>   converters transparently — when Popcorn's generator hits a type it doesn't recognize, it
+>   falls through to `JsonSerializer.Serialize(…)`, which picks up your registered converter.
+>
+> Full rationale + code samples: [MigrationV7toV8.md §8](../MigrationV7toV8.md#8-external-type-handlers-blindhandler).
+>
+> The tutorial below is preserved for v7 users still on that line.
+
 We may not want to actually have to project out all of your objects and map them as that may not be a layer of abstraction 
 you or your team care to have. We recognize that while projections do offer another layer of protection and 
 more flexiblity within Popcorn, our users need to be able to quickly get started and get moving.
