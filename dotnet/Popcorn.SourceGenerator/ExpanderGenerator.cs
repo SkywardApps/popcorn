@@ -1061,7 +1061,7 @@ public static class PopcornJsonOptionsExtension
         private static string CreateArraySerializer(HashSet<string> allTypeNames, INamedTypeSymbol? itemType)
         {
             string internalSerializationCode;
-            var propertyTypeName = itemType?.ToDisplayString().Replace("?", "");
+            var propertyTypeName = itemType?.ToDisplayString().Replace("?", "") ?? "";
             if (allTypeNames.Contains(propertyTypeName))
             {
                 if (TargetEmitsInner(itemType))
