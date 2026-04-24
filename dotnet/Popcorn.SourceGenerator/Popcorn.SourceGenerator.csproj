@@ -11,6 +11,13 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsRoslynComponent>true</IsRoslynComponent>
 
+    <!-- RS2003 fires on each shipped-rule entry because this project is an IIncrementalGenerator,
+         not a DiagnosticAnalyzer — source generators don't expose SupportedDiagnostics, so the
+         release-tracking validator can't match the rule IDs to an analyzer. The tracking files
+         exist purely as shipped-diagnostic documentation (silences the RS2008 "enable tracking"
+         warning the consumer-build sees). Safe to suppress at the project level. -->
+    <NoWarn>$(NoWarn);RS2003</NoWarn>
+
     <PackageId>Skyward.Api.Popcorn.SourceGen</PackageId>
     <Version>8.0.0-preview.1</Version>
     <Authors>Skyward App Company, LLC</Authors>
@@ -59,6 +66,13 @@
 
     <None Include="..\..\LICENSE" Pack="true" PackagePath="" />
     <None Include="..\..\README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <!-- Analyzer release tracking — silences RS2008 ("Enable analyzer release tracking for rule JSGxxx").
+       AdditionalFiles makes the Microsoft.CodeAnalysis.Analyzers release-tracking analyzer read them. -->
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
 
 </Project>
