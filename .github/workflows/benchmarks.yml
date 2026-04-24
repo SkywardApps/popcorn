@@ -1,0 +1,84 @@
+name: Benchmarks (relative-perf gate)
+
+# Runs a narrow BenchmarkDotNet pass on PR + push to master/spike/**, then compares
+# three load-bearing Popcorn/STJ ratios against a committed baseline. Fails if any
+# ratio regressed by more than `thresholdPercent` (default 25%) from the snapshot in
+# benchmarks/results/ci-baseline.json.
+#
+# We gate on RATIOS, not absolute timings, because GitHub runners vary ±20-30% in
+# wall-clock ns/op but the ratio between two benchmarks on the same run is stable
+# (both see the same noise). See .github/scripts/compare-benchmark-ratios.py for the
+# threshold math.
+#
+# Wall time: ~2-3 minutes (5 benchmarks, SimpleJob = 3 warmup + 15 iterations).
+
+on:
+  push:
+    branches:
+      - master
+      - 'spike/**'
+  pull_request:
+    branches:
+      - master
+      - 'spike/**'
+
+concurrency:
+  group: benchmarks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ratio-gate:
+    name: Relative-perf gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK 8.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('dotnet/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Run CI benchmark subset
+        working-directory: dotnet/benchmarks/SerializationPerformance
+        run: dotnet run -c Release -- ci
+
+      - name: Show markdown report
+        working-directory: dotnet/benchmarks/SerializationPerformance
+        run: |
+          REPORT=BenchmarkDotNet.Artifacts/results/SerializationPerformance.Benchmarks.SerializationComparisonBenchmarks-report-github.md
+          if [ -f "$REPORT" ]; then
+            echo "### Benchmark output" >> $GITHUB_STEP_SUMMARY
+            cat "$REPORT" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Compare ratios vs baseline
+        run: |
+          python3 .github/scripts/compare-benchmark-ratios.py \
+            dotnet/benchmarks/SerializationPerformance/BenchmarkDotNet.Artifacts/results/SerializationPerformance.Benchmarks.SerializationComparisonBenchmarks-report-full.json \
+            benchmarks/results/ci-baseline.json \
+            | tee /tmp/ratio-report.txt
+          EXIT=${PIPESTATUS[0]}
+          echo "### Ratio gate" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/ratio-report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          exit $EXIT
+
+      - name: Upload BDN artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: dotnet/benchmarks/SerializationPerformance/BenchmarkDotNet.Artifacts/results/*
+          retention-days: 30

@@ -1,0 +1,30 @@
+{
+  "description": "Relative-performance snapshot used by the benchmark CI gate. Each entry is Popcorn / STJ source-gen on the same shape. Absolute ns/op is machine-dependent; ratios are stable because both numerator and denominator feel the same runner noise. Update this file only when an intentional perf change lands (optimization or deliberate regression); casual CI failures are the gate working.",
+  "thresholdPercent": 25,
+  "capturedAt": "2026-04-23",
+  "capturedOn": ".NET 10.0.7, Windows 11, local dev box",
+  "runner": "SerializationComparisonBenchmarks, SimpleJob (3 warmup + 15 iterations)",
+  "ratios": [
+    {
+      "name": "SimpleModelList_PopcornAll_vs_Stj",
+      "numerator": "SimpleModelList_PopcornAll",
+      "denominator": "SimpleModelList_Stj_SourceGen",
+      "value": 1.492,
+      "meaning": "Worst-case overhead cell. Shallow objects in a list — no room for Popcorn's selectivity to pay off, so we carry the include-check loop cost with nothing to skip. Memory-bank calls this ~1.40× historically."
+    },
+    {
+      "name": "ComplexModelList_PopcornAll_vs_Stj",
+      "numerator": "ComplexModelList_PopcornAll",
+      "denominator": "ComplexModelList_Stj_SourceGen",
+      "value": 0.872,
+      "meaning": "Headline case. Nested complex data, emit everything. Popcorn's generated converter is faster than raw STJ because its per-property loop is flat + non-allocating vs STJ's metadata walk. Memory-bank calls this 0.87×."
+    },
+    {
+      "name": "ComplexModelList_PopcornDefault_vs_Stj",
+      "numerator": "ComplexModelList_PopcornDefault",
+      "denominator": "ComplexModelList_Stj_SourceGen",
+      "value": 0.111,
+      "meaning": "Selectivity win. Same nested shape, emit only [Default]. Popcorn renders ~10% of the STJ time because it skips the excluded properties entirely. Memory-bank calls this 0.10×."
+    }
+  ]
+}

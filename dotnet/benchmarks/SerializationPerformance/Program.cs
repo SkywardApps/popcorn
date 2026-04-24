@@ -46,6 +46,26 @@ class Program
             case "attributes":
                 BenchmarkRunner.Run<AttributeProcessingBenchmarks>(config);
                 break;
+            case "ci":
+                // Focused benchmark pass for the CI ratio gate. Filters to the 5 benchmarks that
+                // back the three load-bearing ratios (worst-case, headline, selectivity) vs their
+                // STJ source-gen baselines. ShortRun is too noisy for ratio detection — the
+                // denominator (Stj_SourceGen) can jump ~30% on a cold iteration, squashing the
+                // ratio and producing false passes/fails. So we run the class's default
+                // [SimpleJob] (3 warmup + 15 iterations) — ~90 seconds total on a typical box.
+                // Pair with .github/scripts/compare-benchmark-ratios.py for the gate check.
+                var ciConfig = ManualConfig.Create(DefaultConfig.Instance)
+                    .AddExporter(JsonExporter.Full);
+                BenchmarkRunner.Run<SerializationComparisonBenchmarks>(ciConfig, new[]
+                {
+                    "--filter",
+                    "*SimpleModelList_Stj_SourceGen",
+                    "*SimpleModelList_PopcornAll",
+                    "*ComplexModelList_Stj_SourceGen",
+                    "*ComplexModelList_PopcornAll",
+                    "*ComplexModelList_PopcornDefault",
+                });
+                break;
             case "parsing":
                 Console.WriteLine("Running existing parsing benchmarks...");
                 Console.WriteLine("Please run the ParsingIncludes project separately.");
@@ -78,6 +98,7 @@ class Program
         Console.WriteLine("  scalability - Big O analysis (flat lists and deep nesting)");
         Console.WriteLine("  circular    - Circular reference detection overhead");
         Console.WriteLine("  attributes  - Attribute processing overhead ([Always], [Never], [Default])");
+        Console.WriteLine("  ci          - CI ratio gate: ShortRun over 5 benchmarks (~2-3 min)");
         Console.WriteLine("  parsing     - Property reference parsing (run ParsingIncludes project)");
         Console.WriteLine();
         Console.WriteLine("Examples:");
