@@ -1,0 +1,113 @@
+name: AOT CI
+
+# Validates that PopcornAotExample publishes and runs under PublishAot=True +
+# PublishTrimmed=True end-to-end, including the custom [PopcornEnvelope] + exception
+# middleware dispatch path. This is the canary that proves the generator-emitted
+# converters + error-writer registration actually work without runtime reflection.
+
+on:
+  push:
+    branches:
+      - master
+      - 'spike/**'
+  pull_request:
+    branches:
+      - master
+      - 'spike/**'
+
+# Cancel superseded runs on the same ref so we don't burn CI minutes on stale commits.
+concurrency:
+  group: aot-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  aot-publish-and-verify:
+    name: Publish AOT + verify endpoints
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build AOT container image
+        uses: docker/build-push-action@v5
+        with:
+          context: dotnet
+          file: dotnet/PopcornAotExample/Dockerfile
+          tags: popcorn-aot-example:ci
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start container
+        run: |
+          set -euo pipefail
+          docker run -d --rm --name popcorn-aot -p 8080:8080 popcorn-aot-example:ci
+          # Wait for the AOT binary to be ready (up to 60s).
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8080/todos > /dev/null 2>&1; then
+              echo "Container ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Container did not become ready within 60s"
+          docker logs popcorn-aot || true
+          exit 1
+
+      - name: Verify /todos
+        run: |
+          set -euo pipefail
+          RESPONSE=$(curl -sf http://127.0.0.1:8080/todos)
+          echo "$RESPONSE"
+          # Success envelope (ApiResponse<T>) from the happy path.
+          echo "$RESPONSE" | grep -q '"Success":true' || { echo "FAIL: /todos missing Success:true"; exit 1; }
+          # [Always] on Id means both Todos must emit it.
+          echo "$RESPONSE" | grep -q '"Id":1' || { echo "FAIL: /todos missing Id:1"; exit 1; }
+          echo "$RESPONSE" | grep -q '"Id":2' || { echo "FAIL: /todos missing Id:2"; exit 1; }
+          # [Never] on IsComplete — it must not appear on the wire.
+          if echo "$RESPONSE" | grep -q 'IsComplete'; then
+            echo "FAIL: /todos leaked [Never] property IsComplete"; exit 1
+          fi
+
+      - name: Verify /null
+        run: |
+          set -euo pipefail
+          RESPONSE=$(curl -sf http://127.0.0.1:8080/null)
+          echo "$RESPONSE"
+          # CreateResponse<Todo?>(null) → ApiResponse<Todo?>{ Data = Pop{ Data = null, ... } }.
+          echo "$RESPONSE" | grep -q '"Data":null' || { echo "FAIL: /null missing Data:null"; exit 1; }
+
+      - name: Verify /sub
+        run: |
+          set -euo pipefail
+          RESPONSE=$(curl -sf http://127.0.0.1:8080/sub)
+          echo "$RESPONSE"
+          # Single Todo with nested SubTodo. ToDo is the property name on the record.
+          echo "$RESPONSE" | grep -q '"ToDo"' || { echo "FAIL: /sub missing nested ToDo"; exit 1; }
+          echo "$RESPONSE" | grep -q '"Id":1' || { echo "FAIL: /sub missing Id:1"; exit 1; }
+
+      - name: Verify /boom (exception middleware + custom envelope)
+        run: |
+          set -euo pipefail
+          STATUS=$(curl -s -o /tmp/boom.json -w '%{http_code}' http://127.0.0.1:8080/boom)
+          BODY=$(cat /tmp/boom.json)
+          echo "status=$STATUS body=$BODY"
+          # UsePopcornExceptionHandler must rewrite the response as 500 with the
+          # generator-emitted AotCustomEnvelope shape — Ok:false + Problem:{...}.
+          [ "$STATUS" = "500" ] || { echo "FAIL: /boom expected 500, got $STATUS"; exit 1; }
+          echo "$BODY" | grep -q '"Ok":false' || { echo "FAIL: /boom missing Ok:false"; exit 1; }
+          echo "$BODY" | grep -q '"Problem"' || { echo "FAIL: /boom missing Problem"; exit 1; }
+          echo "$BODY" | grep -q 'aot boom' || { echo "FAIL: /boom missing exception message"; exit 1; }
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: docker logs popcorn-aot || true
+
+      - name: Stop container
+        if: always()
+        run: docker stop popcorn-aot || true

@@ -53,6 +53,8 @@ These five items are tracked in the roadmap now; kept here as a back-reference f
 - Client libraries (TS/JS) — out of scope for .NET spike, but protocol decisions here constrain them.
 
 ## Recent Activity (branch commits, most recent first)
+- (pending) Add AOT CI workflow (`.github/workflows/aot-ci.yml`): builds the Dockerfile, runs the container, asserts all four endpoints. Closes the AOT merge-gate.
+- `ad4650c` Close NuGet merge-gate: Releases.md 8.0.0-preview.1 entry + smoke-test notes
 - `6c437cb` Wire v8 NuGet packaging: two-package design (`Skyward.Api.Popcorn.SourceGen` + `.Shared`), SourceLink, snupkg for Shared, CI step for both packages; smoke-tested locally
 - `be55b65` Clear remaining Tier-2 scope: drop `[Translator]` with DI and `IPopcornBlindHandler`; migration guide §5/§8 document endpoint-side resolution + standard `JsonConverter<T>` patterns
 - `efb05b9` Drop `[ExpandFrom]` from v2 scope; delete `ExpandFromTests.cs`; migration guide §7 now recommends `[Never]` / hand factory / Mapster

@@ -43,9 +43,15 @@ If a real consumer presents a concrete case that none of the replacement pattern
 - Headline: Popcorn source-gen beats legacy reflection in every scenario (3–8× for `All`, ~5.8× for `Default` on ComplexModelList). Popcorn-default on ComplexModelList is ~10× faster / ~5× less alloc than STJ reflection. Popcorn-all on ComplexModelList is **0.87× time / 0.93× alloc** — Popcorn is *faster* than STJ when emitting everything on nested data; legacy-all is 3.6× slower than STJ on the same shape.
 - **Merge-gate item**: **closed**. "Perf parity or better" was the load-bearing thesis claim; 3-way report confirms it — and the three in-generator optimizations tipped it from parity-to-STJ into *better* than STJ on complex nested lists.
 
-### CI: publish + run AOT example in a container
-- Add a GitHub Actions job to `.github/workflows/main.yml` that runs `dotnet publish dotnet/PopcornAotExample -c Release -r linux-x64` with `PublishAot=True`, builds a container, runs it, and hits the three existing endpoints (`/todos`, `/null`, `/sub`) plus the `/boom` endpoint (which should return a 500 with the custom envelope shape).
-- **Why**: merge gate item — prevents regressions in the AOT code path between PRs.
+### CI: publish + run AOT example in a container — **shipped**
+- [`.github/workflows/aot-ci.yml`](.github/workflows/aot-ci.yml) runs on PR + push to `master` / `spike/**`. Uses `docker/build-push-action@v5` with `type=gha` cache to build [`dotnet/PopcornAotExample/Dockerfile`](dotnet/PopcornAotExample/Dockerfile) (context: `dotnet/`). Starts the container on port 8080, waits up to 60s for readiness, verifies all four endpoints end-to-end:
+  - `/todos` — `Success:true`, `Id:1` + `Id:2` present, `IsComplete` (`[Never]`) absent.
+  - `/null` — `Data:null` in the envelope.
+  - `/sub` — `Id:1` + nested `ToDo` object.
+  - `/boom` — status `500`, `Ok:false`, `Problem` populated with the exception message (exercises the exception middleware + generator-emitted custom-envelope error writer).
+- On failure: dumps `docker logs`. Always: stops the container. Concurrency-group cancels superseded runs on the same ref.
+- Endpoint assertions verified locally (2026-04-23) against the JIT-mode app; docker daemon wasn't available on the dev box so the container path will be first-exercised by CI itself.
+- **Merge-gate item: closed.** Any future change that breaks the AOT code path will fail this job.
 
 ### NuGet packaging story — **ready to tag 8.0.0-preview.1**
 - **Two-package design.** `Skyward.Api.Popcorn.SourceGen.Shared` (runtime attributes, envelopes, middleware — from [`Popcorn.Shared.csproj`](dotnet/Popcorn.Shared/Popcorn.Shared.csproj)) and `Skyward.Api.Popcorn.SourceGen` (analyzer-only, from [`Popcorn.SourceGenerator.csproj`](dotnet/Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj)). Side-by-side-installable with legacy `Skyward.Api.Popcorn` v7 because the IDs diverge.
@@ -115,7 +121,7 @@ Adjust based on what any real consumer blocks on first.
 
 - [x] Published benchmark report. 3-way (Stj reflection vs Stj source-gen vs Popcorn source-gen vs legacy `PopcornNetStandard`) committed under `benchmarks/results/v2-baseline/`.
 - [x] Fix the `Pop{X}Inner` regression on nested-collection registrations.
-- [ ] CI job that publishes the AOT example and runs it in a container.
+- [x] CI job that publishes the AOT example and runs it in a container. Landed as [`.github/workflows/aot-ci.yml`](.github/workflows/aot-ci.yml).
 - [x] NuGet packaging story for `Popcorn.SourceGenerator` + `Popcorn.Shared` — two-package design `Skyward.Api.Popcorn.SourceGen` + `Skyward.Api.Popcorn.SourceGen.Shared`, 8.0.0-preview.1, verified locally. Operational tag+push remains.
 - [x] v7→v8 migration guide ([docs/MigrationV7toV8.md](docs/MigrationV7toV8.md)).
 - [x] JSG008 diagnostic for polymorphic unknown-at-build-time types.
