@@ -19,7 +19,7 @@ The power of Popcorn comes in its ability to expand objects dynamically based on
 There are currently 3 ways that an object can be "Mapped" so it will be expanded by Popcorn. 
 by Popcorn.
  1. [Blind expansion](DotNetTutorialBlindExpansion.md) - The most limiting option, but the quickest to configure
- 2. [Mapping on the Popcorn configuration](DotNetQuickStart.md) - The most permissive and customizable option, but the slowest to configure
+ 2. Mapping on the Popcorn configuration (`config.Map<TSource, TProjection>()` — a v7 API; see the [migration guide](../MigrationV7toV8.md) for the v8 equivalent) - The most permissive and customizable option, but the slowest to configure
  3. ExpandFrom assigned to a projection class - Arguably the best combination of quick setup without the fragility of blind expansion
 
  ## Overview

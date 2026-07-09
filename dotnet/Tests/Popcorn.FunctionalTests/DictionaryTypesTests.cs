@@ -675,19 +675,19 @@ namespace Popcorn.FunctionalTests
 
             // Assert empty dictionaries
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("StringIntDictionary", out var stringIntDictionary), "StringIntDictionary property is present");
-            Assert.Equal(0, stringIntDictionary.EnumerateObject().Count());
+            Assert.Empty(stringIntDictionary.EnumerateObject());
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("StringStringDictionary", out var stringStringDictionary), "StringStringDictionary property is present");
-            Assert.Equal(0, stringStringDictionary.EnumerateObject().Count());
+            Assert.Empty(stringStringDictionary.EnumerateObject());
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("StringComplexItemDictionary", out var stringComplexItemDictionary), "StringComplexItemDictionary property is present");
-            Assert.Equal(0, stringComplexItemDictionary.EnumerateObject().Count());
+            Assert.Empty(stringComplexItemDictionary.EnumerateObject());
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("StringIntListDictionary", out var stringIntListDictionary), "StringIntListDictionary property is present");
-            Assert.Equal(0, stringIntListDictionary.EnumerateObject().Count());
+            Assert.Empty(stringIntListDictionary.EnumerateObject());
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("NestedStringIntDictionary", out var nestedStringIntDictionary), "NestedStringIntDictionary property is present");
-            Assert.Equal(0, nestedStringIntDictionary.EnumerateObject().Count());
+            Assert.Empty(nestedStringIntDictionary.EnumerateObject());
         }
 
         [Fact]

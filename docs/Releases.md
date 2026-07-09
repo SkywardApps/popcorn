@@ -2,7 +2,7 @@
 
 [Table Of Contents](TableOfContents.md)
 
-## 8.0.0-preview.1 (unreleased)
+## 8.0.0-preview.1 — released 2026-04-24 (tag `release/v8.0.0-preview.1`)
 
 First public preview of v8 — Popcorn reimplemented as a Roslyn source generator for Native AOT and IL trimming compatibility. See [MigrationV7toV8.md](MigrationV7toV8.md) for the full migration story.
 

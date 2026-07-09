@@ -458,7 +458,7 @@ namespace Popcorn.FunctionalTests
             Assert.Equal(0, positionRecordStructValue.GetProperty("Longitude").GetDouble());
             
             // Test null record (reference type)
-            testModel.PersonRecordValue = null;
+            testModel.PersonRecordValue = null!;
             
             response = await client.GetAsync("/test?include=[PersonRecordValue[!all]]");
             response.EnsureSuccessStatusCode();
@@ -573,7 +573,7 @@ namespace Popcorn.FunctionalTests
             Assert.Null(namedValueTupleValue.GetProperty("Item2").GetString());
             
             // Test null Tuple (reference type)
-            testModel.TupleValue = null;
+            testModel.TupleValue = null!;
             
             response = await client.GetAsync("/test?include=[TupleValue[!all]]");
             response.EnsureSuccessStatusCode();
@@ -767,8 +767,8 @@ namespace Popcorn.FunctionalTests
             Assert.Equal(0, recordStructListValue.GetArrayLength());
             
             // Test null collections
-            testModel.StructArrayValue = null;
-            testModel.RecordStructListValue = null;
+            testModel.StructArrayValue = null!;
+            testModel.RecordStructListValue = null!;
             
             response = await client.GetAsync("/test?include=[StructArrayValue[!all],RecordStructListValue[!all]]");
             response.EnsureSuccessStatusCode();
