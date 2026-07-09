@@ -39,7 +39,6 @@ dotnet/
 ├── benchmarks/
 │   ├── ParsingIncludes/         # Include-string parser benchmarks
 │   └── SerializationPerformance/ # End-to-end serialization benchmarks (JSON baseline vs Popcorn)
-├── Examples/PopcornNet5Example/ # Older reflection-based demo
 ├── Build/                       # Build scripts
 └── Projects.md                  # Project index
 ```

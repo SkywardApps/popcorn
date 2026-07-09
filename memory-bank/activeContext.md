@@ -14,10 +14,9 @@ On `master`. The source-generator spike merged and shipped as **`8.0.0-preview.1
 ## Open Work (post-8.0.0-preview.1)
 Tracked in [roadmap.md](../roadmap.md). Highlights:
 1. **v7 deprecation window** — decide when to add a `<PackageReleaseNotes>` banner to v7 and later remove `PopcornNetStandard*` from the tree.
-2. **Example refresh** — `dotnet/Examples/PopcornNet5Example/` is still v7-shaped (`net5.0`, `ExpandServiceFilter`); port to v8 or delete in favor of `PopcornAotExample`.
-3. **Polymorphism dispatch via `[JsonDerivedType]`** — 2 skipped tests in `PolymorphismTests.cs`; defer unless a consumer blocks on it.
-4. **Header-based include (`POPCORN-INCLUDE`)** — spec'd in `apiDesign.md`, ~1 day; ship opportunistically.
-5. **Deferred-quality items + perf levers** — see roadmap sections "Deferred-quality items" and "Remaining performance levers".
+2. **Polymorphism dispatch via `[JsonDerivedType]`** — 2 skipped tests in `PolymorphismTests.cs`; defer unless a consumer blocks on it.
+3. **Header-based include (`POPCORN-INCLUDE`)** — spec'd in `apiDesign.md`, ~1 day; ship opportunistically.
+4. **Deferred-quality items + perf levers** — see roadmap sections "Deferred-quality items" and "Remaining performance levers".
 
 ## Known Issues
 None open. Historical generator bugs and their fixes: `progress.md` § "Generator pitfall ledger"; the load-bearing conventions that prevent their recurrence: `systemPatterns.md` § "Load-bearing generator conventions".

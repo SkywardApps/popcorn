@@ -12,8 +12,6 @@ There are a number of projects under this solution. This is a quick summary of t
 
 * Examples
   * PopcornAotExample - Canonical v8 example: minimal API, `CreateSlimBuilder`, `PublishAot=True`, `PublishTrimmed=True`, Dockerfile. Exercised end-to-end by the `aot-ci.yml` workflow.
-  * Examples/PopcornNet5Example - Legacy v7 example (.NET 5). Slated for port-to-v8 or deletion (see roadmap).
-  * Examples/ExampleModel - Data models shared across legacy examples.
 
 * Tests
   * Tests/Popcorn.FunctionalTests - Main v8 suite (xUnit, 184 tests): exercises real generated converters via `TestJsonContext` + `TestServer`.

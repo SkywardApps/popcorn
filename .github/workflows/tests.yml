@@ -42,9 +42,9 @@ jobs:
             ${{ runner.os }}-nuget-
 
       # Restore + build + test each test project individually. We avoid `dotnet test
-      # Popcorn.sln` because the solution also contains PopcornNet5Example (net5.0, EOL)
-      # and PopcornAotExample (needs the AOT toolchain), neither of which belongs in the
-      # test gate. The AOT path is covered separately by aot-ci.yml.
+      # Popcorn.sln` because the solution also contains PopcornAotExample (needs the AOT
+      # toolchain), which doesn't belong in the test gate. The AOT path is covered
+      # separately by aot-ci.yml.
 
       - name: Restore FunctionalTests
         working-directory: dotnet

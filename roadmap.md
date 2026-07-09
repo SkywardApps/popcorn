@@ -18,7 +18,7 @@ Last updated: 2026-07-09.
 ### Toward 8.0.0 stable
 - Gather preview feedback; decide what (if anything) gates dropping the `-preview` suffix.
 - **v7 deprecation window**: proposed "v7 remains on NuGet for at least one release after v8.0 ships; v7 gets a `<PackageReleaseNotes>` banner pointing at [docs/MigrationV7toV8.md](docs/MigrationV7toV8.md)." Not yet actioned.
-- **Example projects refresh**: [`dotnet/Examples/PopcornNet5Example/`](dotnet/Examples/PopcornNet5Example/) still references the v7 reflection engine and targets `net5.0`. Either port to v8 (minimal API + `IPopcornAccessor` + `[JsonSerializable]` context) or delete and rely on [`dotnet/PopcornAotExample/`](dotnet/PopcornAotExample/) as the canonical example. Leaving a v7-shaped example next to a v8 release will confuse new adopters.
+- ~~**Example projects refresh**~~ **Resolved 2026-07-09**: `dotnet/Examples/PopcornNet5Example/` (v7-shaped, `net5.0`/EOL, CI-invisible) was deleted along with the rest of `dotnet/Examples/`; [`dotnet/PopcornAotExample/`](dotnet/PopcornAotExample/) is the canonical example. If a controllers-based (non-minimal-API) v8 sample is ever wanted, track it as a new item.
 
 ### Polymorphism dispatch — deferred (2 skipped tests)
 - [`PolymorphismTests.cs`](dotnet/Tests/Popcorn.FunctionalTests/PolymorphismTests.cs): `[JsonDerivedType]`-registered derived types need generator-emitted per-item type dispatch.
