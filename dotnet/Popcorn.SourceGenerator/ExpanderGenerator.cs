@@ -1062,7 +1062,7 @@ public static class PopcornJsonOptionsExtension
         {
             string internalSerializationCode;
             var propertyTypeName = itemType?.ToDisplayString().Replace("?", "");
-            if (allTypeNames.Contains(propertyTypeName))
+            if (propertyTypeName != null && allTypeNames.Contains(propertyTypeName))
             {
                 if (TargetEmitsInner(itemType))
                 {

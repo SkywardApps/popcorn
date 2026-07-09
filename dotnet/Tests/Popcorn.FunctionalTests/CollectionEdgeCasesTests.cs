@@ -423,7 +423,7 @@ namespace Popcorn.FunctionalTests
             Assert.Equal(1, id1.GetInt32());
             
             Assert.True(itemsWithLargeProperties[0].TryGetProperty("VeryLargeString", out var veryLargeString1), "VeryLargeString property is present");
-            Assert.Equal(10000, veryLargeString1.GetString().Length);
+            Assert.Equal(10000, veryLargeString1.GetString()!.Length);
             Assert.Equal(new string('a', 10000), veryLargeString1.GetString());
             
             Assert.True(itemsWithLargeProperties[0].TryGetProperty("VeryLargeArray", out var veryLargeArray1), "VeryLargeArray property is present");
@@ -436,7 +436,7 @@ namespace Popcorn.FunctionalTests
             Assert.Equal(2, id2.GetInt32());
             
             Assert.True(itemsWithLargeProperties[1].TryGetProperty("VeryLargeString", out var veryLargeString2), "VeryLargeString property is present");
-            Assert.Equal(10000, veryLargeString2.GetString().Length);
+            Assert.Equal(10000, veryLargeString2.GetString()!.Length);
             Assert.Equal(new string('b', 10000), veryLargeString2.GetString());
             
             Assert.True(itemsWithLargeProperties[1].TryGetProperty("VeryLargeArray", out var veryLargeArray2), "VeryLargeArray property is present");
