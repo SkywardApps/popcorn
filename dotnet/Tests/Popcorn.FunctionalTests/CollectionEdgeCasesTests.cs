@@ -131,7 +131,7 @@ namespace Popcorn.FunctionalTests
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("EmptyDictionary", out var emptyDictionary), "EmptyDictionary property is present");
             Assert.Equal(JsonValueKind.Object, emptyDictionary.ValueKind);
-            Assert.Equal(0, emptyDictionary.EnumerateObject().Count());
+            Assert.Empty(emptyDictionary.EnumerateObject());
         }
 
         [Fact]

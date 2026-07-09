@@ -20,7 +20,7 @@ namespace Popcorn.FunctionalTests.Models
         public PositionRecordStruct PositionRecordStructValue { get; set; }
         
         // Record (reference type)
-        public PersonRecord PersonRecordValue { get; set; }
+        public PersonRecord PersonRecordValue { get; set; } = null!;
         
         // ValueTuple
         public (int X, string Y, bool Z) ValueTupleValue { get; set; }
@@ -29,7 +29,7 @@ namespace Popcorn.FunctionalTests.Models
         public (int Id, string Name) NamedValueTupleValue { get; set; }
         
         // Tuple (reference type)
-        public Tuple<int, string, bool> TupleValue { get; set; }
+        public Tuple<int, string, bool> TupleValue { get; set; } = null!;
         
         // Nested ValueTuple
         public (int Id, (string First, string Last) Name) NestedValueTupleValue { get; set; }
@@ -41,10 +41,10 @@ namespace Popcorn.FunctionalTests.Models
         public PositionRecordStruct? NullableRecordStructValue { get; set; }
         
         // Array of structs
-        public SimpleStruct[] StructArrayValue { get; set; }
+        public SimpleStruct[] StructArrayValue { get; set; } = null!;
         
         // List of record structs
-        public List<PositionRecordStruct> RecordStructListValue { get; set; }
+        public List<PositionRecordStruct> RecordStructListValue { get; set; } = null!;
     }
 
     // Simple struct with fields
