@@ -1,5 +1,7 @@
 # Popcorn Source Generator Improvement Plan
 
+> **Historical working notes.** The status fields below were never updated as work landed and no longer reflect reality — every "Critical Issue" in this file shipped in v8 (`8.0.0-preview.1`): comprehensive test coverage (184 functional + 19 generator tests), circular-reference detection, attribute diagnostics (JSG003–JSG008), and error-state support (`ApiError` + exception middleware). Current status lives in [roadmap.md](../../roadmap.md) and `memory-bank/progress.md`. The "Rules for Implementation" below remain the project's working philosophy.
+
 ## Rules for Implementation
 
 1. Only one improvement should be tackled at a time
