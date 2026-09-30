@@ -4,7 +4,7 @@
     <LangVersion>8.0</LangVersion>
     <RootNamespace>Popcorn</RootNamespace>
     <PackageId>Skyward.Api.Popcorn</PackageId>
-    <Authors>Skyward App Company, LLC</Authors>
+    <Authors>Nicholas Elliott, Skyward App Company, LLC</Authors>
     <Description>Object dynamic filtering and expansion</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>Allow re-referencing the same object so long as it is not in a loop.</PackageReleaseNotes>

@@ -2,7 +2,6 @@
 
 [Table Of Contents](TableOfContents.md)
 
-The initial concept, design, and implementation of Popcorn was provided by [Skyward App Company](https://skywardappcompany.com). 
-Currently the Skyward organizational team acts as maintainers of this project.  
+Popcorn was created in 2017 by [Nicholas Elliott](https://nicholasmtelliott.com) at Skyward App Company, with contributions from the Skyward team and the community.
 
-You can contact them directly at popcorn@skywardapps.com, however we encourage you to open an issue to start a discussion!
+It is maintained by [@NicholasMTElliott](https://github.com/NicholasMTElliott). To report a bug or start a discussion, please [open an issue](https://github.com/SkywardApps/popcorn/issues).

@@ -8,7 +8,7 @@
 
     <PackageId>Skyward.Api.Popcorn.SourceGen.Shared</PackageId>
     <Version>8.0.0-preview.1</Version>
-    <Authors>Skyward App Company, LLC</Authors>
+    <Authors>Nicholas Elliott, Skyward App Company, LLC</Authors>
     <Company>Skyward App Company, LLC</Company>
     <Description>Runtime attributes, envelopes (ApiResponse&lt;T&gt; / Pop&lt;T&gt; / ApiError), exception middleware, and DI helpers for Popcorn v8 (source-generator edition). Install alongside Skyward.Api.Popcorn.SourceGen.</Description>
     <PackageTags>api;rest;popcorn;source-generator;aot</PackageTags>

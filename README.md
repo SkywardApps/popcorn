@@ -7,6 +7,8 @@
 [![Tests](https://github.com/SkywardApps/popcorn/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/SkywardApps/popcorn/actions/workflows/tests.yml)
 [![AOT CI](https://github.com/SkywardApps/popcorn/actions/workflows/aot-ci.yml/badge.svg?branch=master)](https://github.com/SkywardApps/popcorn/actions/workflows/aot-ci.yml)
 
+Created by [Nicholas Elliott](https://nicholasmtelliott.com) at Skyward App Company. Maintained by [@NicholasMTElliott](https://github.com/NicholasMTElliott).
+
 [Table Of Contents](docs/TableOfContents.md)
 
 > **Quick orientation.** Popcorn v8 (the current active line) is a Roslyn **source generator**.
