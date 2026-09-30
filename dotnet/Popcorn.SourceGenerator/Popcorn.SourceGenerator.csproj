@@ -13,7 +13,7 @@
 
     <PackageId>Skyward.Api.Popcorn.SourceGen</PackageId>
     <Version>8.0.0-preview.1</Version>
-    <Authors>Skyward App Company, LLC</Authors>
+    <Authors>Nicholas Elliott, Skyward App Company, LLC</Authors>
     <Company>Skyward App Company, LLC</Company>
     <Description>Roslyn source generator for Popcorn v8: emits AOT- and trim-safe JsonConverter&lt;T&gt; types with include-aware serialization. Install alongside Skyward.Api.Popcorn.SourceGen.Shared (runtime attributes, envelopes, middleware).</Description>
     <PackageTags>api;rest;popcorn;source-generator;aot;roslyn;analyzer</PackageTags>
