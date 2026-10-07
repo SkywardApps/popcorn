@@ -11,6 +11,8 @@
     <PublishTrimmed>True</PublishTrimmed>
     <PublishAot>True</PublishAot>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <!-- Example app: demo models don't need XML doc comments -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 

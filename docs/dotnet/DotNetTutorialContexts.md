@@ -42,7 +42,7 @@ services.AddMvc((mvcOptions) =>
 We don't limit your options on what you can use as a context beyond requiring the contexts be entered in a Dictionary format
 (enter the complexity) because contexts will look quite different from project to project.
 
-You'll see in our tutorials on [Authorizers](docs/dotnet/DotNetTutorialAuthorizers.md) and [Advanced Projections](docs/dotnet/DotNetTutorialAdvancedProjections.md) that we give a few trivial examples on how you can set some contexts to be used 
+You'll see in our tutorials on [Authorizers](DotNetTutorialAuthorizers.md) and [Advanced Projections](DotNetTutorialAdvancedProjections.md) that we give a few trivial examples on how you can set some contexts to be used 
 within Popcorn itself. Authorizers uses a context to see what the "active user" is for each request, while Advanced Projections shows how a default Employment 
 context can be used with factories. We also shouldn't forget the obvious that you'll probably need to make your database accessible to Popcorn as a context!
 

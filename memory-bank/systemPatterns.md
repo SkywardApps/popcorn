@@ -171,9 +171,10 @@ The generator enforces: exactly one `[PopcornPayload]` property (otherwise JSG00
 ## Future/Planned Transport
 - Header-based include via `POPCORN-INCLUDE` header — not implemented. Would remove URL length limits and clean up URLs for POST/PUT.
 
-## Deferred or Out-of-Scope for This Spike
-- **Dropped from v2 scope**: sorting, pagination, filtering, authorizers (never used in practice; see migrationAnalysis.md).
-- **Deferred (intend to port from legacy)**: response inspectors (superseded by exception middleware + custom envelope), contexts (superseded by DI), lazy loading (supported by construction), blind expansion (superseded by IPopcornBlindHandler — Tier-2).
+## Deferred or Out-of-Scope for v8
+- **Dropped from v8 scope**: sorting, pagination, filtering, authorizers (never used in practice; see migrationAnalysis.md). Also `[ExpandFrom]`, `[Translator]` with DI, `IPopcornBlindHandler` — replacements in `docs/MigrationV7toV8.md` §5/§7/§8.
+- **Superseded by construction**: response inspectors (exception middleware + custom envelope), contexts (DI), lazy loading (excluded properties are never touched), blind expansion of user-declared types (generator walks reachable types).
+- **Deferred**: polymorphism dispatch via `[JsonDerivedType]` (2 skipped tests), header-based include transport.
 - **Out of scope**: deserialization (generated converters are write-only), runtime-configurable projection API, multi-target (non-.NET) providers.
 
 ## Middleware Constraints

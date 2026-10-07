@@ -4,8 +4,9 @@ using Popcorn;
 namespace Popcorn.FunctionalTests.Models
 {
     // Per-type opt-in: attribute on the enum declaration makes every use of it serialize as a string,
-    // regardless of global options. Standard System.Text.Json pattern.
-    [JsonConverter(typeof(JsonStringEnumConverter))]
+    // regardless of global options. Standard System.Text.Json pattern; the generic converter is the
+    // AOT-compatible form (SYSLIB1034).
+    [JsonConverter(typeof(JsonStringEnumConverter<Season>))]
     public enum Season
     {
         Spring,

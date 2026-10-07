@@ -1,5 +1,7 @@
 # Popcorn Serialization Test Plan
 
+> **Aspirational plan, partly historical.** This was the pre-v8 test wish-list. The shipped suite (184 tests in this project) covers most of it, but some listed surfaces intentionally do not apply to v8: MVC filters / `ActionResult<T>` / content negotiation (v8 targets minimal APIs + STJ), and `object`/interface/abstract members (these now produce the JSG008 diagnostic rather than serializing). Treat the passing test suite, not this file, as the coverage record.
+
 This document outlines a comprehensive test plan for the Popcorn serialization functionality, covering various scenarios and edge cases.
  
  ! Technical Note: The source generated for the tests is in obj/Generated, so while it isn't included directly in the project

@@ -368,7 +368,7 @@ namespace Popcorn.FunctionalTests
             Assert.Equal("Description 1", description.GetString());
             
             Assert.True(complexItemsList[0].TryGetProperty("CreatedDate", out var createdDate), "Property 'CreatedDate' is included");
-            Assert.Equal(new DateTime(2025, 1, 1), DateTime.Parse(createdDate.GetString(), null, System.Globalization.DateTimeStyles.RoundtripKind));
+            Assert.Equal(new DateTime(2025, 1, 1), DateTime.Parse(createdDate.GetString()!, null, System.Globalization.DateTimeStyles.RoundtripKind));
         }
 
         [Fact]

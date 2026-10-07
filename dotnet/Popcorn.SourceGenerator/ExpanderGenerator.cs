@@ -231,14 +231,9 @@ namespace Popcorn.SourceGenerator
                     catch (Exception ex)
                     {
                         spc.ReportDiagnostic(Diagnostic.Create(
-                            new DiagnosticDescriptor(
-                                id: "JSG001",
-                                title: "Source Generation Error",
-                                messageFormat: $"Error generating source for type '{targetType}': {ex.Message}",
-                                category: "SourceGenerator",
-                                DiagnosticSeverity.Error,
-                                isEnabledByDefault: true),
-                            Location.None));
+                            GenerationErrorDescriptor,
+                            Location.None,
+                            $"Error generating source for type '{targetType}': {ex.Message}"));
                     }
                 }
 
@@ -334,14 +329,9 @@ public static class PopcornJsonOptionsExtension
                 catch (Exception ex)
                 {
                     spc.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            id: "JSG001",
-                            title: "Source Generation Error",
-                            messageFormat: $"Error generating registration source': {ex.Message}",
-                            category: "SourceGenerator",
-                            DiagnosticSeverity.Error,
-                            isEnabledByDefault: true),
-                        Location.None));
+                        GenerationErrorDescriptor,
+                        Location.None,
+                        $"Error generating registration source: {ex.Message}"));
                 }
 
             });
@@ -496,6 +486,26 @@ public static class PopcornJsonOptionsExtension
             }
             return false;
         }
+
+        // Static descriptors (rather than inline creation) so the analyzer release-tracking
+        // files (AnalyzerReleases.*.md) can associate the rule IDs with declared rules (RS2002).
+        // messageFormat is "{0}" because both rules carry fully composed, dynamic text.
+        private static readonly DiagnosticDescriptor GenerationErrorDescriptor = new DiagnosticDescriptor(
+            id: "JSG001",
+            title: "Source Generation Error",
+            messageFormat: "{0}",
+            category: "SourceGenerator",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
+        // Info, not Warning: this is log output, and it fires hundreds of times per consumer build.
+        private static readonly DiagnosticDescriptor OutputDescriptor = new DiagnosticDescriptor(
+            id: "JSG002",
+            title: "Output",
+            messageFormat: "{0}",
+            category: "SourceGenerator",
+            defaultSeverity: DiagnosticSeverity.Info,
+            isEnabledByDefault: true);
 
         private static readonly DiagnosticDescriptor EnvelopeMissingPayloadDescriptor = new DiagnosticDescriptor(
             id: "JSG003",
@@ -1062,7 +1072,7 @@ public static class PopcornJsonOptionsExtension
         {
             string internalSerializationCode;
             var propertyTypeName = itemType?.ToDisplayString().Replace("?", "");
-            if (allTypeNames.Contains(propertyTypeName))
+            if (propertyTypeName != null && allTypeNames.Contains(propertyTypeName))
             {
                 if (TargetEmitsInner(itemType))
                 {
@@ -1559,15 +1569,7 @@ public static class PopcornJsonOptionsExtension
 
         public static void Show(string message, SourceProductionContext context)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
-                new DiagnosticDescriptor(
-                    id: "JSG002",
-                    title: "Output",
-                    messageFormat: message,
-                    category: "SourceGenerator",
-                    DiagnosticSeverity.Warning,
-                    isEnabledByDefault: true),
-                Location.None));
+            context.ReportDiagnostic(Diagnostic.Create(OutputDescriptor, Location.None, message));
         }
     }
 

@@ -18,10 +18,10 @@ dotnet/
 │                                #   ApplicationBuilderExtensions (UsePopcornExceptionHandler)
 ├── Popcorn.SourceGenerator/     # IIncrementalGenerator — ExpanderGenerator.cs, Plan.md
 ├── PopcornAotExample/           # AOT/trim smoke test: minimal API, CreateSlimBuilder, PublishAot=True, PublishTrimmed=True
-├── PopcornNetStandard/          # LEGACY reflection-based expander (Abstractions, Expanders, Externals, Internals) — being replaced
-├── PopcornNetStandard.WebApiCore/ # LEGACY middleware (ExpandResultAttribute, ExpandServiceFilter) — being replaced
+├── PopcornNetStandard/          # LEGACY v7 reflection-based expander — kept during deprecation window
+├── PopcornNetStandard.WebApiCore/ # LEGACY v7 middleware (ExpandResultAttribute, ExpandServiceFilter)
 ├── Tests/
-│   ├── Popcorn.FunctionalTests/ # xUnit tests for the source generator (22 files, 140+ tests)
+│   ├── Popcorn.FunctionalTests/ # xUnit tests for the source generator (20 files, 184 tests)
 │   │   ├── *Tests.cs            # PrimitiveTypes, ValueTypes, BasicCollectionTypes, CollectionEdgeCases,
 │   │   │                        #   CollectionPropertyInclusion, DictionaryTypes, AlwaysAttribute,
 │   │   │                        #   NestedAlwaysAttribute, CollectionAlwaysAttribute, ConflictingAttributes,
@@ -34,12 +34,11 @@ dotnet/
 │   │   └── TestPlan.md
 │   ├── Popcorn.SourceGenerator.Tests/ # Generator unit tests (CSharpGeneratorDriver)
 │   │   ├── GeneratorTestHarness.cs    # In-memory compilation + generator-driver harness
-│   │   └── EnvelopeDiagnosticsTests.cs# JSG003–JSG007 assertions + positive control
+│   │   └── EnvelopeDiagnosticsTests.cs# JSG003–JSG008 assertions + positive control
 │   └── PopcornSpecTests/        # Protocol-level spec tests
 ├── benchmarks/
 │   ├── ParsingIncludes/         # Include-string parser benchmarks
 │   └── SerializationPerformance/ # End-to-end serialization benchmarks (JSON baseline vs Popcorn)
-├── Examples/PopcornNet5Example/ # Older reflection-based demo
 ├── Build/                       # Build scripts
 └── Projects.md                  # Project index
 ```
@@ -81,11 +80,13 @@ From `Popcorn.SourceGenerator.csproj`:
 - **Collections**: dispatched via `InheritsOrImplements` for `IEnumerable<T>` / `IDictionary<K,V>`.
 - **Enums and `Nullable<Enum>`**: skipped in `GetReferencedTypes` (not registered as Popcorn-aware types). Fall through to `JsonSerializer.Serialize(writer, value, options)`, which transparently picks up global `options.Converters.Add(new JsonStringEnumConverter())` registrations and per-enum `[JsonConverter(typeof(JsonStringEnumConverter))]` attributes. Default output is numeric; string-form is opt-in via standard System.Text.Json configuration — no Popcorn-specific API.
 
-## CI / Publish
-- GitHub Actions (`.github/workflows/main.yml`) and `.gitlab-ci.yml` for builds.
-- AppVeyor badge still in README (legacy).
-- NuGet package `Skyward.Api.Popcorn` (legacy) — source-generator packages not yet published.
-- Recent `master` commits: CI pipeline for NuGet publishing (#72), unrelated bugfix `ELUM-3318_ErrorsReturnedAsOK` (#71).
+## CI / Publish (GitHub Actions, `.github/workflows/`)
+- `tests.yml` — `dotnet test` on FunctionalTests + SourceGenerator.Tests, PR + push.
+- `aot-ci.yml` — Docker-builds `PopcornAotExample`, runs the container, asserts 4 endpoints.
+- `benchmarks.yml` — relative-performance gate: 3 Popcorn/STJ ratios vs `benchmarks/results/ci-baseline.json`, fails on >25% regression.
+- `main.yml` — release: push tag `release/vX.Y.Z` → pack both v8 packages with `-p:Version` → NuGet push (`--skip-duplicate`) → GitHub release → best-effort csproj version sync to master.
+- Published packages: `Skyward.Api.Popcorn.SourceGen` + `Skyward.Api.Popcorn.SourceGen.Shared` (current: 8.0.0-preview.1). Legacy `Skyward.Api.Popcorn` v7 remains on NuGet but is no longer packed by CI.
+- `.gitlab-ci.yml` still in tree (legacy, unused).
 
 ## Testing Strategy
 - **Functional tests** (`Popcorn.FunctionalTests`) use `TestJsonContext` — a single `JsonSerializerContext` that declares `[JsonSerializable(typeof(ApiResponse<Model>))]` (and `[JsonSerializable(typeof(CustomEnvelope<Model>))]` for envelope fixtures) for every test model. The source generator runs against this and produces real converters, which the tests invoke via `JsonSerializer.Serialize` and real `TestServer` pipelines. To inspect generated output, look in `$(BaseIntermediateOutputPath)Generated` (csproj sets `EmitCompilerGeneratedFiles=true`).
@@ -94,8 +95,8 @@ From `Popcorn.SourceGenerator.csproj`:
 - **Snapshot tests** (Verify.SourceGenerators/Verify.Xunit, as declared in previous notes) — referenced in prior memory, but current branch leans on functional-output assertions rather than snapshot files.
 
 ## Development Workflow
-- Current active branch: `spike/source-generator`. Diff vs `master`: ~12k lines added across 82 files, mostly functional tests (~4k), benchmarks (~2k), source generator (~1.5k), and memory-bank docs.
-- Do not merge to `master` until feature parity decisions are made on sorting/pagination/filtering/authorization and perf benchmarks are validated.
+- Active branch: `master` (the source-generator spike merged; v8.0.0-preview.1 shipped). Work lands via PR to `master`; `tests.yml` + `aot-ci.yml` + `benchmarks.yml` gate every PR.
+- Releases: tag `release/vX.Y.Z` on master; `main.yml` does the rest.
 - Code philosophy (from `Plan.md`): one improvement at a time, fully tested before the next; maintain or improve performance; minimalist code.
 
 ## Known External Dependencies / Constraints

@@ -6,6 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- CS8618: BenchmarkDotNet fields are assigned in [GlobalSetup], not constructors (65 fields).
+         MSB3277: referencing both legacy PopcornNetStandard (old System.* packages) and net8.0
+         produces benign assembly-version-unification notices.
+         JSG008: AttributeHeavyModel deliberately keeps a Dictionary<string, object> to stay
+         comparable with the committed v7-era baseline; it only runs under JIT. -->
+    <NoWarn>$(NoWarn);CS8618;MSB3277;JSG008</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

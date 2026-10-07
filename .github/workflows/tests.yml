@@ -24,17 +24,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET SDK 8.0
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           # Test projects target net8.0. Install the matching SDK so we don't rely on
           # DOTNET_ROLL_FORWARD.
           dotnet-version: 8.0.x
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('dotnet/**/*.csproj') }}
@@ -42,9 +42,9 @@ jobs:
             ${{ runner.os }}-nuget-
 
       # Restore + build + test each test project individually. We avoid `dotnet test
-      # Popcorn.sln` because the solution also contains PopcornNet5Example (net5.0, EOL)
-      # and PopcornAotExample (needs the AOT toolchain), neither of which belongs in the
-      # test gate. The AOT path is covered separately by aot-ci.yml.
+      # Popcorn.sln` because the solution also contains PopcornAotExample (needs the AOT
+      # toolchain), which doesn't belong in the test gate. The AOT path is covered
+      # separately by aot-ci.yml.
 
       - name: Restore FunctionalTests
         working-directory: dotnet
@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload test results on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: dotnet/TestResults/*.trx

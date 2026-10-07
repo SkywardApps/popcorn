@@ -1,5 +1,7 @@
 # Migration Analysis: Reflection → Source Generator
 
+> **Historical decision record.** These analyses drove the v8 scope decisions; all decisions below are final and shipped in `8.0.0-preview.1`. The per-feature outcome ledger is canonical in `apiDesign.md`; consumer-facing replacements are in `docs/MigrationV7toV8.md`. ("v2" in older text = the v8 source-gen line.)
+
 ## Key Finding
 Zero legacy features are genuine technical non-starters under source generation, **except one edge case**: truly polymorphic serialization of a type discovered at runtime whose members the trimmer has stripped. Every other feature is portable; what changes is the **configuration API surface**, not the semantics.
 
@@ -12,7 +14,7 @@ Both options are AOT- and trim-safe. The second is more idiomatic modern ASP.NET
 
 ## Scope Decision (resolved)
 
-Four legacy features were technically feasible under source generation but are **explicitly dropped from v2 scope**:
+Four legacy features were technically feasible under source generation but are **explicitly dropped from v8 scope**:
 
 - **Sorting** — never used in practice; query-param endpoints typically implement sort themselves.
 - **Pagination** — same; endpoints handle `Skip/Take` and page metadata directly when needed.
@@ -44,29 +46,22 @@ This decision resolves the "scope decision required before merge" question that 
 ### Doable via attribute-tagged methods (Tier 2)
 - **Translators (computed properties).** C# computed property (`public string FullName => First + " " + Last;`) works today, zero framework. 3 passing tests.
 - **(Dropped 2026-04-23)** Translators with DI. The DI-during-serialization pattern is an antipattern (N+1, hidden I/O, scope threading). The clean answer is endpoint-side resolution: resolve services in the route handler, populate the DTO, serialize. See `docs/MigrationV7toV8.md` §5.
-- **Factories.** Moot for v2.0 (write-only). When deserialization ships, `[Factory]`-tagged static method.
+- **Factories.** Moot for v8.0 (write-only). When deserialization ships, `[Factory]`-tagged static method.
 
 ### Genuine non-starter
 - **Polymorphic unknown-at-build-time types.** A reflection-based expander can walk any concrete runtime type by name; the trimmer will have removed the metadata. There is no AOT-compatible answer here. Mitigations: document the requirement to register all expected runtime types via `[JsonSerializable]`, and provide generator diagnostics that fire when a property's declared type is `object`/abstract-without-registered-derived-types.
 
 ### Moot (superseded, not non-starter)
-- **Contexts as `Dictionary<string,object>`.** Legacy `SetContext(dict)` passed ambient data into lambdas. Under v2, translator methods receive DI services directly as parameters. Same capability, cleaner shape. The dictionary concept is deleted entirely.
+- **Contexts as `Dictionary<string,object>`.** Legacy `SetContext(dict)` passed ambient data into lambdas. Under v8, endpoints receive DI services directly. Same capability, cleaner shape. The dictionary concept is deleted entirely.
 
-## Feature Tiers for v2.0 Merge
+## Feature Tiers (all resolved)
 
-**Tier 1 — MUST ship with v2.0 (core parity):**
-- Custom envelope + exception middleware (error handling parity)
-- `[SubPropertyDefault]` (common include ergonomics)
+- **Tier 1 (shipped)**: custom envelope + exception middleware; `[SubPropertyDefault]`.
+- **Tier 2 (cleared 2026-04-23)**: `[ExpandFrom]`, `[Translator]` with DI, `IPopcornBlindHandler<TFrom,TTo>` — each has a cleaner native-ASP.NET/STJ answer (`docs/MigrationV7toV8.md` §5/§7/§8). Polymorphism dispatch via `[JsonDerivedType]` remains deferred until a consumer asks.
+- **Tier 3 (deferred/dropped)**: factories (moot until deserialization), deserialization, dictionary contexts.
+- **Dropped**: sorting, filtering, pagination, authorizers — see "Scope Decision" above.
 
-**Tier 2 — cleared 2026-04-23.** All three planned items (`[ExpandFrom]`, `[Translator]` with DI, `IPopcornBlindHandler<TFrom,TTo>`) were dropped after use-case analysis showed each has a cleaner answer using patterns already native to ASP.NET Core + STJ. Documented replacements in `docs/MigrationV7toV8.md` §5/§7/§8. Polymorphism dispatch via `[JsonDerivedType]` remains Tier-2-deferred if a consumer asks.
-
-**Tier 3 — DEFER to v2.x or drop:**
-- Factories (moot until deserialization).
-- Deserialization (out of scope).
-- Legacy `Dictionary<string,object>` context (dropped).
-
-**Dropped from v2 scope:**
-- Sorting, filtering, pagination, authorizers — see "Scope Decision" above.
+Full disposition table: `apiDesign.md` § "Feature Feasibility Ledger".
 
 ## What We Learned About Source Generator Constraints
 1. **Build-time inputs only.** Anything the user wants to inject must be visible in source: attributes, type references, method signatures. Lambdas, runtime `Type` objects, dynamically-built expressions are off-limits.

@@ -18,6 +18,10 @@
     <Version>7.3.2</Version>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- Legacy v7 project, frozen pending deprecation. Suppress doc-comment warnings
+         (CS1591 missing, CS1572/CS1573 mismatched param tags, CS1587 misplaced) and the
+         unused-variable warning (CS0168) so they don't annotate every PR via CI builds. -->
+    <NoWarn>$(NoWarn);CS1591;CS1572;CS1573;CS1587;CS0168</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

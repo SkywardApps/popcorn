@@ -19,12 +19,12 @@ public static class TestDataGenerator
         "Another test description with more content",
         "Brief desc",
         "Very detailed description with multiple sentences and longer content for testing serialization performance.",
-        null, // Test null handling
+        null!, // Test null handling
         ""    // Test empty strings
     };
     
     private static readonly string[] _sampleCategories = {
-        "A", "B", "C", "D", "E", null
+        "A", "B", "C", "D", "E", null!
     };
 
     public static SimpleModel CreateSimpleModel(int id = 0)

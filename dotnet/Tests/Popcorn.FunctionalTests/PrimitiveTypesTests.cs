@@ -147,17 +147,17 @@ namespace Popcorn.FunctionalTests
             
             // Date and time types
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("DateTimeValue", out var dateTimeValue), "DateTimeValue property is present");
-            Assert.Equal(new DateTime(2025, 2, 25, 12, 0, 0, DateTimeKind.Utc), DateTime.Parse(dateTimeValue.GetString(), null, System.Globalization.DateTimeStyles.RoundtripKind));
+            Assert.Equal(new DateTime(2025, 2, 25, 12, 0, 0, DateTimeKind.Utc), DateTime.Parse(dateTimeValue.GetString()!, null, System.Globalization.DateTimeStyles.RoundtripKind));
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("DateTimeOffsetValue", out var dateTimeOffsetValue), "DateTimeOffsetValue property is present");
-            Assert.Equal(new DateTimeOffset(2025, 2, 25, 12, 0, 0, TimeSpan.FromHours(-5)), DateTimeOffset.Parse(dateTimeOffsetValue.GetString()));
+            Assert.Equal(new DateTimeOffset(2025, 2, 25, 12, 0, 0, TimeSpan.FromHours(-5)), DateTimeOffset.Parse(dateTimeOffsetValue.GetString()!));
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("TimeSpanValue", out var timeSpanValue), "TimeSpanValue property is present");
-            Assert.Equal(TimeSpan.FromHours(24), TimeSpan.Parse(timeSpanValue.GetString()));
+            Assert.Equal(TimeSpan.FromHours(24), TimeSpan.Parse(timeSpanValue.GetString()!));
             
             // Identifier type
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("GuidValue", out var guidValue), "GuidValue property is present");
-            Assert.Equal(Guid.Parse("00000000-0000-0000-0000-000000000001"), Guid.Parse(guidValue.GetString()));
+            Assert.Equal(Guid.Parse("00000000-0000-0000-0000-000000000001"), Guid.Parse(guidValue.GetString()!));
             
             // Nullable primitive types
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("NullableIntValue", out var nullableIntValue), "NullableIntValue property is present");
@@ -170,10 +170,10 @@ namespace Popcorn.FunctionalTests
             Assert.False(nullableBoolValue.GetBoolean());
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("NullableDateTimeValue", out var nullableDateTimeValue), "NullableDateTimeValue property is present");
-            Assert.Equal(new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc), DateTime.Parse(nullableDateTimeValue.GetString(), null, System.Globalization.DateTimeStyles.RoundtripKind));
+            Assert.Equal(new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc), DateTime.Parse(nullableDateTimeValue.GetString()!, null, System.Globalization.DateTimeStyles.RoundtripKind));
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("NullableGuidValue", out var nullableGuidValue), "NullableGuidValue property is present");
-            Assert.Equal(Guid.Parse("00000000-0000-0000-0000-000000000002"), Guid.Parse(nullableGuidValue.GetString()));
+            Assert.Equal(Guid.Parse("00000000-0000-0000-0000-000000000002"), Guid.Parse(nullableGuidValue.GetString()!));
         }
 
         [Fact]
@@ -431,7 +431,7 @@ namespace Popcorn.FunctionalTests
             result = JsonDocument.Parse(json);
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("StringValue", out var longStringValue), "StringValue property is present");
-            Assert.Equal(10000, longStringValue.GetString().Length);
+            Assert.Equal(10000, longStringValue.GetString()!.Length);
             Assert.Equal(new string('a', 10000), longStringValue.GetString());
             
             // Test Unicode characters
@@ -566,7 +566,7 @@ namespace Popcorn.FunctionalTests
             
             // Assert DateTime
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("DateTimeValue", out var dateTimeValue), "DateTimeValue property is present");
-            var parsedDateTime = DateTime.Parse(dateTimeValue.GetString(), null, System.Globalization.DateTimeStyles.RoundtripKind);
+            var parsedDateTime = DateTime.Parse(dateTimeValue.GetString()!, null, System.Globalization.DateTimeStyles.RoundtripKind);
             Assert.Equal(2025, parsedDateTime.Year);
             Assert.Equal(2, parsedDateTime.Month);
             Assert.Equal(25, parsedDateTime.Day);
@@ -576,7 +576,7 @@ namespace Popcorn.FunctionalTests
             
             // Assert DateTimeOffset
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("DateTimeOffsetValue", out var dateTimeOffsetValue), "DateTimeOffsetValue property is present");
-            var parsedDateTimeOffset = DateTimeOffset.Parse(dateTimeOffsetValue.GetString());
+            var parsedDateTimeOffset = DateTimeOffset.Parse(dateTimeOffsetValue.GetString()!);
             Assert.Equal(2025, parsedDateTimeOffset.Year);
             Assert.Equal(2, parsedDateTimeOffset.Month);
             Assert.Equal(25, parsedDateTimeOffset.Day);
@@ -587,7 +587,7 @@ namespace Popcorn.FunctionalTests
             
             // Assert TimeSpan
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("TimeSpanValue", out var timeSpanValue), "TimeSpanValue property is present");
-            var parsedTimeSpan = TimeSpan.Parse(timeSpanValue.GetString());
+            var parsedTimeSpan = TimeSpan.Parse(timeSpanValue.GetString()!);
             Assert.Equal(1, parsedTimeSpan.Days);
             Assert.Equal(12, parsedTimeSpan.Hours);
             Assert.Equal(0, parsedTimeSpan.Minutes);
@@ -603,7 +603,7 @@ namespace Popcorn.FunctionalTests
             result = JsonDocument.Parse(json);
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("DateTimeValue", out var minDateTimeValue), "DateTimeValue property is present");
-            Assert.Equal(DateTime.MinValue, DateTime.Parse(minDateTimeValue.GetString(), null, System.Globalization.DateTimeStyles.RoundtripKind));
+            Assert.Equal(DateTime.MinValue, DateTime.Parse(minDateTimeValue.GetString()!, null, System.Globalization.DateTimeStyles.RoundtripKind));
             
             // Test maximum DateTime
             testModel.DateTimeValue = DateTime.MaxValue;
@@ -615,7 +615,7 @@ namespace Popcorn.FunctionalTests
             result = JsonDocument.Parse(json);
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("DateTimeValue", out var maxDateTimeValue), "DateTimeValue property is present");
-            Assert.Equal(DateTime.MaxValue, DateTime.Parse(maxDateTimeValue.GetString(), null, System.Globalization.DateTimeStyles.RoundtripKind));
+            Assert.Equal(DateTime.MaxValue, DateTime.Parse(maxDateTimeValue.GetString()!, null, System.Globalization.DateTimeStyles.RoundtripKind));
         }
 
         [Fact]
@@ -667,7 +667,7 @@ namespace Popcorn.FunctionalTests
             var result = JsonDocument.Parse(json);
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("GuidValue", out var emptyGuidValue), "GuidValue property is present");
-            Assert.Equal(Guid.Empty, Guid.Parse(emptyGuidValue.GetString()));
+            Assert.Equal(Guid.Empty, Guid.Parse(emptyGuidValue.GetString()!));
             
             // Test specific Guid
             var specificGuid = Guid.Parse("12345678-1234-1234-1234-123456789abc");
@@ -680,7 +680,7 @@ namespace Popcorn.FunctionalTests
             result = JsonDocument.Parse(json);
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("GuidValue", out var specificGuidValue), "GuidValue property is present");
-            Assert.Equal(specificGuid, Guid.Parse(specificGuidValue.GetString()));
+            Assert.Equal(specificGuid, Guid.Parse(specificGuidValue.GetString()!));
             
             // Test random Guid
             var randomGuid = Guid.NewGuid();
@@ -693,7 +693,7 @@ namespace Popcorn.FunctionalTests
             result = JsonDocument.Parse(json);
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("GuidValue", out var randomGuidValue), "GuidValue property is present");
-            Assert.Equal(randomGuid, Guid.Parse(randomGuidValue.GetString()));
+            Assert.Equal(randomGuid, Guid.Parse(randomGuidValue.GetString()!));
         }
 
         [Fact]
@@ -788,10 +788,10 @@ namespace Popcorn.FunctionalTests
             Assert.True(nonNullBoolValue.GetBoolean());
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("NullableDateTimeValue", out var nonNullDateTimeValue), "NullableDateTimeValue property is present");
-            Assert.Equal(new DateTime(2025, 2, 25, 12, 0, 0, DateTimeKind.Utc), DateTime.Parse(nonNullDateTimeValue.GetString(), null, System.Globalization.DateTimeStyles.RoundtripKind));
+            Assert.Equal(new DateTime(2025, 2, 25, 12, 0, 0, DateTimeKind.Utc), DateTime.Parse(nonNullDateTimeValue.GetString()!, null, System.Globalization.DateTimeStyles.RoundtripKind));
             
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("NullableGuidValue", out var nonNullGuidValue), "NullableGuidValue property is present");
-            Assert.Equal(Guid.Parse("12345678-1234-1234-1234-123456789abc"), Guid.Parse(nonNullGuidValue.GetString()));
+            Assert.Equal(Guid.Parse("12345678-1234-1234-1234-123456789abc"), Guid.Parse(nonNullGuidValue.GetString()!));
         }
 
         [Fact]
@@ -869,11 +869,11 @@ namespace Popcorn.FunctionalTests
             
             // Assert default value for DateTime (should be DateTime.MinValue)
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("DateTimeValue", out var dateTimeValue), "DateTimeValue property is present");
-            Assert.Equal(default(DateTime), DateTime.Parse(dateTimeValue.GetString(), null, System.Globalization.DateTimeStyles.RoundtripKind));
+            Assert.Equal(default(DateTime), DateTime.Parse(dateTimeValue.GetString()!, null, System.Globalization.DateTimeStyles.RoundtripKind));
             
             // Assert default value for Guid (should be Guid.Empty)
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("GuidValue", out var guidValue), "GuidValue property is present");
-            Assert.Equal(Guid.Empty, Guid.Parse(guidValue.GetString()));
+            Assert.Equal(Guid.Empty, Guid.Parse(guidValue.GetString()!));
             
             // Assert default values for nullable types (should be null)
             Assert.True(result.RootElement.GetProperty("Data").TryGetProperty("NullableIntValue", out var nullableIntValue), "NullableIntValue property is present");
@@ -1158,7 +1158,7 @@ namespace Popcorn.FunctionalTests
             Assert.Equal(expectedString, stringValue.GetString());
             
             // Test string length
-            Assert.Equal(expectedString.Length, stringValue.GetString().Length);
+            Assert.Equal(expectedString.Length, stringValue.GetString()!.Length);
         }
     }
 }

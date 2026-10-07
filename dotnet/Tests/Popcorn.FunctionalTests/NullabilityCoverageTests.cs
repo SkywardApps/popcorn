@@ -56,15 +56,15 @@ namespace Popcorn.FunctionalTests
             Assert.Equal(2, data.GetProperty("DictQInt").EnumerateObject().Count());
             Assert.Equal(2, data.GetProperty("DictString").EnumerateObject().Count());
             Assert.Equal(2, data.GetProperty("DictQString").EnumerateObject().Count());
-            Assert.Equal(1, data.GetProperty("DictStruct").EnumerateObject().Count());
-            Assert.Equal(1, data.GetProperty("DictQStruct").EnumerateObject().Count());
-            Assert.Equal(1, data.GetProperty("DictClass").EnumerateObject().Count());
-            Assert.Equal(1, data.GetProperty("DictQClass").EnumerateObject().Count());
+            Assert.Single(data.GetProperty("DictStruct").EnumerateObject());
+            Assert.Single(data.GetProperty("DictQStruct").EnumerateObject());
+            Assert.Single(data.GetProperty("DictClass").EnumerateObject());
+            Assert.Single(data.GetProperty("DictQClass").EnumerateObject());
 
             Assert.Equal(1, data.GetProperty("ListOfDictOfClass").GetArrayLength());
             Assert.Equal(1, data.GetProperty("ListOfQDictOfClass").GetArrayLength());
-            Assert.Equal(1, data.GetProperty("DictOfListOfClass").EnumerateObject().Count());
-            Assert.Equal(1, data.GetProperty("DictOfQListOfClass").EnumerateObject().Count());
+            Assert.Single(data.GetProperty("DictOfListOfClass").EnumerateObject());
+            Assert.Single(data.GetProperty("DictOfQListOfClass").EnumerateObject());
         }
 
         // ----------------------------------------------------------------

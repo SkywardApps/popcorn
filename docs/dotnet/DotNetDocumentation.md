@@ -43,4 +43,3 @@ at the v8 replacement. Listed for v7 users still on the runtime-reflection line:
 
 + [`dotnet/PopcornAotExample/`](../../dotnet/PopcornAotExample/) — minimal API published with
   `PublishAot=True` + `PublishTrimmed=True`. Exercises the `[PopcornEnvelope]` + exception middleware path.
-+ [`dotnet/Examples/PopcornNet5Example/`](../../dotnet/Examples/PopcornNet5Example/) — legacy v7 example (scheduled for refresh or removal).

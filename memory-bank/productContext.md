@@ -18,7 +18,7 @@ GET /contacts?include=[Id,Name,PhoneNumbers[Number]]
 
 ## Implementation Evolution
 - **Legacy**: runtime reflection expander (`PopcornNetStandard`). Flexible but incompatible with AOT and trimming; allocates heavily on each request.
-- **Current (this branch)**: build-time Roslyn source generator (`Popcorn.SourceGenerator`). AOT- and trim-safe. Type-safe. Generated `JsonConverter<T>` per registered type.
+- **Current (v8, shipped)**: build-time Roslyn source generator (`Popcorn.SourceGenerator`). AOT- and trim-safe. Type-safe. Generated `JsonConverter<T>` per registered type.
 
 ## UX Expectations
 

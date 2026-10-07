@@ -123,7 +123,7 @@ We now have a consistent response wrapper that can be consumed with ease by othe
 
 ### Putting it into action
 
-You can view the full documentation around the ApiResponse object [here](PopcornStandard/Implementation/ApiResponse.cs) so we won't dive too much into that now.
+The v7 `ApiResponse` inspector implementation ships inside the `Skyward.Api.Popcorn` NuGet package (it is no longer present in this repository), so we won't dive too much into that now.
 
 To set the default inspector we just refer back to our Startup.cs file and add the SetDefaultApiResponseInspector method to our UsePopcorn call as seen below.
 ```csharp
