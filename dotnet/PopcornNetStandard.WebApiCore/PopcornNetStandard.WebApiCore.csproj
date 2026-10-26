@@ -36,7 +36,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.403" PrivateAssets="All" />
   </ItemGroup>
 
 
@@ -50,8 +50,13 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.3.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.3.13" />
+    <!-- Transitive pins: Microsoft.AspNetCore.Mvc 2.3.13 pulls System.Security.Cryptography.Xml 8.0.4
+         and System.Security.Cryptography.Pkcs 8.0.1, both with known advisories (Oct 2026).
+         Drop these once a newer Mvc 2.3.x references patched versions. -->
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="8.0.5" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
   </ItemGroup>
   
   <ItemGroup>
