@@ -26,12 +26,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Setup .NET SDK (from global.json)
+      - name: Setup .NET SDKs
         uses: actions/setup-dotnet@v6
         with:
-          # Test projects target net10.0. global.json pins the .NET 10 SDK, which the
-          # source generator (Roslyn 4.12) needs anyway: SDK 8's compiler can't load it.
+          # global.json pins the .NET 10 SDK, which builds everything (the source
+          # generator needs Roslyn 4.12+; SDK 8's compiler can't load it). 8.0.x is
+          # installed only for its runtimes: FunctionalTests also targets net8.0, and
+          # `dotnet test` needs the matching Microsoft.NETCore.App / AspNetCore.App
+          # 8.0 runtime to run that TFM (SDK 10 only carries the 10.0 runtimes).
           global-json-file: global.json
+          dotnet-version: 8.0.x
 
       - name: Cache NuGet packages
         uses: actions/cache@v6
@@ -54,13 +58,15 @@ jobs:
         working-directory: dotnet
         run: dotnet build Tests/Popcorn.FunctionalTests/Popcorn.FunctionalTests.csproj -c Release --no-restore
 
+      # Runs both target frameworks (net8.0 and net10.0). LogFilePrefix gives each TFM
+      # its own .trx file instead of one overwriting the other.
       - name: Run FunctionalTests
         working-directory: dotnet
         run: >
           dotnet test Tests/Popcorn.FunctionalTests/Popcorn.FunctionalTests.csproj
           -c Release --no-build
           --logger "console;verbosity=minimal"
-          --logger "trx;LogFileName=functional-tests.trx"
+          --logger "trx;LogFilePrefix=functional-tests"
           --results-directory TestResults
 
       - name: Restore SourceGenerator.Tests

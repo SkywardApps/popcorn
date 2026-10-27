@@ -2,7 +2,7 @@
 
 This document outlines a comprehensive test plan for the Popcorn serialization functionality, covering various scenarios and edge cases.
  
- ! Technical Note: The source generated for the tests is in obj/Generated, so while it isn't included directly in the project
+ ! Technical Note: The source generated for the tests is in obj/Generated/<tfm>, so while it isn't included directly in the project
  you can find the source there to diagnose generation issues.
 
 ## 1. Property Inclusion/Exclusion Tests
