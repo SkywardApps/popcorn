@@ -51,7 +51,7 @@ If a real consumer presents a concrete case that none of the replacement pattern
 - Markdown BDN report + trx results surfaced via `$GITHUB_STEP_SUMMARY`; raw BDN artifacts uploaded for 30 days.
 
 ### CI: run full test suite on PR + push — **shipped**
-- [`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs on PR + push to `master` / `spike/**`. Installs the .NET 10 SDK pinned by `global.json`, caches NuGet packages keyed on csproj hashes, runs `dotnet test` on both `Popcorn.FunctionalTests` (182 passing / 2 skipped) and `Popcorn.SourceGenerator.Tests` (19 passing). trx logs uploaded as an artifact on failure. Concurrency-group cancels superseded runs.
+- [`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs on PR + push to `master` / `spike/**`. Installs the .NET 10 SDK pinned by `global.json`, caches NuGet packages keyed on csproj hashes, runs `dotnet test` on both `Popcorn.FunctionalTests` (net8.0 + net10.0, 182 passing / 2 skipped each; the 8.0.x SDK is installed for its runtime) and `Popcorn.SourceGenerator.Tests` (19 passing). trx logs uploaded as an artifact on failure. Concurrency-group cancels superseded runs.
 - Why separate from `aot-ci.yml`: the AOT workflow needs the AOT toolchain (clang/zlib) + Docker; the test workflow should run faster and with fewer dependencies. Parallel jobs keep PR feedback tight.
 - Previously the 201 tests only ran on dev boxes — a regression in the generator or runtime could land on `spike/source-generator` without catching. Closed.
 

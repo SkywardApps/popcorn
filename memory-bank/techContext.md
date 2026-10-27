@@ -1,7 +1,7 @@
 # Technical Context: Popcorn
 
 ## Stack
-- **.NET 10** for runtime targets (test projects, AOT example, CI benchmarks). `MatrixPerformance` stays `net8.0;net9.0;net10.0` (cross-runtime comparison, not in CI).
+- **.NET 10** for runtime targets (SourceGenerator.Tests, AOT example, CI benchmarks); FunctionalTests multi-target `net8.0;net10.0`. `MatrixPerformance` stays `net8.0;net9.0;net10.0` (cross-runtime comparison, not in CI).
 - **SDK**: `global.json` pins .NET SDK `10.0.100` + `rollForward: latestFeature`. Generator floor: SDK 9.0.100 / VS 17.12 (Roslyn 4.12); older compilers skip the generator with CS9057.
 - **.NET Standard 2.0** for `Popcorn.Shared` and `Popcorn.SourceGenerator` (source generators *must* target netstandard2.0 per Roslyn rules).
 - **Roslyn** — `Microsoft.CodeAnalysis.CSharp` 4.12.0 for the generator.
@@ -84,21 +84,19 @@ From `Popcorn.SourceGenerator.csproj`:
 
 ## CI / Publish
 - GitHub Actions: `tests.yml`, `aot-ci.yml` (Docker, `sdk:10.0` image), `benchmarks.yml`, `main.yml` (release). SDK comes from `global.json` via `setup-dotnet` `global-json-file`.
-- Release (`main.yml`, `release/v*` tags): `pack` job (no secrets, uploads `nuget-packages` artifact) → `publish` job under environment `nuget-release` (required reviewer; uses secret `SKYWARDNUGETAPIKEY`; NuGet push, GitHub release, csproj version sync).
+- Release (`main.yml`, `release/v*` tags): `pack` job (uploads `nuget-packages` artifact) → `publish` job under environment `nuget-release` (required reviewer; only job using org secret `SKYWARDNUGETAPIKEY`; NuGet push + GitHub release, `--prerelease` when the version has a suffix). Workflow never edits csproj `<Version>`: bump it by PR before tagging (checklist: `docs/Releases.md`). `master` requires PRs + checks.
 - `.gitlab-ci.yml` is legacy (v7 packages, `sdk:6.0`).
-- AppVeyor badge still in README (legacy).
-- NuGet package `Skyward.Api.Popcorn` (legacy) — source-generator packages not yet published.
-- Recent `master` commits: CI pipeline for NuGet publishing (#72), unrelated bugfix `ELUM-3318_ErrorsReturnedAsOK` (#71).
+- `tests.yml` installs `8.0.x` alongside global.json: FunctionalTests' net8.0 TFM needs the 8.0 runtimes (SDK 10 ships only 10.0).
+- NuGet: v8 `Skyward.Api.Popcorn.SourceGen` + `.SourceGen.Shared` `8.0.0-preview.1` published 2026-04-24 (tag `release/v8.0.0-preview.1`). Legacy v7: `Skyward.Api.Popcorn`, `Skyward.Api.Popcorn.WebApiCore`.
 
 ## Testing Strategy
-- **Functional tests** (`Popcorn.FunctionalTests`) use `TestJsonContext` — a single `JsonSerializerContext` that declares `[JsonSerializable(typeof(ApiResponse<Model>))]` (and `[JsonSerializable(typeof(CustomEnvelope<Model>))]` for envelope fixtures) for every test model. The source generator runs against this and produces real converters, which the tests invoke via `JsonSerializer.Serialize` and real `TestServer` pipelines. To inspect generated output, look in `$(BaseIntermediateOutputPath)Generated` (csproj sets `EmitCompilerGeneratedFiles=true`).
+- **Functional tests** (`Popcorn.FunctionalTests`) use `TestJsonContext` — a single `JsonSerializerContext` that declares `[JsonSerializable(typeof(ApiResponse<Model>))]` (and `[JsonSerializable(typeof(CustomEnvelope<Model>))]` for envelope fixtures) for every test model. The source generator runs against this and produces real converters, which the tests invoke via `JsonSerializer.Serialize` and real `TestServer` pipelines. To inspect generated output, look in `obj/Generated/<tfm>/` (csproj sets `EmitCompilerGeneratedFiles=true`). Targets `net8.0;net10.0` (TestHost 8.0.33 / 10.0.14 per TFM); CI runs both.
 - **Generator diagnostic tests** (`Popcorn.SourceGenerator.Tests`) use Roslyn's `CSharpGeneratorDriver` against synthetic in-memory source. `GeneratorTestHarness.Run(source)` returns a `Result` of `Diagnostics + RunResult` for assertions. Covers JSG003–JSG007 plus a positive control.
 - **No mocking** of the generator or the serializer — tests exercise the real pipeline.
 - **Snapshot tests** (Verify.SourceGenerators/Verify.Xunit, as declared in previous notes) — referenced in prior memory, but current branch leans on functional-output assertions rather than snapshot files.
 
 ## Development Workflow
-- Current active branch: `spike/source-generator`. Diff vs `master`: ~12k lines added across 82 files, mostly functional tests (~4k), benchmarks (~2k), source generator (~1.5k), and memory-bank docs.
-- Do not merge to `master` until feature parity decisions are made on sorting/pagination/filtering/authorization and perf benchmarks are validated.
+- Source-generator line is on `master`; changes land by PR.
 - Code philosophy (from `Plan.md`): one improvement at a time, fully tested before the next; maintain or improve performance; minimalist code.
 
 ## Known External Dependencies / Constraints
