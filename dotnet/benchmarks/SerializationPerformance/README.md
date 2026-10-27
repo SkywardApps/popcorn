@@ -80,7 +80,7 @@ Analyzes the performance cost of different attribute types:
 ## Running Benchmarks
 
 ### Prerequisites
-- .NET 8.0 or later
+- .NET 10 SDK (pinned by the repo's `global.json`; the project targets `net10.0`)
 - BenchmarkDotNet package
 - Sufficient memory for large dataset tests
 

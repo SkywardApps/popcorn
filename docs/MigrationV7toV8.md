@@ -63,6 +63,9 @@ The `SourceGen` package is marked `developmentDependency` — it only contribute
 analyzer, never any runtime DLLs. The `SourceGen.Shared` package is the normal runtime
 library that carries attributes, envelopes, and middleware.
 
+> **Build requirement:** .NET SDK 9.0.100 or later (.NET 10 SDK recommended). See the
+> [Quick Start](dotnet/DotNetQuickStart.md#1-install-the-packages) for details.
+
 ```csharp
 using Popcorn;         // attributes live here
 using Popcorn.Shared;  // ApiResponse<T>, Pop<T>, ApiError, IPopcornAccessor, middleware extensions

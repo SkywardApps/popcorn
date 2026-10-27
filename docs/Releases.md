@@ -2,7 +2,19 @@
 
 [Table Of Contents](TableOfContents.md)
 
-## 8.0.0-preview.1 (unreleased)
+## Release checklist (v8 packages)
+
+1. Bump `<Version>` in both `dotnet/Popcorn.Shared/Popcorn.Shared.csproj` and
+   `dotnet/Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj` to the new version, and add
+   the release notes below, in a pull request to `master`. The release workflow does not edit
+   the csproj files.
+2. After the PR merges, tag the merge commit `release/vX.Y.Z` (or `release/vX.Y.Z-suffix` for a
+   prerelease) and push the tag.
+3. The [Release workflow](../.github/workflows/main.yml) packs both packages, then waits for
+   approval on the `nuget-release` environment before pushing to NuGet and creating the GitHub
+   release. Versions with a suffix are marked as GitHub prereleases.
+
+## 8.0.0-preview.1 (2026-04-24)
 
 First public preview of v8 — Popcorn reimplemented as a Roslyn source generator for Native AOT and IL trimming compatibility. See [MigrationV7toV8.md](MigrationV7toV8.md) for the full migration story.
 

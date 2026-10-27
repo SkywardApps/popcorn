@@ -12,6 +12,10 @@ Popcorn's .NET provider ships as two NuGet packages:
 Both target .NET 8+ and are compatible with `PublishAot=True` and `PublishTrimmed=True`. Current
 version: `8.0.0-preview.1` (see [Releases](../Releases.md)).
 
+Building requires .NET SDK 9.0.100 or later (Roslyn 4.12); .NET 10 SDK recommended. Older SDKs
+skip the generator with warning `CS9057`. See the [Quick Start](DotNetQuickStart.md#1-install-the-packages)
+for details.
+
 > **Coming from v7?** The v7 packages (`Skyward.Api.Popcorn` and `Skyward.Api.Popcorn.DotNetCore`)
 > are the runtime-reflection line — still on NuGet, still maintained, but cannot AOT-publish.
 > See [Migrating from v7 to v8](../MigrationV7toV8.md) for the upgrade path.

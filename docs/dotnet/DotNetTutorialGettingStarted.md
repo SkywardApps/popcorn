@@ -50,6 +50,9 @@ The csproj will look like:
 `SourceGen` is marked `developmentDependency` — it only contributes the Roslyn analyzer, never
 a runtime DLL. `SourceGen.Shared` carries the attributes, envelopes, and middleware.
 
+> **Build requirement:** .NET SDK 9.0.100 or later (.NET 10 SDK recommended). See the
+> [Quick Start](DotNetQuickStart.md#1-install-the-packages) for details.
+
 ## 3. Define your models
 
 Create a `Models` folder and add `Employee.cs` and `Car.cs`:
