@@ -24,14 +24,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Setup .NET SDK 8.0
-        uses: actions/setup-dotnet@v4
+      - name: Setup .NET SDK (from global.json)
+        uses: actions/setup-dotnet@v6
         with:
-          # Test projects target net8.0. Install the matching SDK so we don't rely on
-          # DOTNET_ROLL_FORWARD.
-          dotnet-version: 8.0.x
+          # Test projects target net10.0. global.json pins the .NET 10 SDK, which the
+          # source generator (Roslyn 4.12) needs anyway: SDK 8's compiler can't load it.
+          global-json-file: global.json
 
       - name: Cache NuGet packages
         uses: actions/cache@v4

@@ -33,12 +33,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Setup .NET SDK 8.0
-        uses: actions/setup-dotnet@v4
+      - name: Setup .NET SDK (from global.json)
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
