@@ -187,6 +187,9 @@ keep v7 if you aren't yet ready to migrate.
 **.NET (ASP.NET Core):** see the [.NET Quick Start](docs/dotnet/DotNetQuickStart.md) and the
 [Getting Started tutorial](docs/dotnet/DotNetTutorialGettingStarted.md). Both packages
 (`Skyward.Api.Popcorn.SourceGen` + `Skyward.Api.Popcorn.SourceGen.Shared`) are on NuGet.
+.NET SDK 9.0.100 or later is required to build with the source generator (Roslyn 4.12); .NET 10
+SDK recommended. On an older SDK the compiler skips the generator with warning `CS9057` and the
+build fails on missing generated members.
 
 **Other platforms:** the protocol is documented in [Documentation](docs/Documentation.md) — if
 you build a provider in another language, the `?include=` grammar and default/always/never

@@ -20,6 +20,15 @@ data, multiple endpoints) see [Getting Started](DotNetTutorialGettingStarted.md)
 runtime DLL. `SourceGen.Shared` is the runtime library that carries attributes, envelopes, and
 middleware.
 
+> **Build requirement.** .NET SDK 9.0.100 or later is required to build with the source
+> generator (Roslyn 4.12); .NET 10 SDK recommended. In Visual Studio that means 2022 17.12 or
+> later. The requirement is on the SDK that compiles your project, not on its target framework:
+> a `net8.0` app builds fine with the .NET 10 SDK. On an older SDK (the .NET 8 SDK ships Roslyn
+> 4.11) the compiler skips the generator with warning `CS9057` ("The analyzer assembly ...
+> references version '4.12.0.0' of the compiler, which is newer than the currently running
+> version ..."), and the build then fails with errors about missing generated members such as
+> `AddPopcornOptions`. Check with `dotnet --version`, or pin the SDK with a `global.json`.
+
 ## 2. Declare a `JsonSerializerContext`
 
 Popcorn's generator discovers types through standard `System.Text.Json`

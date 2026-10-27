@@ -63,6 +63,15 @@ The `SourceGen` package is marked `developmentDependency` — it only contribute
 analyzer, never any runtime DLLs. The `SourceGen.Shared` package is the normal runtime
 library that carries attributes, envelopes, and middleware.
 
+> **Build requirement.** .NET SDK 9.0.100 or later is required to build with the source
+> generator (Roslyn 4.12); .NET 10 SDK recommended. In Visual Studio that means 2022 17.12 or
+> later. The requirement is on the SDK that compiles your project, not on its target framework:
+> a `net8.0` app builds fine with the .NET 10 SDK. On an older SDK (the .NET 8 SDK ships Roslyn
+> 4.11) the compiler skips the generator with warning `CS9057` ("The analyzer assembly ...
+> references version '4.12.0.0' of the compiler, which is newer than the currently running
+> version ..."), and the build then fails with errors about missing generated members such as
+> `AddPopcornOptions`. Check with `dotnet --version`, or pin the SDK with a `global.json`.
+
 ```csharp
 using Popcorn;         // attributes live here
 using Popcorn.Shared;  // ApiResponse<T>, Pop<T>, ApiError, IPopcornAccessor, middleware extensions

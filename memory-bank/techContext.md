@@ -1,12 +1,13 @@
 # Technical Context: Popcorn
 
 ## Stack
-- **.NET 8+** for runtime targets (test project, AOT example).
+- **.NET 10** for runtime targets (test projects, AOT example, CI benchmarks). `MatrixPerformance` stays `net8.0;net9.0;net10.0` (cross-runtime comparison, not in CI).
+- **SDK**: `global.json` pins .NET SDK `10.0.100` + `rollForward: latestFeature`. Generator floor: SDK 9.0.100 / VS 17.12 (Roslyn 4.12); older compilers skip the generator with CS9057.
 - **.NET Standard 2.0** for `Popcorn.Shared` and `Popcorn.SourceGenerator` (source generators *must* target netstandard2.0 per Roslyn rules).
 - **Roslyn** — `Microsoft.CodeAnalysis.CSharp` 4.12.0 for the generator.
 - **System.Text.Json** 9.0.1.
 - **Microsoft.AspNetCore.Http.Abstractions** 2.3.0 (for `HttpContext` in netstandard2.0 land).
-- **xUnit** 2.6.6 + `Microsoft.AspNetCore.TestHost` 8.0.0 for functional tests.
+- **xUnit** 2.6.6 + `Microsoft.AspNetCore.TestHost` 10.0.14 for functional tests.
 - **BenchmarkDotNet** for perf suite.
 
 ## Solution Layout (`dotnet/Popcorn.sln`)
@@ -82,7 +83,9 @@ From `Popcorn.SourceGenerator.csproj`:
 - **Enums and `Nullable<Enum>`**: skipped in `GetReferencedTypes` (not registered as Popcorn-aware types). Fall through to `JsonSerializer.Serialize(writer, value, options)`, which transparently picks up global `options.Converters.Add(new JsonStringEnumConverter())` registrations and per-enum `[JsonConverter(typeof(JsonStringEnumConverter))]` attributes. Default output is numeric; string-form is opt-in via standard System.Text.Json configuration — no Popcorn-specific API.
 
 ## CI / Publish
-- GitHub Actions (`.github/workflows/main.yml`) and `.gitlab-ci.yml` for builds.
+- GitHub Actions: `tests.yml`, `aot-ci.yml` (Docker, `sdk:10.0` image), `benchmarks.yml`, `main.yml` (release). SDK comes from `global.json` via `setup-dotnet` `global-json-file`.
+- Release (`main.yml`, `release/v*` tags): `pack` job (no secrets, uploads `nuget-packages` artifact) → `publish` job under environment `nuget-release` (required reviewer; uses secret `SKYWARDNUGETAPIKEY`; NuGet push, GitHub release, csproj version sync).
+- `.gitlab-ci.yml` is legacy (v7 packages, `sdk:6.0`).
 - AppVeyor badge still in README (legacy).
 - NuGet package `Skyward.Api.Popcorn` (legacy) — source-generator packages not yet published.
 - Recent `master` commits: CI pipeline for NuGet publishing (#72), unrelated bugfix `ELUM-3318_ErrorsReturnedAsOK` (#71).
