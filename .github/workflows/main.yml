@@ -1,23 +1,26 @@
 name: Release
 
-# Triggered by pushing a tag of the form `release/vX.Y.Z` (or `release/vX.Y.Z-suffix`)
-# to master. The tag is the single source of truth for the version: we pack both
-# v8 packages with that version (overriding the csproj <Version> via -p:Version=),
-# push them to NuGet, create a GitHub Release with the .nupkg + .snupkg attached,
-# and sync the csproj <Version> on master so the next dev build starts from a
-# matching baseline.
+# Triggered by pushing a tag of the form `release/vX.Y.Z` (or `release/vX.Y.Z-suffix`),
+# normally created on a commit already on master. The tag is the single source of truth
+# for the package version: both v8 packages are packed with that version (overriding the
+# csproj <Version> via -p:Version=), pushed to NuGet, and attached to a GitHub Release.
+# Tags with a suffix (e.g. 8.1.0-preview.1) produce a GitHub prerelease.
 #
-# Two jobs: `pack` builds the .nupkg/.snupkg files with no secrets in scope and uploads
-# them as an artifact; `publish` runs under the `nuget-release` environment, so a
-# required reviewer must approve each run before the NuGet API key is used. The
-# reviewer can inspect the `pack` job log and the `nuget-packages` artifact first.
+# The workflow does not edit the csproj <Version>: master only accepts changes through
+# pull requests. Bump <Version> in both csproj files by PR before tagging (see the
+# release checklist in docs/Releases.md).
 #
-# The csproj sync is best-effort — if branch protection blocks the push, the release
-# still succeeds; a maintainer can bump the csproj manually after the fact.
+# Two jobs:
+# - `pack` builds the .nupkg/.snupkg files and uploads them as the `nuget-packages`
+#   artifact. It does not reference the NuGet API key.
+# - `publish` runs under the `nuget-release` environment, so a required reviewer must
+#   approve each run before it starts. It is the only job that uses SKYWARDNUGETAPIKEY.
+#   The reviewer can inspect the `pack` log and the artifact first.
 #
-# Prior iteration of this file had a broken regex-style tag filter (`/^release/`)
-# that never matched any glob, so the pipeline never actually ran. If anyone on the
-# team "published v8 manually before," this is why.
+# Note: SKYWARDNUGETAPIKEY is an organization secret, so any job in this repository can
+# read it. The environment approval gates the job that uses it, not access to the
+# secret. Moving it to an environment secret on `nuget-release` would restrict it to
+# approved runs of that environment.
 
 on:
   push:
@@ -61,8 +64,7 @@ jobs:
           global-json-file: global.json
 
       # -p:Version= and -p:PackageVersion= together make the emitted .nupkg carry the
-      # tag's version regardless of what <Version> the csproj has. The csproj edit
-      # (publish job) is for keeping the repo tidy, not for the pack output.
+      # tag's version regardless of what <Version> the csproj has.
       - name: Pack Popcorn.Shared
         working-directory: dotnet
         run: >
@@ -105,7 +107,7 @@ jobs:
       name: nuget-release
       url: https://www.nuget.org/packages/Skyward.Api.Popcorn.SourceGen
     permissions:
-      contents: write  # needed for `gh release create` and for the version-sync push
+      contents: write  # needed only for `gh release create`
     env:
       VERSION: ${{ needs.pack.outputs.version }}
 
@@ -113,7 +115,7 @@ jobs:
       - name: Checkout tagged commit
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0  # the version-sync step checks out and pushes master
+          persist-credentials: false  # nothing in this job pushes to git
 
       - name: Setup .NET SDK (from global.json)
         uses: actions/setup-dotnet@v6
@@ -150,41 +152,19 @@ jobs:
               --skip-duplicate
           done
 
+      # A version with a suffix (8.1.0-preview.1, 9.0.0-rc.1) is a prerelease: mark it
+      # so it never shows as the repository's Latest release.
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
+          PRERELEASE=()
+          if [[ "$VERSION" == *-* ]]; then
+            PRERELEASE=(--prerelease)
+          fi
           gh release create "${GITHUB_REF_NAME}" \
             --title "v${VERSION}" \
             --generate-notes \
+            "${PRERELEASE[@]}" \
             publish/*.nupkg publish/*.snupkg
-
-      # Sync the csproj <Version> on master so the next dev build reads a version
-      # that matches the latest release. Best-effort: branch protection may reject
-      # the push, in which case we log a warning and the release still succeeds.
-      - name: Sync csproj version on master
-        continue-on-error: true
-        run: |
-          git fetch origin master
-          git checkout master
-          changed=0
-          for f in dotnet/Popcorn.Shared/Popcorn.Shared.csproj dotnet/Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj; do
-            current=$(grep -oP '(?<=<Version>)[^<]+' "$f" | head -n 1)
-            if [ "$current" != "$VERSION" ]; then
-              echo "Bumping $f: $current → $VERSION"
-              sed -i "s|<Version>${current}</Version>|<Version>${VERSION}</Version>|" "$f"
-              changed=1
-            else
-              echo "$f already at $VERSION"
-            fi
-          done
-          if [ "$changed" = "1" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add dotnet/Popcorn.Shared/Popcorn.Shared.csproj dotnet/Popcorn.SourceGenerator/Popcorn.SourceGenerator.csproj
-            git commit -m "Sync csproj Version to ${VERSION} after ${GITHUB_REF_NAME} release [skip ci]"
-            if ! git push origin master; then
-              echo "::warning::Could not push version bump to master. Branch protection may be blocking workflow pushes. Bump csproj <Version> manually."
-              exit 0
-            fi
-          fi
