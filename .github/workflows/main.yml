@@ -7,6 +7,11 @@ name: Release
 # and sync the csproj <Version> on master so the next dev build starts from a
 # matching baseline.
 #
+# Two jobs: `pack` builds the .nupkg/.snupkg files with no secrets in scope and uploads
+# them as an artifact; `publish` runs under the `nuget-release` environment, so a
+# required reviewer must approve each run before the NuGet API key is used. The
+# reviewer can inspect the `pack` job log and the `nuget-packages` artifact first.
+#
 # The csproj sync is best-effort — if branch protection blocks the push, the release
 # still succeeds; a maintainer can bump the csproj manually after the fact.
 #
@@ -20,17 +25,19 @@ on:
       - 'release/v*'
 
 permissions:
-  contents: write  # needed for `gh release create` and for the version-sync push
+  contents: read
 
 jobs:
-  release:
-    name: Pack, publish to NuGet, create GitHub release
+  pack:
+    name: Pack NuGet packages
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
 
     steps:
       - name: Checkout tagged commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0  # SourceLink needs full history to resolve commit hashes
 
@@ -48,14 +55,14 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Detected version: $VERSION"
 
-      - name: Setup .NET SDK 8.0
-        uses: actions/setup-dotnet@v4
+      - name: Setup .NET SDK (from global.json)
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
 
       # -p:Version= and -p:PackageVersion= together make the emitted .nupkg carry the
       # tag's version regardless of what <Version> the csproj has. The csproj edit
-      # (later step) is for keeping the repo tidy, not for the pack output.
+      # (publish job) is for keeping the repo tidy, not for the pack output.
       - name: Pack Popcorn.Shared
         working-directory: dotnet
         run: >
@@ -75,6 +82,51 @@ jobs:
           --output ../publish
 
       - name: List packaged artifacts
+        run: ls -la publish/
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-packages
+          path: |
+            publish/*.nupkg
+            publish/*.snupkg
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish to NuGet, create GitHub release
+    needs: pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Required reviewers on this environment gate every publish. Configure it under
+    # Settings → Environments → nuget-release.
+    environment:
+      name: nuget-release
+      url: https://www.nuget.org/packages/Skyward.Api.Popcorn.SourceGen
+    permissions:
+      contents: write  # needed for `gh release create` and for the version-sync push
+    env:
+      VERSION: ${{ needs.pack.outputs.version }}
+
+    steps:
+      - name: Checkout tagged commit
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # the version-sync step checks out and pushes master
+
+      - name: Setup .NET SDK (from global.json)
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          name: nuget-packages
+          path: publish
+
+      - name: List packages to publish
         run: ls -la publish/
 
       # `dotnet nuget push *.nupkg` automatically pushes the sibling .snupkg symbol
@@ -103,7 +155,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "${GITHUB_REF_NAME}" \
-            --title "v${{ steps.ver.outputs.version }}" \
+            --title "v${VERSION}" \
             --generate-notes \
             publish/*.nupkg publish/*.snupkg
 
@@ -112,8 +164,6 @@ jobs:
       # the push, in which case we log a warning and the release still succeeds.
       - name: Sync csproj version on master
         continue-on-error: true
-        env:
-          VERSION: ${{ steps.ver.outputs.version }}
         run: |
           git fetch origin master
           git checkout master
